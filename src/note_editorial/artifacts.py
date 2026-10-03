@@ -154,8 +154,16 @@ def _post_len(item: str) -> int:
     return len(body)
 
 
-def _sns(text: str) -> list[str]:
+def _sns(text: str, run_dir: Path | None = None) -> list[str]:
     errs = []
+    # 記事に未確認(要確認)の情報が残っている間は、その出典に触れる投稿を作らせない
+    if run_dir is not None:
+        revised = Path(run_dir) / FILES["revised"]
+        if revised.exists() and "要確認" in publishable_text(revised.read_text(encoding="utf-8")):
+            body = re.split(r"^##\s*確認メモ", text, flags=re.M)[0]
+            for word in ("白書", "総務省"):
+                if word in body:
+                    errs.append(f"記事に「要確認」が残っているのに、投稿案が「{word}」に触れています(確認後に追記する)")
     for heading, minimum, limit in (("X投稿案", 3, X_LIMIT), ("Threads投稿案", 2, THREADS_LIMIT)):
         block = section(text, heading)
         if block is None:
@@ -196,7 +204,7 @@ def validate(step: str, path: Path, run_dir: Path | None = None) -> list[str]:
     if step == "critique":
         return _critique(text)
     if step == "sns":
-        return _sns(text)
+        return _sns(text, run_dir)
     return _revised(text, run_dir)
 
 

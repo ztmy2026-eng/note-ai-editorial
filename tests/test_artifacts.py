@@ -55,3 +55,13 @@ def test_sns_x_post_over_limit_rejected(tmp_path):
 
 def test_sns_needs_confirmation_memo(tmp_path):
     assert any("確認メモ" in e for e in check("sns", SNS.replace("## 確認メモ", "## 別の章"), tmp_path))
+
+
+def test_sns_must_not_cite_unverified_source(tmp_path):
+    (tmp_path / a.FILES["revised"]).write_text(REVISED.replace("## 情報源", "58.8%(要確認)\n## 情報源", 1), encoding="utf-8")
+    bad = SNS.replace("- チェック表を記事で配っています 【記事URL】", "- 総務省の白書によると… 【記事URL】")
+    assert any("白書" in e or "総務省" in e for e in check("sns", bad, tmp_path, tmp_path))
+    assert check("sns", SNS, tmp_path, tmp_path) == []
+    # 要確認が残っていない記事なら、出典に触れてよい
+    (tmp_path / a.FILES["revised"]).write_text(REVISED, encoding="utf-8")
+    assert check("sns", bad, tmp_path, tmp_path) == []
