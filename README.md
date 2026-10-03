@@ -31,7 +31,8 @@ python -m note_editorial check-articles    # 過去記事の読み込み確認
 python -m note_editorial new-run --theme ai-work
 ```
 
-Claude Code では `/editorial-run ai-work` で、リサーチ→企画(承認1の手前)まで進みます。
+Claude Code では `/editorial-run ai-work`(手動承認で1ステップずつ)か、`/daily-run`(承認なしモードで上限まで自動)を使います。
+自動実行の場所(クラウド / PC)の比較は `docs/automation_options.md` を見てください。
 
 承認は人間が実行するコマンドだけです。
 
@@ -41,6 +42,10 @@ python -m note_editorial approve-publish <実行ID>          # 承認2(【要入
 python -m note_editorial approve-sns <実行ID>              # 承認3(承認2の後。「要確認」「要入力」が残ると拒否)
 python -m note_editorial export-note <実行ID>               # note貼り付け用(タイトル欄・本文欄に分けて出力。承認2の後)
 python -m note_editorial make-images <実行ID>              # note見出し画像・Instagram画像を自動作成
+python -m note_editorial check-limits                      # 1日の上限の使用状況(上限なら終了コード1)
+python -m note_editorial auto-approve <実行ID>             # 承認なしモード(config/limits.yaml の auto_approve: true のとき)
+python -m note_editorial mark-posted <実行ID> --url <URL>  # noteに投稿したことを記録(次の記事を作れるようになる)
+python -m note_editorial next-theme                        # 次に作るテーマを選ぶ
 python -m note_editorial status                            # 状態確認
 python -m note_editorial reopen <実行ID> draft             # 体験を足して第2ラウンド(古い版は history/ に退避)
 python -m note_editorial analyze                           # 過去記事の集計 → analytics/facts.md
