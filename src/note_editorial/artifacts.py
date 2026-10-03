@@ -18,6 +18,7 @@ FILES = {
     "sns": "06_sns.md",
 }
 PLACEHOLDER = "【要入力"
+NO_SOURCE_NOTE = "外部の情報源は使用していません"
 SEVERITY = ("【重大】", "【中】", "【軽微】")
 IDEA_LABELS = ("タイトル案", "想定読者", "読者の悩み", "切り口", "構成", "CTA", "過去記事との関係")
 URL_RE = re.compile(r"https?://\S+")
@@ -90,8 +91,10 @@ def _article_common(text: str) -> list[str]:
     if not re.search(r"^#\s+\S", text, re.M):
         errs.append("記事タイトル(# …)がありません")
     src = section(text, "情報源")
-    if src is None or not any(URL_RE.search(i) for i in _items(src)):
-        errs.append("「## 情報源」にURLがありません")
+    if src is None:
+        errs.append("「## 情報源」の章がありません")
+    elif NO_SOURCE_NOTE not in src and not any(URL_RE.search(i) for i in _items(src)):
+        errs.append(f"「## 情報源」にURLがありません(外部情報を使っていない場合は「{NO_SOURCE_NOTE}」と明記)")
     return errs
 
 

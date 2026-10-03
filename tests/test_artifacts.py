@@ -65,3 +65,10 @@ def test_sns_must_not_cite_unverified_source(tmp_path):
     # 要確認が残っていない記事なら、出典に触れてよい
     (tmp_path / a.FILES["revised"]).write_text(REVISED, encoding="utf-8")
     assert check("sns", bad, tmp_path, tmp_path) == []
+
+
+def test_article_without_external_sources_needs_explicit_note(tmp_path):
+    no_url = DRAFT.replace("- https://example.com/1", "- 筆者の体験のみ")
+    assert any("URL" in e for e in check("draft", no_url, tmp_path))
+    ok = DRAFT.replace("- https://example.com/1", "- 外部の情報源は使用していません(筆者の体験と架空例のみ)")
+    assert check("draft", ok, tmp_path) == []
