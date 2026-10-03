@@ -3,7 +3,7 @@
   "theme": "ai-work",
   "theme_name": "AI × 仕事効率化",
   "created": "2026-10-03T10:28:45+00:00",
-  "status": "sns_done",
+  "status": "publish_approved",
   "steps_done": [
     "research",
     "ideas",
@@ -17,7 +17,9 @@
       "candidate": 1,
       "at": "2026-10-03T10:33:30+00:00"
     },
-    "publish": null,
+    "publish": {
+      "at": "2026-10-03T11:06:15+00:00"
+    },
     "sns": null
   },
   "rounds": 4
