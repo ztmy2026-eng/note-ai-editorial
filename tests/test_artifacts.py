@@ -1,5 +1,5 @@
 from note_editorial import artifacts as a
-from conftest import RESEARCH, IDEAS, DRAFT, CRITIQUE, REVISED
+from conftest import RESEARCH, IDEAS, DRAFT, CRITIQUE, REVISED, SNS
 
 
 def check(step, text, tmp_path, run_dir=None):
@@ -42,3 +42,16 @@ def test_revised_must_address_every_problem(tmp_path):
     assert check("revised", REVISED, tmp_path, tmp_path) == []
     missing = REVISED.replace("- 問題3: 表記統一", "")
     assert any("問題3" in e for e in check("revised", missing, tmp_path, tmp_path))
+
+
+def test_good_sns_passes(tmp_path):
+    assert check("sns", SNS, tmp_path) == []
+
+
+def test_sns_x_post_over_limit_rejected(tmp_path):
+    long = SNS.replace("- チェック表を記事で配っています 【記事URL】", "- " + "あ" * 141)
+    assert any("140字" in e for e in check("sns", long, tmp_path))
+
+
+def test_sns_needs_confirmation_memo(tmp_path):
+    assert any("確認メモ" in e for e in check("sns", SNS.replace("## 確認メモ", "## 別の章"), tmp_path))

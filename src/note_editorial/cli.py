@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import artifacts, articles, runs
+from . import analytics, artifacts, articles, chief, runs
 
 
 def _cmd_check_articles(args) -> int:
@@ -65,6 +65,38 @@ def _cmd_approve_publish(args) -> int:
     return 0
 
 
+def _cmd_approve_sns(args) -> int:
+    runs.approve_sns(Path(args.root), args.run_id)
+    print("【承認3】SNS投稿案を承認しました\n※ 投稿はあなたが手動で行います(このシステムは送信しません)")
+    return 0
+
+
+def _cmd_analyze(args) -> int:
+    root = Path(args.root)
+    result, source = articles.load_with_fallback(root)
+    for p in result.problems:
+        print(f"[問題] {p}")
+    out = root / "analytics" / "facts.md"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(analytics.render_facts(analytics.compute_facts(result.articles)), encoding="utf-8")
+    print(f"集計を書き出しました: {out}(読み込み元: {source})")
+    return 0
+
+
+def _cmd_validate_hypotheses(args) -> int:
+    problems = analytics.validate_hypotheses(Path(args.root) / "analytics" / "hypotheses.md")
+    for p in problems:
+        print(f"  - {p}")
+    print("合格" if not problems else "不合格")
+    return 1 if problems else 0
+
+
+def _cmd_briefing(args) -> int:
+    path = chief.write_briefing(Path(args.root))
+    print(path.read_text(encoding="utf-8"))
+    return 0
+
+
 def _cmd_reopen(args) -> int:
     dest = runs.reopen(Path(args.root), args.run_id, args.step)
     print(f"{args.step} 以降をやり直します。古い成果物は {dest} に退避しました")
@@ -77,7 +109,8 @@ def _cmd_status(args) -> int:
     for rid in ids:
         d = runs.read_run(root, rid)
         print(f"{rid} [{d['theme_name']}] 状態={d['status']} 完了={','.join(d['steps_done']) or '-'}"
-              f" 承認1={'済' if d['approvals']['idea'] else '未'} 承認2={'済' if d['approvals']['publish'] else '未'}")
+              f" 承認1={'済' if d['approvals']['idea'] else '未'} 承認2={'済' if d['approvals']['publish'] else '未'}"
+              f" 承認3={'済' if d['approvals'].get('sns') else '未'}")
     return 0
 
 
@@ -102,9 +135,15 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("approve-publish", help="【承認2】公開してよいと承認")
     s.add_argument("run_id")
     s.set_defaults(fn=_cmd_approve_publish)
+    s = sub.add_parser("approve-sns", help="【承認3】SNS投稿案を承認")
+    s.add_argument("run_id")
+    s.set_defaults(fn=_cmd_approve_sns)
+    sub.add_parser("analyze", help="過去記事を集計(分析の事実部分)").set_defaults(fn=_cmd_analyze)
+    sub.add_parser("validate-hypotheses", help="仮説台帳の形式検査").set_defaults(fn=_cmd_validate_hypotheses)
+    sub.add_parser("briefing", help="編集長の朝のブリーフィングを作る").set_defaults(fn=_cmd_briefing)
     s = sub.add_parser("reopen", help="draft/critique/revised 以降をやり直す(古い版は退避)")
     s.add_argument("run_id")
-    s.add_argument("step", choices=["draft", "critique", "revised"])
+    s.add_argument("step", choices=["draft", "critique", "revised", "sns"])
     s.set_defaults(fn=_cmd_reopen)
     s = sub.add_parser("status", help="実行の状態")
     s.add_argument("run_id", nargs="?")

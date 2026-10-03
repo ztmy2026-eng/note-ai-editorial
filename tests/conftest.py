@@ -77,3 +77,20 @@ def root(tmp_path):
 
 def write(root, run_id, name, text):
     (root / "runs" / run_id / name).write_text(text, encoding="utf-8")
+
+
+SNS = """# SNS投稿案
+## X投稿案
+- 議事録はAIに任せても、日付と担当は元メモと照合しています 【記事URL】
+- メールの下書きもAIで作れます。入れてよい情報かだけ先に確認を
+- チェック表を記事で配っています 【記事URL】
+## Threads投稿案
+- Threads用の投稿その1です。
+- Threads用の投稿その2です。
+## Instagram投稿案
+1枚目: タイトル / 2枚目: チェック表
+## Instagramキャプション
+キャプション本文です。
+## 確認メモ
+- 数字は使っていません
+"""

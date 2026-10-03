@@ -23,3 +23,7 @@ argument-hint: <テーマID 例: ai-work> [phase1|phase2 候補番号と体験�
    `approve-publish <実行ID>` で行う
 
 不合格(`[不合格]`)が出たら、理由に従って担当Agentにやり直させる(最大2回。それでも駄目なら人間に報告)。
+
+## phase3(承認2の後)
+9. sns → `06_sns.md` → `complete <実行ID> sns`
+10. **ここで止まる(承認3)。** 人間のみが `approve-sns <実行ID>` で承認する。投稿は人間が手動で行う

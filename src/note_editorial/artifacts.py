@@ -8,13 +8,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-STEPS = ["research", "ideas", "draft", "critique", "revised"]
+STEPS = ["research", "ideas", "draft", "critique", "revised", "sns"]
 FILES = {
     "research": "01_research.md",
     "ideas": "02_ideas.md",
     "draft": "03_draft.md",
     "critique": "04_critique.md",
     "revised": "05_revised.md",
+    "sns": "06_sns.md",
 }
 PLACEHOLDER = "【要入力"
 SEVERITY = ("【重大】", "【中】", "【軽微】")
@@ -140,6 +141,42 @@ def _revised(text: str, run_dir: Path | None) -> list[str]:
     return errs
 
 
+
+# 文字数の上限(X=日本語は全角140字まで。Threads=500字。Instagramキャプション=2,200字)
+X_LIMIT = 140
+THREADS_LIMIT = 500
+CAPTION_LIMIT = 2200
+LINK_TOKEN = "【記事URL】"
+
+
+def _post_len(item: str) -> int:
+    body = re.sub(r"^\s*(?:[-*]|\d+[.)])\s+", "", item).replace(LINK_TOKEN, "").strip()
+    return len(body)
+
+
+def _sns(text: str) -> list[str]:
+    errs = []
+    for heading, minimum, limit in (("X投稿案", 3, X_LIMIT), ("Threads投稿案", 2, THREADS_LIMIT)):
+        block = section(text, heading)
+        if block is None:
+            errs.append(f"「## {heading}」の章がありません")
+            continue
+        items = _items(block)
+        if len(items) < minimum:
+            errs.append(f"{heading}は{minimum}件以上必要です({len(items)}件)")
+        errs += [f"{heading}の{i}件目が{limit}字を超えています({_post_len(it)}字)" for i, it in enumerate(items, 1) if _post_len(it) > limit]
+    if not (section(text, "Instagram投稿案") or "").strip():
+        errs.append("「## Instagram投稿案」の章がないか、空です")
+    cap = (section(text, "Instagramキャプション") or "").strip()
+    if not cap:
+        errs.append("「## Instagramキャプション」の章がないか、空です")
+    elif len(cap) > CAPTION_LIMIT:
+        errs.append(f"Instagramキャプションが{CAPTION_LIMIT}字を超えています({len(cap)}字)")
+    if section(text, "確認メモ") is None:
+        errs.append("「## 確認メモ」(未確認の数字・体験に依存する投稿の注意)がありません")
+    return errs
+
+
 def validate(step: str, path: Path, run_dir: Path | None = None) -> list[str]:
     """問題のリストを返す。空リストなら合格。"""
     if step not in STEPS:
@@ -158,6 +195,8 @@ def validate(step: str, path: Path, run_dir: Path | None = None) -> list[str]:
         return _draft(text)
     if step == "critique":
         return _critique(text)
+    if step == "sns":
+        return _sns(text)
     return _revised(text, run_dir)
 
 

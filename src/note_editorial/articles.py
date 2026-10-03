@@ -111,8 +111,10 @@ def load_articles(directory: Path) -> LoadResult:
 
 def load_with_fallback(root: Path) -> tuple[LoadResult, str]:
     """実記事(data/past_articles)があればそれを、無ければサンプルを読む。"""
-    real = load_articles(Path(root) / "data" / "past_articles")
-    if real.articles or real.problems:
+    real_dir = Path(root) / "data" / "past_articles"
+    real = load_articles(real_dir)
+    folder_missing = not real_dir.is_dir()
+    if real.articles or (real.problems and not folder_missing):  # 壊れた記事がある場合もサンプルに逃げず報告する
         return real, "past_articles"
     return load_articles(Path(root) / "data" / "samples"), "samples"
 

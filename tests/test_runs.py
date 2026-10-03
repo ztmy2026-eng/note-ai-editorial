@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from note_editorial import runs
-from conftest import RESEARCH, IDEAS, DRAFT, CRITIQUE, REVISED, write
+from conftest import RESEARCH, IDEAS, DRAFT, CRITIQUE, REVISED, SNS, write
 
 D = date(2026, 10, 3)
 
@@ -119,3 +119,34 @@ def test_reopen_unfinished_step_rejected(root):
     rid = full_to_ideas(root)
     with pytest.raises(runs.RunError):
         runs.reopen(root, rid, "draft")
+
+
+def test_sns_needs_publish_approval_then_gates(root):
+    rid = finish(root)
+    write(root, rid, "06_sns.md", SNS)
+    assert runs.complete_step(root, rid, "sns") == []
+    with pytest.raises(runs.RunError, match="承認2"):
+        runs.approve_sns(root, rid)
+    runs.approve_publish(root, rid)
+    runs.approve_sns(root, rid)
+    d = runs.read_run(root, rid)
+    assert d["approvals"]["sns"] and d["status"] == "sns_approved"
+
+
+def test_sns_approval_blocked_by_unverified(root):
+    rid = finish(root)
+    write(root, rid, "06_sns.md", SNS.replace("数字は使っていません", "58.8%(要確認)"))
+    assert runs.complete_step(root, rid, "sns") == []
+    runs.approve_publish(root, rid)
+    with pytest.raises(runs.RunError, match="要確認"):
+        runs.approve_sns(root, rid)
+
+
+def test_reopen_sns_keeps_publish_approval(root):
+    rid = finish(root)
+    write(root, rid, "06_sns.md", SNS)
+    runs.complete_step(root, rid, "sns")
+    runs.approve_publish(root, rid)
+    runs.reopen(root, rid, "sns")
+    d = runs.read_run(root, rid)
+    assert d["approvals"]["publish"] and d["status"] == "publish_approved" and "sns" not in d["steps_done"]

@@ -23,6 +23,7 @@ STATUS_BY_STEP = {
     "draft": "draft_done",
     "critique": "critique_done",
     "revised": "revised_done",
+    "sns": "sns_done",
 }
 READY_FILE = "READY_TO_PUBLISH.md"
 
@@ -90,7 +91,7 @@ def create_run(root: Path, theme_id: str, today: date | None = None) -> str:
         "created": _now(),
         "status": "created",
         "steps_done": [],
-        "approvals": {"idea": None, "publish": None},
+        "approvals": {"idea": None, "publish": None, "sns": None},
     }
     _save(root, run_id, data)
     log_event(root, "run_created", run_id=run_id, theme=theme_id)
@@ -117,7 +118,8 @@ def complete_step(root: Path, run_id: str, step: str) -> list[str]:
         log_event(root, "step_rejected", run_id=run_id, step=step, problems=problems)
         return problems
     done.append(step)
-    data["status"] = STATUS_BY_STEP[step]
+    if not (step == "sns" and data["approvals"]["publish"]):  # 公開承認済みの状態表示を上書きしない
+        data["status"] = STATUS_BY_STEP[step]
     _save(root, run_id, data)
     log_event(root, "step_done", run_id=run_id, step=step)
     return []
@@ -174,8 +176,8 @@ def reopen(root: Path, run_id: str, step: str) -> Path:
     公開承認(承認2)は、記事が変わるので取り消される。
     """
     root = Path(root)
-    if step not in ("draft", "critique", "revised"):
-        raise RunError("やり直せるのは draft / critique / revised からです")
+    if step not in ("draft", "critique", "revised", "sns"):
+        raise RunError("やり直せるのは draft / critique / revised / sns からです")
     data = read_run(root, run_id)
     if step not in data["steps_done"]:
         raise RunError(f"'{step}' はまだ完了していないため、やり直す対象がありません")
@@ -189,12 +191,41 @@ def reopen(root: Path, run_id: str, step: str) -> Path:
         if f.exists():
             shutil.move(str(f), dest / f.name)
     ready = rdir / READY_FILE
-    if ready.exists():
+    if step != "sns" and ready.exists():  # 記事が変わるなら公開承認は取り消す
         shutil.move(str(ready), dest / ready.name)
     data["steps_done"] = artifacts.STEPS[:idx]
-    data["approvals"]["publish"] = None
+    if step != "sns":
+        data["approvals"]["publish"] = None
+    data["approvals"]["sns"] = None
     data["rounds"] = n + 1
-    data["status"] = STATUS_BY_STEP[artifacts.STEPS[idx - 1]] if data["steps_done"][-1] != "ideas" else "idea_approved"
+    if step == "sns" and data["approvals"]["publish"]:
+        data["status"] = "publish_approved"
+    else:
+        data["status"] = STATUS_BY_STEP[artifacts.STEPS[idx - 1]] if data["steps_done"][-1] != "ideas" else "idea_approved"
     _save(root, run_id, data)
     log_event(root, "run_reopened", run_id=run_id, from_step=step, archived_to=str(dest.relative_to(root)))
     return dest
+
+
+def approve_sns(root: Path, run_id: str) -> None:
+    """【承認3】SNS投稿案の内容を確認して承認する。人間が実行する操作。
+
+    記事の公開承認が済んでいて、SNS案に【要入力】「要確認」が残っていないことが条件。
+    ここでも何も送信しない(投稿はあなたが手動で行う)。
+    """
+    root = Path(root)
+    data = read_run(root, run_id)
+    if "sns" not in data["steps_done"]:
+        raise RunError("SNS投稿案がまだ完了していません")
+    if not data["approvals"].get("publish"):
+        raise RunError("先に【承認2】記事の公開承認が必要です(SNSは公開された記事を前提にするため)")
+    sns = run_path(root, run_id) / artifacts.FILES["sns"]
+    text = sns.read_text(encoding="utf-8")
+    for token in (artifacts.PLACEHOLDER, "要確認"):
+        n = text.count(token)
+        if n:
+            raise RunError(f"{artifacts.FILES['sns']} に「{token}」が {n} 箇所残っています")
+    data["approvals"]["sns"] = {"at": _now()}
+    data["status"] = "sns_approved"
+    _save(root, run_id, data)
+    log_event(root, "sns_approved", run_id=run_id)
