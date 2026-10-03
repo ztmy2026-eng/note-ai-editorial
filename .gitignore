@@ -1,0 +1,15 @@
+# 秘密情報(APIキーなど)は絶対にGitへ入れない
+.env
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+
+# ログは各自の環境で生成(Gitには載せない)
+logs/*
+!logs/.gitkeep

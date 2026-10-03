@@ -1,0 +1,111 @@
+"""コマンド入口。  使い方: python -m note_editorial <コマンド> --help"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from . import artifacts, articles, runs
+
+
+def _cmd_check_articles(args) -> int:
+    root = Path(args.root)
+    result, source = articles.load_with_fallback(root)
+    s = articles.summarize(result.articles)
+    label = "サンプル(架空)データ" if source == "samples" else "data/past_articles"
+    print(f"読み込み元: {label}")
+    print(f"記事数: {s['count']}(数値あり {s['with_metrics']} / 数値なし {s['without_metrics']})")
+    print(f"テーマ別: {s['by_theme']}")
+    for p in result.problems:
+        print(f"[問題] {p}")
+    return 1 if result.problems else 0
+
+
+def _cmd_themes(args) -> int:
+    for t in sorted(runs.load_themes(Path(args.root)), key=lambda t: t.get("priority", 99)):
+        mark = "有効" if t.get("active", True) else "無効"
+        print(f"{t['priority']}. {t['id']:<10} {t['name']} [{mark}]")
+    return 0
+
+
+def _cmd_new_run(args) -> int:
+    print(runs.create_run(Path(args.root), args.theme))
+    return 0
+
+
+def _cmd_complete(args) -> int:
+    problems = runs.complete_step(Path(args.root), args.run_id, args.step)
+    if problems:
+        print(f"[不合格] {args.step}:")
+        for p in problems:
+            print(f"  - {p}")
+        return 1
+    print(f"[合格] {args.step} を完了として記録しました")
+    return 0
+
+
+def _cmd_validate(args) -> int:
+    rdir = runs.run_path(Path(args.root), args.run_id)
+    problems = artifacts.validate(args.step, rdir / artifacts.FILES[args.step], rdir)
+    for p in problems:
+        print(f"  - {p}")
+    print("合格" if not problems else "不合格")
+    return 1 if problems else 0
+
+
+def _cmd_approve_idea(args) -> int:
+    runs.approve_idea(Path(args.root), args.run_id, args.number)
+    print(f"【承認1】候補{args.number}を採用しました")
+    return 0
+
+
+def _cmd_approve_publish(args) -> int:
+    ready = runs.approve_publish(Path(args.root), args.run_id)
+    print(f"【承認2】公開準備完了: {ready}\n※ noteへの投稿はあなたが手動で行います(このシステムは送信しません)")
+    return 0
+
+
+def _cmd_status(args) -> int:
+    root = Path(args.root)
+    ids = [args.run_id] if args.run_id else sorted(p.parent.name for p in (root / "runs").glob("*/run.json"))
+    for rid in ids:
+        d = runs.read_run(root, rid)
+        print(f"{rid} [{d['theme_name']}] 状態={d['status']} 完了={','.join(d['steps_done']) or '-'}"
+              f" 承認1={'済' if d['approvals']['idea'] else '未'} 承認2={'済' if d['approvals']['publish'] else '未'}")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="note_editorial", description="note AI編集部")
+    p.add_argument("--root", default=".", help="プロジェクトのフォルダ(通常は変更不要)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("check-articles", help="過去記事を読み込んで集計").set_defaults(fn=_cmd_check_articles)
+    sub.add_parser("themes", help="テーマ一覧").set_defaults(fn=_cmd_themes)
+    s = sub.add_parser("new-run", help="新しい実行を作る")
+    s.add_argument("--theme", required=True)
+    s.set_defaults(fn=_cmd_new_run)
+    for name, fn, h in (("complete", _cmd_complete, "成果物を検査して完了を記録"), ("validate", _cmd_validate, "検査のみ(記録しない)")):
+        s = sub.add_parser(name, help=h)
+        s.add_argument("run_id")
+        s.add_argument("step", choices=artifacts.STEPS)
+        s.set_defaults(fn=fn)
+    s = sub.add_parser("approve-idea", help="【承認1】企画を採用")
+    s.add_argument("run_id")
+    s.add_argument("number", type=int)
+    s.set_defaults(fn=_cmd_approve_idea)
+    s = sub.add_parser("approve-publish", help="【承認2】公開してよいと承認")
+    s.add_argument("run_id")
+    s.set_defaults(fn=_cmd_approve_publish)
+    s = sub.add_parser("status", help="実行の状態")
+    s.add_argument("run_id", nargs="?")
+    s.set_defaults(fn=_cmd_status)
+    return p
+
+
+def main(argv=None) -> int:
+    args = build_parser().parse_args(argv)
+    try:
+        return args.fn(args)
+    except runs.RunError as e:
+        print(f"[エラー] {e}", file=sys.stderr)
+        return 2

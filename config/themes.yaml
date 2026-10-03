@@ -1,0 +1,19 @@
+# テーマ設定。後から自由に追加・変更・無効化できます。
+# priority: 小さいほど優先 / active: false にすると企画の対象外
+themes:
+  - id: ai-work
+    name: "AI × 仕事効率化"
+    priority: 1
+    active: true
+  - id: newcomer
+    name: "新社会人 × お金・仕事・キャリア"
+    priority: 2
+    active: true
+  - id: investing
+    name: "投資・資産形成"
+    priority: 3
+    active: true
+  - id: side-job
+    name: "副業"
+    priority: 4
+    active: true
