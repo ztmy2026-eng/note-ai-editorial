@@ -72,7 +72,7 @@ REVISED = DRAFT + """
 def root(tmp_path):
     """本物の config を使う、空の作業フォルダ。"""
     shutil.copytree(REPO / "config", tmp_path / "config")
-    set_limits(tmp_path, auto_approve="false")  # テストは手動承認を基本にする(本番の設定値に依存させない)
+    set_limits(tmp_path, auto_approve="false", max_runs_per_day=3, max_agent_steps_per_day=30, max_ready_queue=3)  # テストは本番の設定値に依存させない
     return tmp_path
 
 

@@ -135,7 +135,7 @@ def test_sns_needs_publish_approval_then_gates(root):
 
 def test_sns_approval_blocked_by_unverified(root):
     rid = finish(root)
-    write(root, rid, "06_sns.md", SNS.replace("数字は使っていません", "58.8%(要確認)"))
+    write(root, rid, "06_sns.md", SNS.replace("- Threads用の投稿その1です。", "- 58.8%(要確認)"))
     assert runs.complete_step(root, rid, "sns") == []
     runs.approve_publish(root, rid)
     with pytest.raises(runs.RunError, match="要確認"):
@@ -150,3 +150,17 @@ def test_reopen_sns_keeps_publish_approval(root):
     runs.reopen(root, rid, "sns")
     d = runs.read_run(root, rid)
     assert d["approvals"]["publish"] and d["status"] == "publish_approved" and "sns" not in d["steps_done"]
+
+
+def test_sns_memo_may_mention_markers_but_posts_may_not(root):
+    rid = finish(root)
+    runs.approve_publish(root, rid)
+    write(root, rid, "06_sns.md", SNS.replace("数字は使っていません", "「要確認」「【要入力】」は残っていません"))
+    assert runs.complete_step(root, rid, "sns") == []
+    runs.approve_sns(root, rid)  # メモ内の言及だけなら通る
+    rid2 = finish(root)
+    runs.approve_publish(root, rid2)
+    write(root, rid2, "06_sns.md", SNS.replace("- Threads用の投稿その1です。", "- 【要入力:ここ】"))
+    runs.complete_step(root, rid2, "sns")
+    with pytest.raises(runs.RunError, match="要入力"):
+        runs.approve_sns(root, rid2)

@@ -211,6 +211,11 @@ def validate(step: str, path: Path, run_dir: Path | None = None) -> list[str]:
     return _revised(text, run_dir)
 
 
+def drop_section(text: str, heading: str) -> str:
+    """「## 見出し」の章を、次の「## 」の手前まで取り除く。"""
+    return re.sub(rf"^##\s*{re.escape(heading)}[^\n]*\n.*?(?=^##\s|\Z)", "", text, flags=re.M | re.S)
+
+
 def publishable_text(text: str) -> str:
     """公開用の本文。編集向けの「修正履歴」の章は取り除く。"""
     return re.sub(r"^##\s*修正履歴[^\n]*\n.*?(?=^##\s|\Z)", "", text, flags=re.M | re.S).rstrip() + "\n"

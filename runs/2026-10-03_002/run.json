@@ -1,0 +1,31 @@
+{
+  "run_id": "2026-10-03_002",
+  "theme": "newcomer",
+  "theme_name": "新社会人 × お金・仕事・キャリア",
+  "created": "2026-10-03T12:13:10+00:00",
+  "status": "sns_approved",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-03T12:15:26+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-10-03T12:18:37+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-10-03T12:20:58+00:00",
+      "by": "auto"
+    }
+  },
+  "posted": null
+}

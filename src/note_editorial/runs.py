@@ -225,7 +225,8 @@ def approve_sns(root: Path, run_id: str, by: str = "human") -> None:
     if not data["approvals"].get("publish"):
         raise RunError("先に【承認2】記事の公開承認が必要です(SNSは公開された記事を前提にするため)")
     sns = run_path(root, run_id) / artifacts.FILES["sns"]
-    text = sns.read_text(encoding="utf-8")
+    # 投稿される部分だけ検査する。「## 確認メモ」は編集用で投稿されないため、マーカーへの言及を許す
+    text = artifacts.drop_section(sns.read_text(encoding="utf-8"), "確認メモ")
     for token in (artifacts.PLACEHOLDER, "要確認"):
         n = text.count(token)
         if n:
