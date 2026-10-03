@@ -1,0 +1,10 @@
+# 画像の見た目の設定(後から自由に変更できます)。色は #RRGGBB。
+colors:
+  background: "#0f2a43"   # 背景
+  accent: "#ffb400"       # アクセント(線・番号)
+  text: "#ffffff"         # 文字
+  subtext: "#b8c7d9"      # 小さい文字
+font_family: "'Noto Sans JP','Noto Sans CJK JP','Yu Gothic','Meiryo','IPAGothic',sans-serif"
+footer: ""                # 画像の下に入れる名前(例: "@あなたのアカウント")。空なら何も入れない
+# 画像を作るブラウザ(Chrome / Edge)。空なら自動で探す。Windowsで見つからない場合はここに実行ファイルのパスを書く
+browser_path: ""

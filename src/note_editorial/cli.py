@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, artifacts, articles, chief, runs
+from . import analytics, artifacts, articles, chief, export, images, runs
 
 
 def _cmd_check_articles(args) -> int:
@@ -97,6 +97,24 @@ def _cmd_briefing(args) -> int:
     return 0
 
 
+def _cmd_export_note(args) -> int:
+    out = export.export_note(Path(args.root), args.run_id)
+    print(f"note貼り付け用を作りました: {out}/title.txt(タイトル欄) と {out}/body.md(本文欄)")
+    return 0
+
+
+def _cmd_make_images(args) -> int:
+    try:
+        made = images.make_images(Path(args.root), args.run_id)
+    except images.ImageError as e:
+        print(f"[エラー] {e}", file=sys.stderr)
+        return 2
+    for p in made:
+        print(p)
+    print(f"{len(made)}枚作りました(文字入りカード。内容を確認してから使ってください)")
+    return 0
+
+
 def _cmd_reopen(args) -> int:
     dest = runs.reopen(Path(args.root), args.run_id, args.step)
     print(f"{args.step} 以降をやり直します。古い成果物は {dest} に退避しました")
@@ -141,6 +159,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("analyze", help="過去記事を集計(分析の事実部分)").set_defaults(fn=_cmd_analyze)
     sub.add_parser("validate-hypotheses", help="仮説台帳の形式検査").set_defaults(fn=_cmd_validate_hypotheses)
     sub.add_parser("briefing", help="編集長の朝のブリーフィングを作る").set_defaults(fn=_cmd_briefing)
+    for name, fn, h in (("export-note", _cmd_export_note, "note貼り付け用のタイトル・本文を作る(承認2の後)"),
+                        ("make-images", _cmd_make_images, "note見出し画像とInstagram画像を自動作成")):
+        s = sub.add_parser(name, help=h)
+        s.add_argument("run_id")
+        s.set_defaults(fn=fn)
     s = sub.add_parser("reopen", help="draft/critique/revised 以降をやり直す(古い版は退避)")
     s.add_argument("run_id")
     s.add_argument("step", choices=["draft", "critique", "revised", "sns"])

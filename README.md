@@ -19,6 +19,7 @@ note副業のための、複数のAIエージェントが役割分担して記�
 | 検品・承認・ログ・集計 | `src/note_editorial/` | 形式検査、順番と承認の管理、数値計算(**AIは使わない**) |
 
 - APIキーは**不要**です(Claude Code上で動かします)。
+- 画像は**AI画像生成を使わず**、文字入りカードをブラウザ(Chrome/Edge)で画像化します(費用なし・著作権の心配が少ない)。色や名前は `config/images.yaml` で変更できます。
 - 成果物は `runs/<日付_連番>/` に1ファイルずつ保存されます(`01_research.md` … `05_revised.md`、`run.json`)。
 
 ## 使い方
@@ -38,6 +39,8 @@ Claude Code では `/editorial-run ai-work` で、リサーチ→企画(承認1�
 python -m note_editorial approve-idea <実行ID> <候補番号>   # 承認1
 python -m note_editorial approve-publish <実行ID>          # 承認2(【要入力】が残っていると拒否される)
 python -m note_editorial approve-sns <実行ID>              # 承認3(承認2の後。「要確認」「要入力」が残ると拒否)
+python -m note_editorial export-note <実行ID>               # note貼り付け用(タイトル欄・本文欄に分けて出力。承認2の後)
+python -m note_editorial make-images <実行ID>              # note見出し画像・Instagram画像を自動作成
 python -m note_editorial status                            # 状態確認
 python -m note_editorial reopen <実行ID> draft             # 体験を足して第2ラウンド(古い版は history/ に退避)
 python -m note_editorial analyze                           # 過去記事の集計 → analytics/facts.md
