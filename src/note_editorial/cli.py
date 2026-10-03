@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, artifacts, articles, chief, export, images, runs
+from . import analytics, artifacts, articles, auto, chief, export, images, limits, runs
 
 
 def _cmd_check_articles(args) -> int:
@@ -115,6 +115,35 @@ def _cmd_make_images(args) -> int:
     return 0
 
 
+def _cmd_check_limits(args) -> int:
+    root = Path(args.root)
+    for key, (used, cap) in limits.usage(root).items():
+        print(f"{limits.LABELS[key]}: {used} / {cap}")
+    reasons = limits.reached(root)
+    for r in reasons:
+        print(f"[停止] {r}")
+    print("上限に達しています。新しい作業は始めません" if reasons else "OK(まだ作業できます)")
+    return 1 if reasons else 0
+
+
+def _cmd_auto_approve(args) -> int:
+    results = auto.auto_approve(Path(args.root), args.run_id)
+    for r in results or ["自動で進める承認はありませんでした"]:
+        print(r)
+    return 1 if any(r.startswith("停止") for r in results) else 0
+
+
+def _cmd_mark_posted(args) -> int:
+    runs.mark_posted(Path(args.root), args.run_id, args.url)
+    print("投稿済みとして記録しました(次の記事を作れるようになります)")
+    return 0
+
+
+def _cmd_next_theme(args) -> int:
+    print(chief.next_theme(Path(args.root)))
+    return 0
+
+
 def _cmd_reopen(args) -> int:
     dest = runs.reopen(Path(args.root), args.run_id, args.step)
     print(f"{args.step} 以降をやり直します。古い成果物は {dest} に退避しました")
@@ -164,6 +193,15 @@ def build_parser() -> argparse.ArgumentParser:
         s = sub.add_parser(name, help=h)
         s.add_argument("run_id")
         s.set_defaults(fn=fn)
+    sub.add_parser("check-limits", help="1日の上限の使用状況(上限に達していれば終了コード1)").set_defaults(fn=_cmd_check_limits)
+    s = sub.add_parser("auto-approve", help="承認なしモード:承認1〜3を自動で通す(検品は人間の承認と同じ条件)")
+    s.add_argument("run_id")
+    s.set_defaults(fn=_cmd_auto_approve)
+    s = sub.add_parser("mark-posted", help="noteに投稿したことを記録")
+    s.add_argument("run_id")
+    s.add_argument("--url", default="", help="公開した記事のURL")
+    s.set_defaults(fn=_cmd_mark_posted)
+    sub.add_parser("next-theme", help="次に記事を作るテーマを選ぶ").set_defaults(fn=_cmd_next_theme)
     s = sub.add_parser("reopen", help="draft/critique/revised 以降をやり直す(古い版は退避)")
     s.add_argument("run_id")
     s.add_argument("step", choices=["draft", "critique", "revised", "sns"])

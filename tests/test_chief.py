@@ -61,7 +61,7 @@ def test_briefing_lists_waiting_items_and_suggestions(root):
     finish(root, REVISED.replace("## 情報源", "【要入力:体験】\n## 情報源", 1))
     text = chief.briefing(root, D)
     assert "あなたの確認待ち" in text and "【要入力】1件" in text
-    assert "今日の実行回数: 1 / 3" in text
+    assert "今日の実行数: 1 / 3" in text
     assert "過去記事が1本も読み込めていません" in text
 
 
@@ -74,3 +74,9 @@ def test_briefing_warns_when_only_samples(root):
 
 def test_briefing_with_no_runs_does_not_crash(root):
     assert "なし" in chief.briefing(root, D)
+
+
+def test_next_theme_balances_by_priority_then_fewest_runs(root):
+    assert chief.next_theme(root) == "ai-work"  # 実行ゼロなら最優先テーマ
+    runs.create_run(root, "ai-work", today=D)
+    assert chief.next_theme(root) == "newcomer"  # 最優先テーマは1回実行済み→次に優先度が高く実行数の少ないもの

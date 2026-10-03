@@ -72,7 +72,18 @@ REVISED = DRAFT + """
 def root(tmp_path):
     """本物の config を使う、空の作業フォルダ。"""
     shutil.copytree(REPO / "config", tmp_path / "config")
+    set_limits(tmp_path, auto_approve="false")  # テストは手動承認を基本にする(本番の設定値に依存させない)
     return tmp_path
+
+
+def set_limits(root, **values):
+    """tmp の config/limits.yaml の値を書き換える(key=値 の行を置換)。"""
+    import re
+    path = root / "config" / "limits.yaml"
+    text = path.read_text(encoding="utf-8")
+    for key, val in values.items():
+        text = re.sub(rf"^{key}:.*$", f"{key}: {val}", text, flags=re.M)
+    path.write_text(text, encoding="utf-8")
 
 
 def write(root, run_id, name, text):

@@ -10,7 +10,7 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 
-from . import analytics, artifacts, articles, runs
+from . import analytics, artifacts, articles, limits, runs
 
 AGENT_FOR_STEP = {
     "research": "リサーチAgent",
@@ -26,10 +26,13 @@ def next_action(root: Path, run_id: str) -> tuple[str, bool]:
     """(次の一手, 人間の作業が必要か) を返す。"""
     d = runs.read_run(root, run_id)
     done, ap = d["steps_done"], d["approvals"]
+    auto = limits.load(root)["auto_approve"]
     rdir = runs.run_path(root, run_id)
     for step in ("research", "ideas"):
         if step not in done:
             return f"{AGENT_FOR_STEP[step]}を実行", False
+    if not ap["idea"] and auto:
+        return f"承認なしモード:`auto-approve {run_id}` でおすすめ企画を採用", False
     if not ap["idea"]:
         return f"【承認1】02_ideas.md を読み、`approve-idea {run_id} <候補番号>` で企画を選ぶ", True
     for step in ("draft", "critique", "revised"):
@@ -40,12 +43,18 @@ def next_action(root: Path, run_id: str) -> tuple[str, bool]:
         ph, uv = artifacts.count_placeholders(revised), artifacts.count_unverified(revised)
         if ph or uv:
             return f"記事の空欄【要入力】{ph}件・「要確認」{uv}件を、あなたが埋める/確認する(その後、編集・批評を再実行)", True
+        if auto:
+            return f"承認なしモード:`auto-approve {run_id}` で公開準備", False
         return f"【承認2】05_revised.md を読み、問題なければ `approve-publish {run_id}`", True
     if "sns" not in done:
         return "SNS Agentを実行", False
+    if not ap.get("sns") and auto:
+        return f"承認なしモード:`auto-approve {run_id}` でSNS案を承認", False
     if not ap.get("sns"):
         return f"【承認3】06_sns.md を読み、問題なければ `approve-sns {run_id}`", True
-    return "完了:READY_TO_PUBLISH.md と 06_sns.md を使って、noteとSNSへ手動で投稿", True
+    if d.get("posted"):
+        return "投稿済み", False
+    return f"完了:note_post/(`export-note`)と 06_sns.md・images/ を使って、noteとSNSへ手動で投稿。投稿したら `mark-posted {run_id} --url <記事URL>`", True
 
 
 def read_log(root: Path) -> list[dict]:
@@ -92,17 +101,19 @@ def suggestions(root: Path, signals: dict, art_summary: dict, hyp_problems: list
 def briefing(root: Path, today: date | None = None) -> str:
     root = Path(root)
     today = today or date.today()
-    limits = runs._read_yaml(root / "config" / "limits.yaml")
-    cap = int(limits.get("max_runs_per_day", 3))
-    used = len([p for p in (root / "runs").glob(f"{today.isoformat()}_*") if p.is_dir()])
     loaded, source = articles.load_with_fallback(root)
     art_summary = articles.summarize(loaded.articles)
     signals = quality_signals(read_log(root))
     hyp = root / "analytics" / "hypotheses.md"
     hyp_problems = analytics.validate_hypotheses(hyp) if hyp.exists() else None
 
+    use = limits.usage(root, today)
+    stops = limits.reached(root, today)
     lines = [f"# 編集部ブリーフィング {today.isoformat()}", "",
-             f"- 今日の実行回数: {used} / {cap}(上限)",
+             f"- 承認: {'承認なしモード(自動)。検品は有効、投稿は常に手動' if limits.load(root)['auto_approve'] else '手動承認'}",
+             f"- 今日の実行数: {use['runs'][0]} / {use['runs'][1]}、Agent作業数: {use['steps'][0]} / {use['steps'][1]}、"
+             f"未投稿の公開準備済み: {use['queue'][0]} / {use['queue'][1]}",
+             *([f"- **停止中**: {'; '.join(stops)}"] if stops else []),
              f"- 過去記事: {art_summary['count']}本(数値あり {art_summary['with_metrics']}、"
              f"{'サンプル(架空)' if source == 'samples' else '実データ'})", ""]
     ids = sorted(p.parent.name for p in (root / "runs").glob("*/run.json"))
@@ -134,3 +145,21 @@ def write_briefing(root: Path, today: date | None = None) -> Path:
     path = out / f"{today.isoformat()}.md"
     path.write_text(briefing(root, today), encoding="utf-8")
     return path
+
+
+def next_theme(root: Path) -> str:
+    """次に記事を作るテーマ。有効なテーマのうち、これまでの実行数が最も少ないもの(同数なら優先度が高い方)。
+
+    優先度の高いテーマが多めになるよう、実行数が同じなら priority 順。偏りすぎを防ぐため単純な「実行数の少ない順」を基本にする。
+    """
+    root = Path(root)
+    themes = [t for t in runs.load_themes(root) if t.get("active", True)]
+    if not themes:
+        raise runs.RunError("有効なテーマがありません(config/themes.yaml)")
+    counts = Counter()
+    for p in (root / "runs").glob("*/run.json"):
+        try:
+            counts[json.loads(p.read_text(encoding="utf-8")).get("theme")] += 1
+        except json.JSONDecodeError:
+            continue
+    return min(themes, key=lambda t: (counts[t["id"]], t.get("priority", 99)))["id"]
