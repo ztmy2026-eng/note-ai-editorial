@@ -8,6 +8,7 @@ runs/日付_連番/ に成果物と run.json(状態・承認)を置く。
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -164,3 +165,36 @@ def approve_publish(root: Path, run_id: str) -> Path:
     _save(root, run_id, data)
     log_event(root, "publish_approved", run_id=run_id)
     return ready
+
+
+def reopen(root: Path, run_id: str, step: str) -> Path:
+    """指定ステップ以降をやり直す(第2ラウンド)。
+
+    古い成果物は消さず runs/<id>/history/round_N/ に退避する。企画の承認(承認1)は保持。
+    公開承認(承認2)は、記事が変わるので取り消される。
+    """
+    root = Path(root)
+    if step not in ("draft", "critique", "revised"):
+        raise RunError("やり直せるのは draft / critique / revised からです")
+    data = read_run(root, run_id)
+    if step not in data["steps_done"]:
+        raise RunError(f"'{step}' はまだ完了していないため、やり直す対象がありません")
+    rdir = run_path(root, run_id)
+    n = data.get("rounds", 1)
+    dest = rdir / "history" / f"round_{n}"
+    dest.mkdir(parents=True, exist_ok=True)
+    idx = artifacts.STEPS.index(step)
+    for s in artifacts.STEPS[idx:]:
+        f = rdir / artifacts.FILES[s]
+        if f.exists():
+            shutil.move(str(f), dest / f.name)
+    ready = rdir / READY_FILE
+    if ready.exists():
+        shutil.move(str(ready), dest / ready.name)
+    data["steps_done"] = artifacts.STEPS[:idx]
+    data["approvals"]["publish"] = None
+    data["rounds"] = n + 1
+    data["status"] = STATUS_BY_STEP[artifacts.STEPS[idx - 1]] if data["steps_done"][-1] != "ideas" else "idea_approved"
+    _save(root, run_id, data)
+    log_event(root, "run_reopened", run_id=run_id, from_step=step, archived_to=str(dest.relative_to(root)))
+    return dest

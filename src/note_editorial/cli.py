@@ -65,6 +65,12 @@ def _cmd_approve_publish(args) -> int:
     return 0
 
 
+def _cmd_reopen(args) -> int:
+    dest = runs.reopen(Path(args.root), args.run_id, args.step)
+    print(f"{args.step} 以降をやり直します。古い成果物は {dest} に退避しました")
+    return 0
+
+
 def _cmd_status(args) -> int:
     root = Path(args.root)
     ids = [args.run_id] if args.run_id else sorted(p.parent.name for p in (root / "runs").glob("*/run.json"))
@@ -96,6 +102,10 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("approve-publish", help="【承認2】公開してよいと承認")
     s.add_argument("run_id")
     s.set_defaults(fn=_cmd_approve_publish)
+    s = sub.add_parser("reopen", help="draft/critique/revised 以降をやり直す(古い版は退避)")
+    s.add_argument("run_id")
+    s.add_argument("step", choices=["draft", "critique", "revised"])
+    s.set_defaults(fn=_cmd_reopen)
     s = sub.add_parser("status", help="実行の状態")
     s.add_argument("run_id", nargs="?")
     s.set_defaults(fn=_cmd_status)

@@ -101,3 +101,21 @@ def test_publish_blocked_while_unverified_remains(root):
     with pytest.raises(runs.RunError, match="要確認"):
         runs.approve_publish(root, rid)
     assert not (root / "runs" / rid / runs.READY_FILE).exists()
+
+
+def test_reopen_archives_and_resets_publish_approval(root):
+    rid = finish(root)
+    runs.approve_publish(root, rid)
+    dest = runs.reopen(root, rid, "draft")
+    rdir = root / "runs" / rid
+    assert (dest / "05_revised.md").exists() and (dest / runs.READY_FILE).exists()
+    assert not (rdir / "03_draft.md").exists()
+    d = runs.read_run(root, rid)
+    assert d["steps_done"] == ["research", "ideas"] and d["approvals"]["publish"] is None
+    assert d["approvals"]["idea"] and d["status"] == "idea_approved" and d["rounds"] == 2
+
+
+def test_reopen_unfinished_step_rejected(root):
+    rid = full_to_ideas(root)
+    with pytest.raises(runs.RunError):
+        runs.reopen(root, rid, "draft")
