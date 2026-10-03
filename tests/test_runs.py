@@ -77,7 +77,7 @@ def test_full_pipeline_then_publish_approval(root):
 
 
 def test_publish_blocked_while_placeholders_remain(root):
-    rid = finish(root, REVISED + "\n【要入力:あなたの体験】\n")
+    rid = finish(root, REVISED.replace("## 情報源", "【要入力:あなたの体験】\n## 情報源", 1))
     with pytest.raises(runs.RunError, match="要入力"):
         runs.approve_publish(root, rid)
     assert not (root / "runs" / rid / runs.READY_FILE).exists()
@@ -87,3 +87,17 @@ def test_publish_requires_revised_step(root):
     rid = full_to_ideas(root)
     with pytest.raises(runs.RunError):
         runs.approve_publish(root, rid)
+
+
+def test_placeholder_mention_in_revision_log_is_not_counted(root):
+    rid = finish(root, REVISED + "- 校正: 【要入力】は残した\n")
+    ready = runs.approve_publish(root, rid)
+    text = ready.read_text(encoding="utf-8")
+    assert "修正履歴" not in text and "【要入力" not in text  # 公開用ファイルに編集メモは入らない
+
+
+def test_publish_blocked_while_unverified_remains(root):
+    rid = finish(root, REVISED.replace("## 情報源", "58.8%(要確認)\n## 情報源", 1))
+    with pytest.raises(runs.RunError, match="要確認"):
+        runs.approve_publish(root, rid)
+    assert not (root / "runs" / rid / runs.READY_FILE).exists()

@@ -8,7 +8,6 @@ runs/日付_連番/ に成果物と run.json(状態・承認)を置く。
 from __future__ import annotations
 
 import json
-import shutil
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -143,7 +142,8 @@ def approve_idea(root: Path, run_id: str, number: int) -> None:
 def approve_publish(root: Path, run_id: str) -> Path:
     """【承認2】公開してよいと承認する。人間が実行する操作。
 
-    【要入力】の空欄が残っていると承認できない。ここでは何も送信せず、READY_TO_PUBLISH.md を作るだけ。
+    【要入力】の空欄や「要確認」(未確認の情報)が残っていると承認できない。
+    ここでは何も送信せず、修正履歴を除いた READY_TO_PUBLISH.md を作るだけ。
     """
     root = Path(root)
     data = read_run(root, run_id)
@@ -154,8 +154,11 @@ def approve_publish(root: Path, run_id: str) -> Path:
     left = artifacts.count_placeholders(revised)
     if left:
         raise RunError(f"{artifacts.FILES['revised']} に 【要入力】 が {left} 箇所残っています。あなたの体験・数字を入れてから承認してください")
+    unverified = artifacts.count_unverified(revised)
+    if unverified:
+        raise RunError(f"{artifacts.FILES['revised']} に「要確認」が {unverified} 箇所残っています。一次情報で確認してから、確認済みの表記に直す(または削る)ことが必要です")
     ready = rdir / READY_FILE
-    shutil.copyfile(revised, ready)
+    ready.write_text(artifacts.publishable_text(revised.read_text(encoding="utf-8")), encoding="utf-8")
     data["approvals"]["publish"] = {"at": _now()}
     data["status"] = "publish_approved"
     _save(root, run_id, data)

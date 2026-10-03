@@ -161,5 +161,16 @@ def validate(step: str, path: Path, run_dir: Path | None = None) -> list[str]:
     return _revised(text, run_dir)
 
 
+def publishable_text(text: str) -> str:
+    """公開用の本文。編集向けの「修正履歴」の章は取り除く。"""
+    return re.sub(r"^##\s*修正履歴[^\n]*\n.*?(?=^##\s|\Z)", "", text, flags=re.M | re.S).rstrip() + "\n"
+
+
 def count_placeholders(path: Path) -> int:
-    return Path(path).read_text(encoding="utf-8").count(PLACEHOLDER)
+    """公開本文に残っている【要入力】の数(修正履歴の中の言及は数えない)。"""
+    return publishable_text(Path(path).read_text(encoding="utf-8")).count(PLACEHOLDER)
+
+
+def count_unverified(path: Path) -> int:
+    """公開本文に残っている「要確認」(未確認の数字・事実)の数。"""
+    return publishable_text(Path(path).read_text(encoding="utf-8")).count("要確認")
