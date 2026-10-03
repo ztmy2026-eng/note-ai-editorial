@@ -3,13 +3,19 @@
   "theme": "ai-work",
   "theme_name": "AI × 仕事効率化",
   "created": "2026-10-03T10:28:45+00:00",
-  "status": "ideas_done",
+  "status": "revised_done",
   "steps_done": [
     "research",
-    "ideas"
+    "ideas",
+    "draft",
+    "critique",
+    "revised"
   ],
   "approvals": {
-    "idea": null,
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-03T10:33:30+00:00"
+    },
     "publish": null
   }
 }
