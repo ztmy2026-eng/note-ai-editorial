@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, artifacts, articles, auto, chief, export, images, limits, runs
+from . import analytics, artifacts, articles, auto, chief, export, images, learn, limits, runs
 
 
 def _cmd_check_articles(args) -> int:
@@ -141,6 +141,15 @@ def _cmd_mark_posted(args) -> int:
         ready = export.fill_article_url(Path(args.root), args.run_id, url)
         if ready:
             print(f"URL入りのSNS案を作りました: {ready}")
+    if (Path(args.root) / "runs" / args.run_id / "note_post" / "title.txt").exists():
+        print(f"あなたのデータとして登録しました: {learn.add_posted_article(Path(args.root), args.run_id)}(数値は空。record-metrics で追記)")
+    return 0
+
+
+def _cmd_record_metrics(args) -> int:
+    path = learn.record_metrics(Path(args.root), args.run_id, pv=args.pv, likes=args.likes,
+                                revenue=args.revenue, followers_gained=args.followers)
+    print(f"数値を記録しました: {path}")
     return 0
 
 
@@ -208,6 +217,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_id")
     s.add_argument("--url", default="", help="公開した記事のURL")
     s.set_defaults(fn=_cmd_mark_posted)
+    s = sub.add_parser("record-metrics", help="投稿した記事の反応の数値を記録(手入力・メール収集の共通の入口)")
+    s.add_argument("run_id")
+    for opt in ("pv", "likes", "revenue", "followers"):
+        s.add_argument(f"--{opt}", type=int, default=None)
+    s.set_defaults(fn=_cmd_record_metrics)
     sub.add_parser("next-theme", help="次に記事を作るテーマを選ぶ").set_defaults(fn=_cmd_next_theme)
     s = sub.add_parser("reopen", help="draft/critique/revised 以降をやり直す(古い版は退避)")
     s.add_argument("run_id")
