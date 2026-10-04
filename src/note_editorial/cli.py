@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, artifacts, articles, auto, chief, collect, export, figures, images, learn, limits, runs, weekly
+from . import analytics, articles, artifacts, auto, chief, collect, export, figures, images, learn, limits, market, runs, weekly
 
 
 def _cmd_check_articles(args) -> int:
@@ -214,6 +214,18 @@ def _cmd_import_metrics(args) -> int:
     return 0
 
 
+def _cmd_analyze_market(args) -> int:
+    root = Path(args.root)
+    items, problems = market.load_items(root / "data" / "market" / "items.csv")
+    for p in problems:
+        print(f"[問題] {p}")
+    out = root / "analytics" / "market_insights.md"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(market.render(items), encoding="utf-8")
+    print(f"書き出しました: {out}(記事{len(items)}件)")
+    return 1 if problems and not items else 0
+
+
 def _cmd_mark_skipped(args) -> int:
     runs.mark_skipped(Path(args.root), args.run_id, args.reason)
     print("見送りとして記録しました(未投稿の在庫から外れます)")
@@ -304,6 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("import-metrics", help="ダッシュボードで直した数字(手入力)を取り込む")
     s.add_argument("file")
     s.set_defaults(fn=_cmd_import_metrics)
+    sub.add_parser("analyze-market", help="data/market/items.csv(他の人の記事)を分析").set_defaults(fn=_cmd_analyze_market)
     s = sub.add_parser("mark-skipped", help="この記事は投稿しない、と記録")
     s.add_argument("run_id")
     s.add_argument("--reason", default="")
