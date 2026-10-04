@@ -54,3 +54,35 @@ def test_real_article_replaces_samples_in_loader(root):
     assert articles.load_with_fallback(root)[1] == "samples"
     learn.add_posted_article(root, posted_run(root))
     assert articles.load_with_fallback(root)[1] == "past_articles"
+
+
+def test_dashboard_edits_import_and_win_over_email(root, tmp_path):
+    import json
+    from note_editorial import collect
+    rid = posted_run(root)
+    learn.add_posted_article(root, rid)
+    rows = learn.export_metrics(root)["articles"]
+    assert rows[0]["id"] == rid and rows[0]["pv"] is None
+    # 画面で PV=120, スキ=7 を手入力した
+    edited = [{**rows[0], "pv": 120, "likes": 7, "impressions": 900, "src": {"pv": "manual", "likes": "manual", "impressions": "manual"}}]
+    notes = learn.import_metrics(root, edited)
+    a = articles.load_articles(root / "data" / "past_articles").articles[0]
+    assert (a.impressions, a.pv, a.likes) == (900, 120, 7) and notes
+    # その後メール収集が「スキ=3」を見つけても、手入力は上書きしない
+    raw = tmp_path / "raw.json"
+    raw.write_text(json.dumps({"likes": [{"date": "2026-10-05T00:00:00Z", "snippet":
+        f"作品が読者に届いています！ {a.title} 見出し画像 x x 3 スキしてくれた人"}]}, ensure_ascii=False), encoding="utf-8")
+    out = collect.collect(root, raw)
+    assert articles.load_articles(root / "data" / "past_articles").articles[0].likes == 7
+    assert any("手入力を優先" in line for line in out)
+
+
+def test_import_ignores_auto_values_negatives_and_unknown_ids(root):
+    rid = posted_run(root)
+    learn.add_posted_article(root, rid)
+    notes = learn.import_metrics(root, [
+        {"id": rid, "pv": 5, "src": {"pv": "auto"}},          # 自動の値は取り込まない
+        {"id": rid, "likes": -3, "src": {"likes": "manual"}},  # 負の数は無視
+        {"id": "nope", "pv": 1, "src": {"pv": "manual"}}])
+    a = articles.load_articles(root / "data" / "past_articles").articles[0]
+    assert a.pv is None and a.likes is None and any("対応する記事がありません" in n for n in notes)

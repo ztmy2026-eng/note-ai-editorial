@@ -78,11 +78,14 @@ def apply_likes(root: Path, likes: dict[str, dict]) -> list[str]:
         if path is None:
             path = _stub_path(root, title)
             path.parent.mkdir(parents=True, exist_ok=True)
-            meta = {"title": title, "url": "", "published": None, "theme": "", "pv": None, "likes": None,
+            meta = {"title": title, "url": "", "published": None, "theme": "", "impressions": None, "pv": None, "likes": None,
                     "revenue": None, "followers_gained": None, "cta": "", "sample": False, "source": "email"}
             path.write_text(learn._dump(meta, "(本文は未登録です。通知メールから作った記録です。本文を `data/past_articles/` に貼ると分析に使えます)"), encoding="utf-8")
             notes.append(f"新規(メール由来): {title}")
         meta, body = articles._split_front_matter(path.read_text(encoding="utf-8"))
+        if str(meta.get("likes_source", "")).startswith(learn.MANUAL):
+            notes.append(f"手入力を優先して更新しない: {title}")
+            continue
         meta["likes"] = info["likes"]
         meta["likes_source"] = "email(最新の通知の値。取り消しで減ることがある推定値)"
         meta["metrics_updated"] = today

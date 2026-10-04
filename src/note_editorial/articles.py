@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-NUMERIC_FIELDS = ("pv", "likes", "revenue", "followers_gained")
+NUMERIC_FIELDS = ("impressions", "pv", "likes", "revenue", "followers_gained")
 
 
 @dataclass
@@ -23,6 +23,7 @@ class Article:
     theme: str = ""
     url: str = ""
     published: date | None = None
+    impressions: int | None = None  # インプ(表示された回数)
     pv: int | None = None
     likes: int | None = None
     revenue: int | None = None

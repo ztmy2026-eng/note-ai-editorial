@@ -1,0 +1,359 @@
+<title>note反応ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* 配置: 上に見出しと合計の4枚、下に記事の表(数字はその場で直せる)、最後に日ごとの新規フォロー。
+   配色: 紺(note画像と同じ系統)を土台に、琥珀色を「直せる数字」の印にだけ使う。 */
+:root {
+  --bg: #f1f4f8;
+  --surface: #ffffff;
+  --ink: #12263a;
+  --ink-sub: #566a7f;
+  --line: #d9e0e8;
+  --accent: #b87900;        /* 直せる数字の印(明るい背景用の濃い琥珀) */
+  --accent-soft: #fff4d6;
+  --bar: #1f4d78;
+  --good: #1d7a4a;
+  --warn: #a15c00;
+  --font-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-head: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1a29; --surface: #13273b; --ink: #e6edf5; --ink-sub: #96a9bd; --line: #264058;
+    --accent: #ffb400; --accent-soft: #3a3010; --bar: #6aa7de; --good: #5fcf92; --warn: #ffb347;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1a29; --surface: #13273b; --ink: #e6edf5; --ink-sub: #96a9bd; --line: #264058;
+  --accent: #ffb400; --accent-soft: #3a3010; --bar: #6aa7de; --good: #5fcf92; --warn: #ffb347;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-inline: 16px; padding-block: 24px 48px; }
+.wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 24px; }
+h1 { font-family: var(--font-head); font-weight: 900; font-size: 1.7rem; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+h2 { font-family: var(--font-head); font-weight: 700; font-size: 1.05rem; margin: 0 0 4px; }
+.sub { color: var(--ink-sub); margin: 4px 0 0; font-size: .9rem; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.tile .label { color: var(--ink-sub); font-size: .8rem; letter-spacing: .04em; }
+.tile .num { font-family: var(--font-head); font-weight: 900; font-size: 1.9rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.tile .note { color: var(--ink-sub); font-size: .75rem; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 660px; font-variant-numeric: tabular-nums; }
+th { text-align: right; font-weight: 500; color: var(--ink-sub); font-size: .78rem; letter-spacing: .04em; padding: 6px 10px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+td.title { min-width: 220px; max-width: 360px; }
+td.title a { color: var(--ink); text-decoration-color: var(--line); text-underline-offset: 3px; }
+td.title a:hover { text-decoration-color: var(--accent); }
+td.date { color: var(--ink-sub); white-space: nowrap; }
+.cell { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+input.metric { width: 5.6em; text-align: right; font: inherit; font-variant-numeric: tabular-nums; color: var(--ink);
+  background: transparent; border: 1px dashed var(--accent); border-radius: 6px; padding: 3px 6px; }
+input.metric::placeholder { color: var(--ink-sub); opacity: .8; }
+input.metric:hover { background: var(--accent-soft); }
+input.metric:focus { outline: 2px solid var(--accent); outline-offset: 1px; background: var(--surface); border-style: solid; }
+input.metric:disabled { border-color: transparent; background: transparent; }
+.badge { font-size: .68rem; color: var(--ink-sub); }
+.badge.manual { color: var(--accent); font-weight: 700; }
+td.rate { color: var(--ink-sub); white-space: nowrap; }
+.empty { color: var(--ink-sub); padding: 20px 4px; }
+.status { min-height: 1.4em; font-size: .85rem; color: var(--ink-sub); }
+.status.ok { color: var(--good); } .status.err { color: var(--warn); }
+.help { color: var(--ink-sub); font-size: .82rem; margin: 10px 0 0; }
+.help b { color: var(--ink); font-weight: 500; }
+svg { display: block; width: 100%; height: auto; max-width: 100%; }
+svg text { fill: var(--ink-sub); font-family: var(--font-body); font-size: 11px; }
+svg .val { fill: var(--ink); font-weight: 700; }
+svg .bar { fill: var(--bar); }
+svg .axis { stroke: var(--line); stroke-width: 1; }
+
+@media (max-width: 640px) {
+  table { min-width: 0; display: block; }
+  thead { display: none; }
+  tbody { display: block; }
+  tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  tr:last-child { border-bottom: 0; }
+  td { display: block; padding: 0; border: 0; text-align: left; }
+  td.title { grid-column: 1 / -1; min-width: 0; max-width: none; }
+  td.date { grid-column: 1 / -1; font-size: .8rem; }
+  td.date::before { content: "投稿日 "; }
+  td.metric-td::before { content: attr(data-label); display: block; color: var(--ink-sub); font-size: .72rem; margin-bottom: 2px; }
+  .cell { align-items: flex-start; width: 100%; }
+  input.metric { width: 100%; }
+  td.rate { grid-column: 1 / -1; font-size: .8rem; }
+  td.rate::before { content: "スキ率 "; }
+}
+@media (max-width: 520px) { h1 { font-size: 1.4rem; } .tile .num { font-size: 1.6rem; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>note反応ダッシュボード</h1>
+    <p class="sub">地道編集部の記事ごとの数字です。<b style="color:var(--accent)">点線の枠</b>の数字は、その場で書き換えられます。</p>
+  </header>
+
+  <section class="tiles" id="tiles" aria-label="合計"></section>
+
+  <section class="panel">
+    <h2>記事ごとの数字</h2>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>記事</th><th>投稿日</th><th>インプ</th><th>PV</th><th>スキ</th><th>スキ率</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty">記事の数字を読み込んでいます。</div>
+    <p class="help">
+      <b>インプ</b>は表示された回数、<b>PV</b>はnoteの記事が開かれた回数、<b>スキ率</b>はスキ÷PVです。
+      「メール」と出ている数字はnoteの通知メールから集めた推定値で、取り消しで減ることがあります。
+      PVとインプはメールでは届かないので、noteのダッシュボードの数字を入力してください。
+      手で直した数字(「手入力」)は、自動の収集より優先されます。
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>新規フォロー(日ごと)</h2>
+    <p class="sub" id="follow-sub"></p>
+    <div id="follow-chart"></div>
+  </section>
+</div>
+
+<script>
+const FIELDS = [
+  { key: "impressions", label: "インプ" },
+  { key: "pv", label: "PV" },
+  { key: "likes", label: "スキ" },
+];
+const state = { docs: new Map(), order: [], canWrite: true, rowEls: new Map(), chains: new Map() };
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => (n == null ? "—" : n.toLocaleString("ja-JP"));
+
+function setStatus(text, kind) {
+  const el = $("status");
+  el.textContent = text || "";
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+function shortDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+  return m ? `${Number(m[2])}/${Number(m[3])}` : "不明";
+}
+
+/* ---------- 合計の4枚 ---------- */
+function renderTiles() {
+  const docs = [...state.docs.values()];
+  const sum = (k) => {
+    const vals = docs.map((d) => d[k]).filter((v) => typeof v === "number");
+    return { total: vals.reduce((a, b) => a + b, 0), n: vals.length };
+  };
+  const tiles = [
+    { label: "記事", value: fmt(docs.length), note: "登録されている本数" },
+    ...FIELDS.map((f) => {
+      const s = sum(f.key);
+      return { label: f.label + "(合計)", value: s.n ? fmt(s.total) : "—", note: s.n ? `${s.n}本分の入力` : "入力待ち" };
+    }),
+  ];
+  const root = $("tiles");
+  root.replaceChildren(...tiles.map((t) => {
+    const d = document.createElement("div");
+    d.className = "tile";
+    const l = document.createElement("div"); l.className = "label"; l.textContent = t.label;
+    const n = document.createElement("div"); n.className = "num"; n.textContent = t.value;
+    const c = document.createElement("div"); c.className = "note"; c.textContent = t.note;
+    d.append(l, n, c);
+    return d;
+  }));
+}
+
+/* ---------- 記事の表 ---------- */
+function makeRow(id) {
+  const tr = document.createElement("tr");
+  const tdTitle = document.createElement("td"); tdTitle.className = "title";
+  const tdDate = document.createElement("td"); tdDate.className = "date";
+  tr.append(tdTitle, tdDate);
+  const inputs = {}, badges = {};
+  for (const f of FIELDS) {
+    const td = document.createElement("td");
+    td.className = "metric-td"; td.dataset.label = f.label;
+    const cell = document.createElement("span"); cell.className = "cell";
+    const inp = document.createElement("input");
+    inp.type = "number"; inp.min = "0"; inp.step = "1"; inp.inputMode = "numeric";
+    inp.className = "metric"; inp.id = `m-${id}-${f.key}`; inp.placeholder = "未入力";
+    inp.setAttribute("aria-label", `${f.label}(この記事)`);
+    inp.addEventListener("change", () => commit(id, f, inp));
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") inp.blur();
+      if (e.key === "Escape") { inp.value = inp.dataset.saved || ""; inp.blur(); }
+    });
+    const badge = document.createElement("span"); badge.className = "badge";
+    cell.append(inp, badge); td.append(cell); tr.append(td);
+    inputs[f.key] = inp; badges[f.key] = badge;
+  }
+  const tdRate = document.createElement("td"); tdRate.className = "rate";
+  tr.append(tdRate);
+  return { tr, tdTitle, tdDate, tdRate, inputs, badges };
+}
+
+function updateRow(r, d) {
+  r.tdTitle.replaceChildren();
+  if (d.url && /^https?:\/\//.test(d.url)) {
+    const a = document.createElement("a");
+    a.href = d.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = d.title || "(無題)";
+    r.tdTitle.append(a);
+  } else {
+    r.tdTitle.textContent = d.title || "(無題)";
+  }
+  r.tdDate.textContent = shortDate(d.published);
+  for (const f of FIELDS) {
+    const inp = r.inputs[f.key];
+    const v = typeof d[f.key] === "number" ? String(d[f.key]) : "";
+    inp.dataset.saved = v;
+    if (document.activeElement !== inp) inp.value = v;   // 入力中の欄は上書きしない
+    inp.disabled = !state.canWrite;
+    const src = d.src && d.src[f.key];
+    const b = r.badges[f.key];
+    b.className = "badge" + (src === "manual" ? " manual" : "");
+    b.textContent = v === "" ? "" : src === "manual" ? "手入力" : "メール";
+  }
+  const rate = typeof d.likes === "number" && typeof d.pv === "number" && d.pv > 0 ? (d.likes / d.pv) * 100 : null;
+  r.tdRate.textContent = rate == null ? "—" : rate.toFixed(1) + "%";
+}
+
+function renderRows(docs) {
+  const tbody = $("rows");
+  state.docs = new Map(docs.map((s) => [s.id, s.data()]));
+  const ids = docs.map((s) => s.id);
+  for (const id of [...state.rowEls.keys()]) {
+    if (!state.docs.has(id)) { state.rowEls.get(id).tr.remove(); state.rowEls.delete(id); }
+  }
+  for (const id of ids) {
+    if (!state.rowEls.has(id)) state.rowEls.set(id, makeRow(id));
+    updateRow(state.rowEls.get(id), state.docs.get(id));
+  }
+  if (ids.join("|") !== state.order.join("|")) {      // 並びが変わったときだけ並べ直す(入力中の欄を動かさない)
+    ids.forEach((id) => tbody.appendChild(state.rowEls.get(id).tr));
+    state.order = ids;
+  }
+  $("empty").hidden = ids.length > 0;
+  if (!ids.length) $("empty").textContent = "まだ記事が登録されていません。Claudeがnoteの記事とメールの数字を読み込むと、ここに並びます。";
+  renderTiles();
+}
+
+/* ---------- 書き換えの保存(1つの記事への書き込みは順番に1つずつ) ---------- */
+function commit(id, field, inp) {
+  const raw = inp.value.trim();
+  const prev = inp.dataset.saved || "";
+  if (raw === prev) return;
+  let value = null;
+  if (raw !== "") {
+    value = Number(raw);
+    if (!Number.isInteger(value) || value < 0 || value > 1e9) {
+      inp.value = prev;
+      setStatus(`${field.label}は0以上の整数で入力してください。`, "err");
+      return;
+    }
+  }
+  const run = async () => {
+    try {
+      await state.db.doc(`articles/${id}`).update({
+        [field.key]: value,
+        src: { [field.key]: "manual" },
+        edited_at: new Date().toISOString(),
+      });
+      inp.dataset.saved = raw;
+      setStatus(`保存しました(${field.label}:${raw === "" ? "未入力に戻しました" : fmt(value)})。`, "ok");
+    } catch (e) {
+      inp.value = prev;
+      setStatus(e && e.code === "invalid_argument" ? "この表を書き換える権限がありません。" : "保存できませんでした。少し待ってからもう一度お試しください。", "err");
+    }
+  };
+  const tail = state.chains.get(id) || Promise.resolve();
+  state.chains.set(id, tail.then(run));
+}
+
+/* ---------- 日ごとの新規フォロー(棒グラフ) ---------- */
+function addDays(iso, n) {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+let followDocs = null;
+function renderFollowers(docs) {
+  if (docs) followDocs = docs;
+  if (!followDocs) return;
+  const map = new Map(followDocs.map((s) => [s.id, s.data().new_followers]));
+  const holder = $("follow-chart");
+  if (!map.size) { holder.textContent = "まだフォローの記録がありません。"; $("follow-sub").textContent = ""; return; }
+  const last = [...map.keys()].sort().at(-1);
+  const W = Math.max(280, Math.floor(holder.clientWidth || 640));
+  const count = W < 420 ? 14 : 21;                       // 狭い画面では日数を減らして文字を読みやすく保つ
+  const days = Array.from({ length: count }, (_, i) => addDays(last, i - (count - 1)));
+  const vals = days.map((d) => map.get(d) || 0);
+  const total = vals.reduce((a, b) => a + b, 0);
+  const max = Math.max(...vals, 1);
+  $("follow-sub").textContent = `直近${count}日で${total}件。最大は1日${max}件です。`;
+  const H = 190, L = 28, R = 8, T = 18, B = 26;
+  const pw = W - L - R, ph = H - T - B, bw = pw / days.length;
+  const step = Math.ceil(days.length / Math.max(2, Math.floor(pw / 56)));   // 日付ラベルが重ならない間隔
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (n, a, t) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; return e; };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "日ごとの新規フォロー数" });
+  svg.append(el("line", { class: "axis", x1: L, x2: W - R, y1: T + ph, y2: T + ph }));
+  svg.append(el("text", { x: L - 6, y: T + ph + 4, "text-anchor": "end" }, "0"));
+  svg.append(el("text", { x: L - 6, y: T + 4, "text-anchor": "end" }, String(max)));
+  svg.append(el("line", { class: "axis", x1: L, x2: W - R, y1: T, y2: T, "stroke-dasharray": "2 4" }));
+  days.forEach((d, i) => {
+    const h = (vals[i] / max) * ph;
+    const x = L + i * bw + bw * 0.18;
+    if (vals[i] > 0) {
+      svg.append(el("rect", { class: "bar", x, y: T + ph - h, width: bw * 0.64, height: h, rx: 2 }));
+      svg.append(el("text", { class: "val", x: x + bw * 0.32, y: T + ph - h - 4, "text-anchor": "middle" }, String(vals[i])));
+    }
+    if ((days.length - 1 - i) % step === 0) svg.append(el("text", { x: x + bw * 0.32, y: H - 8, "text-anchor": "middle" }, shortDate(d)));
+  });
+  holder.replaceChildren(svg);
+}
+let resizeTimer = 0, lastW = 0;
+new ResizeObserver(() => {
+  const w = Math.floor($("follow-chart").clientWidth);
+  if (w === lastW) return;
+  lastW = w;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => renderFollowers(null), 150);
+}).observe($("follow-chart"));
+
+/* ---------- 起動 ---------- */
+async function start() {
+  const claude = window.claude;
+  const db = claude && claude.use ? await claude.use("db") : null;
+  if (!db) {
+    $("empty").textContent = "共有データにつながっていません。ログインした状態で開き直してください。";
+    renderTiles();
+    return;
+  }
+  state.db = db;
+  try {
+    const user = await claude.use("user");
+    const can = user && user.can ? await user.can("data.write") : null;
+    state.canWrite = can !== false;
+  } catch (e) { state.canWrite = true; }
+  if (!state.canWrite) setStatus("この画面では数字を見るだけです(書き換えの権限がありません)。");
+  const onErr = (e) => setStatus(e && e.code === "revoked" ? "この画面の権限が変わりました。開き直してください。" : "データを読み込めませんでした。", "err");
+  db.collection("articles").orderBy("published", "desc").onSnapshot((snap) => renderRows(snap.docs), onErr);
+  db.collection("followers").limit(120).onSnapshot((snap) => renderFollowers(snap.docs), onErr);
+}
+renderTiles();
+start();
+</script>

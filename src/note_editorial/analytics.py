@@ -39,6 +39,7 @@ def _group(arts: list[Article]) -> dict:
     rates = [r for r in (like_rate(a) for a in arts) if r is not None]
     return {
         "n": len(arts),
+        "avg_impressions": _mean([a.impressions for a in arts if a.impressions is not None]),
         "avg_pv": _mean([a.pv for a in arts if a.pv is not None]),
         "avg_like_rate": _mean(rates),
         "total_revenue": sum(a.revenue for a in arts if a.revenue is not None),
@@ -82,9 +83,9 @@ def render_facts(facts: dict) -> str:
     if facts["small_sample"]:
         out += [f"> ⚠ 数値のある記事が{facts['measured']}本のみ(傾向とみなすには{MIN_N_FOR_TREND}本以上が目安)。**参考程度**です。", ""]
     out += [f"- 記事数: {facts['total']}(数値あり {facts['measured']} / データなし {facts['unmeasured']})", "",
-            "## テーマ別", "", "| テーマ | n | 平均PV | 平均スキ率 | 収益合計 | フォロワー増合計 |", "|---|---|---|---|---|---|"]
+            "## テーマ別", "", "| テーマ | n | 平均インプ | 平均PV | 平均スキ率 | 収益合計 | フォロワー増合計 |", "|---|---|---|---|---|---|---|"]
     for k, g in facts["by_theme"].items():
-        out.append(f"| {k} | {g['n']} | {_f(g['avg_pv'])} | {_f(g['avg_like_rate'], True)} | {g['total_revenue']:,} | {g['total_followers']:,} |")
+        out.append(f"| {k} | {g['n']} | {_f(g['avg_impressions'])} | {_f(g['avg_pv'])} | {_f(g['avg_like_rate'], True)} | {g['total_revenue']:,} | {g['total_followers']:,} |")
     out += ["", "## タイトルの特徴別(スキ率の平均)", "", "| 特徴 | あり(n) | なし(n) |", "|---|---|---|"]
     for name, g in facts["features"].items():
         y, n = g["あり"], g["なし"]

@@ -146,6 +146,29 @@ def _cmd_mark_posted(args) -> int:
     return 0
 
 
+def _cmd_export_metrics(args) -> int:
+    import json
+    text = json.dumps(learn.export_metrics(Path(args.root)), ensure_ascii=False, indent=2)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"書き出しました: {args.out}")
+    else:
+        print(text)
+    return 0
+
+
+def _cmd_import_metrics(args) -> int:
+    import json
+    try:
+        data = json.loads(Path(args.file).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise runs.RunError(f"読み込めません: {e}") from e
+    rows = data["articles"] if isinstance(data, dict) else data
+    for line in learn.import_metrics(Path(args.root), rows) or ["取り込む手入力の変更はありませんでした"]:
+        print(line)
+    return 0
+
+
 def _cmd_mark_skipped(args) -> int:
     runs.mark_skipped(Path(args.root), args.run_id, args.reason)
     print("見送りとして記録しました(未投稿の在庫から外れます)")
@@ -159,7 +182,7 @@ def _cmd_collect_metrics(args) -> int:
 
 
 def _cmd_record_metrics(args) -> int:
-    path = learn.record_metrics(Path(args.root), args.run_id, pv=args.pv, likes=args.likes,
+    path = learn.record_metrics(Path(args.root), args.run_id, impressions=args.impressions, pv=args.pv, likes=args.likes,
                                 revenue=args.revenue, followers_gained=args.followers)
     print(f"数値を記録しました: {path}")
     return 0
@@ -229,6 +252,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_id")
     s.add_argument("--url", default="", help="公開した記事のURL")
     s.set_defaults(fn=_cmd_mark_posted)
+    s = sub.add_parser("export-metrics", help="ダッシュボード用に数値を書き出す(JSON)")
+    s.add_argument("--out", default="")
+    s.set_defaults(fn=_cmd_export_metrics)
+    s = sub.add_parser("import-metrics", help="ダッシュボードで直した数字(手入力)を取り込む")
+    s.add_argument("file")
+    s.set_defaults(fn=_cmd_import_metrics)
     s = sub.add_parser("mark-skipped", help="この記事は投稿しない、と記録")
     s.add_argument("run_id")
     s.add_argument("--reason", default="")
@@ -238,7 +267,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=_cmd_collect_metrics)
     s = sub.add_parser("record-metrics", help="投稿した記事の反応の数値を記録(手入力・メール収集の共通の入口)")
     s.add_argument("run_id")
-    for opt in ("pv", "likes", "revenue", "followers"):
+    for opt in ("impressions", "pv", "likes", "revenue", "followers"):
         s.add_argument(f"--{opt}", type=int, default=None)
     s.set_defaults(fn=_cmd_record_metrics)
     sub.add_parser("next-theme", help="次に記事を作るテーマを選ぶ").set_defaults(fn=_cmd_next_theme)

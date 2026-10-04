@@ -14,7 +14,9 @@ import yaml
 from . import articles, limits, runs
 from .log import log_event
 
-METRIC_KEYS = ("pv", "likes", "revenue", "followers_gained")
+METRIC_KEYS = ("impressions", "pv", "likes", "revenue", "followers_gained")
+DASHBOARD_METRICS = ("impressions", "pv", "likes")  # ダッシュボードで編集できる項目
+MANUAL = "手入力"
 
 
 def _dump(meta: dict, body: str) -> str:
@@ -48,7 +50,7 @@ def add_posted_article(root: Path, run_id: str) -> Path:
     tz = limits._tz(limits.load(root))
     posted_date = datetime.fromisoformat(data["posted"]["at"]).astimezone(tz).date()
     meta = {"title": title, "url": data["posted"].get("url", ""), "published": posted_date, "theme": data["theme"],
-            "pv": None, "likes": None, "revenue": None, "followers_gained": None,
+            "impressions": None, "pv": None, "likes": None, "revenue": None, "followers_gained": None,
             "cta": "", "sample": False, "run_id": run_id}
     out_dir = root / "data" / "past_articles"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -76,3 +78,66 @@ def record_metrics(root: Path, run_id: str, **values: int | None) -> Path:
     path.write_text(_dump(meta, body), encoding="utf-8")
     log_event(root, "metrics_recorded", run_id=run_id, **updates)
     return path
+
+
+def article_id(path: Path, meta: dict) -> str:
+    """ダッシュボードとの対応に使う記事ID。システムで作った記事は実行ID、メール由来の記録はファイル名。"""
+    return str(meta.get("run_id") or Path(path).stem)
+
+
+def export_metrics(root: Path) -> dict:
+    """ダッシュボード(共有データ)に載せる内容。記事ごとの数値と、日ごとの新規フォロー数。"""
+    root = Path(root)
+    rows = []
+    for p in sorted((root / "data" / "past_articles").glob("*.md")):
+        try:
+            meta, _ = articles._split_front_matter(p.read_text(encoding="utf-8"))
+        except (ValueError, yaml.YAMLError):
+            continue
+        src = {k: ("manual" if str(meta.get(f"{k}_source", "")).startswith(MANUAL) else "auto")
+               for k in DASHBOARD_METRICS if meta.get(k) is not None}
+        rows.append({"id": article_id(p, meta), "title": str(meta.get("title", "")), "theme": str(meta.get("theme") or ""),
+                     "published": str(meta.get("published") or ""), "url": str(meta.get("url") or ""),
+                     **{k: meta.get(k) for k in DASHBOARD_METRICS}, "src": src})
+    followers = []
+    csv_path = root / "analytics" / "followers.csv"
+    if csv_path.exists():
+        import csv
+        with open(csv_path, encoding="utf-8", newline="") as f:
+            followers = [{"date": r["date"], "new_followers": int(r["new_followers"])} for r in csv.DictReader(f)]
+    return {"articles": rows, "followers": followers}
+
+
+def import_metrics(root: Path, rows: list[dict]) -> list[str]:
+    """ダッシュボードで人が直した数字だけを取り込む(src が manual の項目)。手入力は、メール収集より優先される。"""
+    root = Path(root)
+    by_id = {}
+    for p in sorted((root / "data" / "past_articles").glob("*.md")):
+        try:
+            meta, _ = articles._split_front_matter(p.read_text(encoding="utf-8"))
+        except (ValueError, yaml.YAMLError):
+            continue
+        by_id[article_id(p, meta)] = p
+    notes = []
+    for row in rows:
+        path = by_id.get(str(row.get("id")))
+        if path is None:
+            notes.append(f"[注意] 対応する記事がありません: {row.get('id')}")
+            continue
+        meta, body = articles._split_front_matter(path.read_text(encoding="utf-8"))
+        changed = []
+        for k in DASHBOARD_METRICS:
+            v = row.get(k)
+            if (row.get("src") or {}).get(k) != "manual" or isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
+                continue
+            v = int(v)
+            if meta.get(k) != v or not str(meta.get(f"{k}_source", "")).startswith(MANUAL):
+                meta[k] = v
+                meta[f"{k}_source"] = f"{MANUAL}(ダッシュボード)"
+                changed.append(f"{k}={v}")
+        if changed:
+            meta["metrics_updated"] = limits.today_local(root)
+            path.write_text(_dump(meta, body), encoding="utf-8")
+            notes.append(f"{row.get('title', row['id'])}: " + ", ".join(changed))
+    log_event(root, "metrics_imported", updated=len(notes))
+    return notes

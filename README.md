@@ -54,6 +54,12 @@ python -m note_editorial briefing                          # 編集長の朝の�
 python -m pytest                                           # テスト
 ```
 
+## ダッシュボード(インプ・PV・スキを見る/直す)
+
+https://claude.ai/artifact/R7dbtDrFCm9tiYRUCR8T1r (ソース: `dashboard/index.html`)
+数字はその場で書き換えられ、共有データに保存されます。`/sync-metrics` で、システムの記録(`data/past_articles/`)と相互に反映します。
+手入力の数字は、メールからの自動収集より優先されます。
+
 ## 過去記事の取り込み
 
 `data/past_articles/` に、1記事=1つの `.md` ファイルで置きます。先頭の情報は空でも構いません(空は「データなし」扱い)。
