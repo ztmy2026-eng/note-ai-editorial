@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, artifacts, articles, auto, chief, export, images, learn, limits, runs
+from . import analytics, artifacts, articles, auto, chief, collect, export, images, learn, limits, runs
 
 
 def _cmd_check_articles(args) -> int:
@@ -146,6 +146,18 @@ def _cmd_mark_posted(args) -> int:
     return 0
 
 
+def _cmd_mark_skipped(args) -> int:
+    runs.mark_skipped(Path(args.root), args.run_id, args.reason)
+    print("見送りとして記録しました(未投稿の在庫から外れます)")
+    return 0
+
+
+def _cmd_collect_metrics(args) -> int:
+    for line in collect.collect(Path(args.root), Path(args.file)):
+        print(line)
+    return 0
+
+
 def _cmd_record_metrics(args) -> int:
     path = learn.record_metrics(Path(args.root), args.run_id, pv=args.pv, likes=args.likes,
                                 revenue=args.revenue, followers_gained=args.followers)
@@ -217,6 +229,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_id")
     s.add_argument("--url", default="", help="公開した記事のURL")
     s.set_defaults(fn=_cmd_mark_posted)
+    s = sub.add_parser("mark-skipped", help="この記事は投稿しない、と記録")
+    s.add_argument("run_id")
+    s.add_argument("--reason", default="")
+    s.set_defaults(fn=_cmd_mark_skipped)
+    s = sub.add_parser("collect-metrics", help="通知メールから集めたデータ(JSON)を集計して記録")
+    s.add_argument("file")
+    s.set_defaults(fn=_cmd_collect_metrics)
     s = sub.add_parser("record-metrics", help="投稿した記事の反応の数値を記録(手入力・メール収集の共通の入口)")
     s.add_argument("run_id")
     for opt in ("pv", "likes", "revenue", "followers"):

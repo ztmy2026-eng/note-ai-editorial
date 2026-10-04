@@ -64,14 +64,14 @@ def _local_date(iso: str, tz) -> date | None:
 
 
 def ready_queue(root: Path) -> list[str]:
-    """公開承認済みで、まだ「投稿済み」の記録がない実行ID。"""
+    """公開承認済みで、まだ「投稿済み」の記録も「見送り」の記録もない実行ID。"""
     ids = []
     for p in sorted((Path(root) / "runs").glob("*/run.json")):
         try:
             d = json.loads(p.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
-        if d.get("approvals", {}).get("publish") and not d.get("posted"):
+        if d.get("approvals", {}).get("publish") and not d.get("posted") and not d.get("skipped"):
             ids.append(d["run_id"])
     return ids
 

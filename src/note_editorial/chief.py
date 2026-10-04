@@ -26,6 +26,8 @@ def next_action(root: Path, run_id: str) -> tuple[str, bool]:
     """(次の一手, 人間の作業が必要か) を返す。"""
     d = runs.read_run(root, run_id)
     done, ap = d["steps_done"], d["approvals"]
+    if d.get("skipped"):
+        return "見送り済み(投稿しない)", False
     auto = limits.load(root)["auto_approve"]
     rdir = runs.run_path(root, run_id)
     for step in ("research", "ideas"):
@@ -54,6 +56,8 @@ def next_action(root: Path, run_id: str) -> tuple[str, bool]:
         return f"【承認3】06_sns.md を読み、問題なければ `approve-sns {run_id}`", True
     if d.get("posted"):
         return "投稿済み", False
+    if d.get("skipped"):
+        return "見送り済み(投稿しない)", False
     return f"完了:note_post/(`export-note`)と 06_sns.md・images/ を使って、noteとSNSへ手動で投稿。投稿したら `mark-posted {run_id} --url <記事URL>`", True
 
 

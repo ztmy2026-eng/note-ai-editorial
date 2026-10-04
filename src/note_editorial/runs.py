@@ -246,3 +246,14 @@ def mark_posted(root: Path, run_id: str, url: str = "") -> None:
     data["posted"] = {"at": _now(), "url": url}
     _save(root, run_id, data)
     log_event(root, "marked_posted", run_id=run_id, url=url)
+
+
+def mark_skipped(root: Path, run_id: str, reason: str = "") -> None:
+    """この記事は投稿しない、と記録する(人間の操作)。未投稿の在庫から外れ、次の記事を作れるようになる。"""
+    root = Path(root)
+    data = read_run(root, run_id)
+    if data.get("posted"):
+        raise RunError("すでに投稿済みとして記録されています")
+    data["skipped"] = {"at": _now(), "reason": reason}
+    _save(root, run_id, data)
+    log_event(root, "marked_skipped", run_id=run_id, reason=reason)

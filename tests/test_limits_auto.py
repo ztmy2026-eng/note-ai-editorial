@@ -106,3 +106,13 @@ def test_continuing_work_is_not_blocked_by_ready_queue(root):
     runs.approve_publish(root, rid)  # この記事自身が在庫1/1になる
     assert cli.main(["--root", str(root), "check-limits"]) == 0              # 続き(SNSなど)は止めない
     assert cli.main(["--root", str(root), "check-limits", "--new-run"]) == 1  # 新しい記事は始めない
+
+
+def test_skipped_run_leaves_the_ready_queue(root):
+    rid = finish(root)
+    runs.approve_publish(root, rid)
+    assert limits.ready_queue(root) == [rid]
+    runs.mark_skipped(root, rid, "投稿しない")
+    assert limits.ready_queue(root) == []
+    with pytest.raises(runs.RunError):
+        runs.mark_skipped(root, "no-such-run")  # 存在しない実行はエラー
