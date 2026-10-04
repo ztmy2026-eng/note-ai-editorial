@@ -136,7 +136,7 @@ items:
   - 'fig3: AIにお金の相談をする前のチェックリスト'
   affiliate: ''
   notes:
-  - 作業時間・良かった点などは【要記入】。数字の棒グラフは作らない
+  - 作業時間・良かった点などは【要入力】。数字の棒グラフは作らない
   draft: drafts/2026-10-10_ai-household-money-mistakes.md
 - date: '2026-10-11'
   theme: newcomer

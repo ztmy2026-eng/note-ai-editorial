@@ -12,10 +12,11 @@ description: 1日分の編集部の仕事(記事1本分)を、承認なしモー
    - 失敗したら理由を記録して 9 へ
 3. check-limits → researcher → `complete <ID> research`
 4. check-limits → planner → `complete <ID> ideas` → `auto-approve <ID>`
-5. check-limits → writer → `complete <ID> draft`(config/editorial_rules.md の「自動モード」に従い、空欄を残さない。週次企画の実行では体験の欄だけ【要記入】で残す)
+5. check-limits → writer → `complete <ID> draft`(config/editorial_rules.md の「自動モード」に従い、空欄を残さない。週次企画の実行では体験の欄だけ【要入力】で残す)
 6. check-limits → critic → `complete <ID> critique`
 7. check-limits → editor → `complete <ID> revised` → `auto-approve <ID>`
-   (「停止:…」と出たら、その記事は止める。1回だけ editor に直させて再試行し、駄目なら 9 へ)
+   (「停止:…」と出たら、その記事は止める。ただし停止の理由が**体験の欄の【要入力】だけ**なら正常(あなたの入力待ち)。そのまま 8(SNS案まで)へ進み、承認は人間に任せる。
+    それ以外の理由なら、1回だけ editor に直させて再試行し、駄目なら 9 へ)
 8. check-limits → sns → `complete <ID> sns` → `auto-approve <ID>` → `export-note <ID>` → `make-images <ID>`
    週次企画の実行(00_plan.md がある)では、さらに図を用意する:`images/plan/` に週次の画像が無ければ、`config/weekly_policy.md` の仕様で
    `runs/<ID>/figures.json`(見出し画像1枚+図2〜3枚)を書いて `make-figures <ID>` を実行し、Readで1枚ずつ目視して崩れがあれば直す。

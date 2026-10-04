@@ -58,8 +58,8 @@ def next_action(root: Path, run_id: str) -> tuple[str, bool]:
         return "投稿済み", False
     if d.get("skipped"):
         return "見送り済み(投稿しない)", False
-    fill = artifacts.count_fill_ins(rdir / artifacts.FILES["revised"]) if (rdir / artifacts.FILES["revised"]).exists() else 0
-    pre = f"【要記入】{fill}件を埋めてから、" if fill else "完了:"
+    fill = artifacts.count_placeholders(rdir / artifacts.FILES["revised"]) if (rdir / artifacts.FILES["revised"]).exists() else 0
+    pre = f"【要入力】{fill}件を埋めてから、" if fill else "完了:"
     return f"{pre}note_post/(`export-note`)と 06_sns.md・images/ を使って、noteとSNSへ手動で投稿。投稿したら `mark-posted {run_id} --url <記事URL>`", True
 
 

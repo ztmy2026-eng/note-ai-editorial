@@ -81,11 +81,25 @@ def test_no_item_outside_plan(root):
     assert weekly.item_for(root, date(2026, 10, 12)) is None
 
 
-def test_fill_ins_counted_separately(tmp_path):
-    p = tmp_path / "a.md"
-    p.write_text("# t\n【要記入:僕自身の失敗】\n本文\n", encoding="utf-8")
-    assert artifacts.count_fill_ins(p) == 1
-    assert artifacts.count_placeholders(p) == 0
+def test_experience_slot_blocks_publish_approval_until_filled(root):
+    """体験の欄(【要入力:僕自身の失敗】)が残っている間は、承認2が止まる(自動モードでも同じ)。"""
+    from note_editorial import runs
+    from conftest import RESEARCH, IDEAS, DRAFT, CRITIQUE, REVISED, write
+    rid = runs.create_run(root, "ai-work")
+    for step, name, text in (("research", "01_research.md", RESEARCH), ("ideas", "02_ideas.md", IDEAS)):
+        write(root, rid, name, text)
+        runs.complete_step(root, rid, step)
+    runs.approve_idea(root, rid, 1)
+    slot = REVISED.replace("## 情報源", "## 僕自身の失敗\n【要入力:僕自身の失敗(年末調整について)】\n## 情報源", 1)
+    for step, name, text in (("draft", "03_draft.md", DRAFT), ("critique", "04_critique.md", CRITIQUE), ("revised", "05_revised.md", slot)):
+        write(root, rid, name, text)
+        assert runs.complete_step(root, rid, step) == []
+    import pytest
+    with pytest.raises(runs.RunError, match="要入力"):
+        runs.approve_publish(root, rid)
+    write(root, rid, "05_revised.md", REVISED.replace("## 情報源", "## 僕自身の失敗\n(あなたが書いた体験)\n## 情報源", 1))
+    runs.approve_publish(root, rid)  # 埋めたら通る
+    assert (root / "runs" / rid / runs.READY_FILE).exists()
 
 
 def test_briefing_shows_weekly_plan(root):

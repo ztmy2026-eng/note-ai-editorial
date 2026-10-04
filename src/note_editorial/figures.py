@@ -111,6 +111,19 @@ def checklist(s):
 R = {'cover':cover,'bar':bar,'timeline':timeline,'checklist':checklist}
 
 
+def _launch(p):
+    """Playwright 標準のブラウザで起動し、無い/版が合わない場合は、すでにある Chrome・Chromium を指定して起動する。
+    (ブラウザを新しく入れ直さない。探し方は images.find_browser と同じ)"""
+    try:
+        return p.chromium.launch()
+    except Exception as first:
+        from . import images
+        try:
+            return p.chromium.launch(executable_path=images.find_browser(images.load_config(Path("."))))
+        except Exception as second:
+            raise FigureError(f"図を描くブラウザを起動できません: {str(first).splitlines()[0][:120]} / {second}") from second
+
+
 def render_all(specs: list[dict], out_dir: Path) -> list[Path]:
     try:
         from playwright.sync_api import sync_playwright
@@ -119,7 +132,7 @@ def render_all(specs: list[dict], out_dir: Path) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     made = []
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b = _launch(p)
         try:
             pg = b.new_page(viewport={"width": 1280, "height": 800}, device_scale_factor=2)
             for s in specs:

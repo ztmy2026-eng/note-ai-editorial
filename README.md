@@ -109,7 +109,7 @@ cta: "フォロー誘導"
 
 - **日曜**:daily-run の最後に `.claude/commands/weekly-plan.md` を実行し、`plans/<翌週の月曜>/` に企画(plan.yaml)・リサーチ・weekly-plan.md を作る(未承認のまま)。
 - **毎朝**:`today-plan` で今日の企画があれば `new-run --plan` で実行を作り、その企画で1本仕上げる。無ければ従来どおり `next-theme`。
-- 書き方・画像の仕様は `config/weekly_policy.md`(editorial_rules.md より優先)。体験の欄は【要記入】で残し、投稿前にあなたが埋める。
+- 書き方・画像の仕様は `config/weekly_policy.md`(editorial_rules.md より優先)。体験の欄は【要入力】で残す。**あなたが埋めて `approve-publish` するまで、公開準備済みになりません**(承認2が止まります)。
 - 図は `runs/<ID>/figures.json` を書いて `make-figures <ID>`(Playwright が必要。無ければ `pip install playwright`)。
 
 | コマンド | 何をするか |
