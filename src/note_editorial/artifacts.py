@@ -18,6 +18,7 @@ FILES = {
     "sns": "06_sns.md",
 }
 PLACEHOLDER = "【要入力"
+FILL_IN = "【要記入"  # 週次方針で、ユーザーが投稿前に埋める欄(「僕自身の失敗」など)。自動モードでも止めない
 NO_SOURCE_NOTE = "外部の情報源は使用していません"
 SEVERITY = ("【重大】", "【中】", "【軽微】")
 IDEA_LABELS = ("タイトル案", "想定読者", "読者の悩み", "切り口", "構成", "CTA", "過去記事との関係")
@@ -229,3 +230,8 @@ def count_placeholders(path: Path) -> int:
 def count_unverified(path: Path) -> int:
     """公開本文に残っている「要確認」(未確認の数字・事実)の数。"""
     return publishable_text(Path(path).read_text(encoding="utf-8")).count("要確認")
+
+
+def count_fill_ins(path: Path) -> int:
+    """公開本文に残っている【要記入】(投稿前にユーザーが埋める欄)の数。"""
+    return publishable_text(Path(path).read_text(encoding="utf-8")).count(FILL_IN)

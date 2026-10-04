@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, artifacts, articles, auto, chief, collect, export, images, learn, limits, runs
+from . import analytics, artifacts, articles, auto, chief, collect, export, figures, images, learn, limits, runs, weekly
 
 
 def _cmd_check_articles(args) -> int:
@@ -29,7 +29,52 @@ def _cmd_themes(args) -> int:
 
 
 def _cmd_new_run(args) -> int:
-    print(runs.create_run(Path(args.root), args.theme))
+    root = Path(args.root)
+    if args.plan:
+        found = weekly.item_for(root, limits.today_local(root))
+        if not found:
+            raise runs.RunError("今日の週次企画がありません(plans/<週の月曜>/plan.yaml)。`next-theme` で選んで `new-run --theme` を使ってください")
+        data, it = found
+        run_id = runs.create_run(root, it["theme"])
+        weekly.attach_to_run(root, run_id, data, it)
+        print(run_id)
+        return 0
+    if not args.theme:
+        raise runs.RunError("--theme か --plan のどちらかを指定してください")
+    print(runs.create_run(root, args.theme))
+    return 0
+
+
+def _cmd_today_plan(args) -> int:
+    root = Path(args.root)
+    found = weekly.item_for(root, limits.today_local(root))
+    if not found:
+        print("今日の週次企画はありません(従来どおり next-theme でテーマを選ぶ)")
+        return 1
+    print(weekly.render_item(*found), end="")
+    return 0
+
+
+def _cmd_check_plan(args) -> int:
+    from datetime import date as _date
+    root = Path(args.root)
+    start = _date.fromisoformat(args.week) if args.week else weekly.week_start(limits.today_local(root))
+    problems = weekly.validate_plan(root, start)
+    for pr in problems:
+        print(f"  - {pr}")
+    print(f"週次企画 {start.isoformat()}: " + ("合格" if not problems else "不合格"))
+    return 1 if problems else 0
+
+
+def _cmd_make_figures(args) -> int:
+    try:
+        made = figures.make_figures(Path(args.root), args.run_id)
+    except figures.FigureError as e:
+        print(f"[エラー] {e}", file=sys.stderr)
+        return 2
+    for p in made:
+        print(p)
+    print(f"{len(made)}枚作りました。Readで1枚ずつ目視し、文字の重なり・はみ出し・表の崩れがあれば figures.json を直して作り直してください")
     return 0
 
 
@@ -217,7 +262,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("check-articles", help="過去記事を読み込んで集計").set_defaults(fn=_cmd_check_articles)
     sub.add_parser("themes", help="テーマ一覧").set_defaults(fn=_cmd_themes)
     s = sub.add_parser("new-run", help="新しい実行を作る")
-    s.add_argument("--theme", required=True)
+    s.add_argument("--theme", default="")
+    s.add_argument("--plan", action="store_true", help="今日の週次企画(plans/)を使って実行を作る")
     s.set_defaults(fn=_cmd_new_run)
     for name, fn, h in (("complete", _cmd_complete, "成果物を検査して完了を記録"), ("validate", _cmd_validate, "検査のみ(記録しない)")):
         s = sub.add_parser(name, help=h)
@@ -271,6 +317,13 @@ def build_parser() -> argparse.ArgumentParser:
         s.add_argument(f"--{opt}", type=int, default=None)
     s.set_defaults(fn=_cmd_record_metrics)
     sub.add_parser("next-theme", help="次に記事を作るテーマを選ぶ").set_defaults(fn=_cmd_next_theme)
+    sub.add_parser("today-plan", help="今日の週次企画を表示(無ければ終了コード1)").set_defaults(fn=_cmd_today_plan)
+    s = sub.add_parser("check-plan", help="週次企画(plans/<週の月曜>/plan.yaml)の形式検査")
+    s.add_argument("--week", default="", help="週の開始日(月曜, YYYY-MM-DD)。省略時は今週")
+    s.set_defaults(fn=_cmd_check_plan)
+    s = sub.add_parser("make-figures", help="runs/<ID>/figures.json から本文の図・見出し画像を作る(週次方針の仕様)")
+    s.add_argument("run_id")
+    s.set_defaults(fn=_cmd_make_figures)
     s = sub.add_parser("reopen", help="draft/critique/revised 以降をやり直す(古い版は退避)")
     s.add_argument("run_id")
     s.add_argument("step", choices=["draft", "critique", "revised", "sns"])

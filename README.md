@@ -102,3 +102,21 @@ cta: "フォロー誘導"
 
 - 秘密情報(APIキー等)は `.env` に置き、コードに書かない(`.gitignore` 済み)。
 - ログは `logs/events.jsonl`(成功・失敗・上限到達を記録)。
+
+## 週次企画(日曜に翌週7本分を企画 → 毎朝1本ずつ仕上げる)
+
+以前は Cowork の週次タスク(日曜に7本書く)と、この daily-run(毎朝1本)が別々に動いていました。今はここに一本化しています。
+
+- **日曜**:daily-run の最後に `.claude/commands/weekly-plan.md` を実行し、`plans/<翌週の月曜>/` に企画(plan.yaml)・リサーチ・weekly-plan.md を作る(未承認のまま)。
+- **毎朝**:`today-plan` で今日の企画があれば `new-run --plan` で実行を作り、その企画で1本仕上げる。無ければ従来どおり `next-theme`。
+- 書き方・画像の仕様は `config/weekly_policy.md`(editorial_rules.md より優先)。体験の欄は【要記入】で残し、投稿前にあなたが埋める。
+- 図は `runs/<ID>/figures.json` を書いて `make-figures <ID>`(Playwright が必要。無ければ `pip install playwright`)。
+
+| コマンド | 何をするか |
+|---|---|
+| `today-plan` | 今日の週次企画を表示(無ければ終了コード1) |
+| `new-run --plan` | 今日の週次企画で実行を作る(00_plan.md・下書き・週次の画像をコピー) |
+| `check-plan --week YYYY-MM-DD` | 週次企画の形式検査 |
+| `make-figures <ID>` | 本文の図・見出し画像を作る |
+
+承認するときは `plans/<週>/plan.yaml` の `approved: true` にする(未承認でも自動モードでは進みます。ブリーフィングに状態が出ます)。

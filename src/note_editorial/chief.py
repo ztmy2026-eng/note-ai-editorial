@@ -58,7 +58,9 @@ def next_action(root: Path, run_id: str) -> tuple[str, bool]:
         return "投稿済み", False
     if d.get("skipped"):
         return "見送り済み(投稿しない)", False
-    return f"完了:note_post/(`export-note`)と 06_sns.md・images/ を使って、noteとSNSへ手動で投稿。投稿したら `mark-posted {run_id} --url <記事URL>`", True
+    fill = artifacts.count_fill_ins(rdir / artifacts.FILES["revised"]) if (rdir / artifacts.FILES["revised"]).exists() else 0
+    pre = f"【要記入】{fill}件を埋めてから、" if fill else "完了:"
+    return f"{pre}note_post/(`export-note`)と 06_sns.md・images/ を使って、noteとSNSへ手動で投稿。投稿したら `mark-posted {run_id} --url <記事URL>`", True
 
 
 def read_log(root: Path) -> list[dict]:
@@ -128,6 +130,7 @@ def briefing(root: Path, today: date | None = None) -> str:
         rows.append(f"| {rid} | {d['theme_name']} | {d['status']} | {action} |")
         if human:
             waiting.append(f"- **{rid}**: {action}")
+    lines += _plan_lines(root, today)
     lines += ["## あなたの確認待ち", ""] + (waiting or ["- なし"]) + ["", "## 実行一覧", ""]
     lines += ["| 実行ID | テーマ | 状態 | 次の一手 |", "|---|---|---|---|"] + (rows or ["| (なし) | | | |"])
     lines += ["", "## 品質・コストのシグナル(ログより)", "",
@@ -140,6 +143,22 @@ def briefing(root: Path, today: date | None = None) -> str:
     sugg = suggestions(root, signals, art_summary, hyp_problems)
     lines += ["## 次に改善すべきこと", ""] + ([f"- {s}" for s in sugg] or ["- 現時点で検知した問題はありません"])
     return "\n".join(lines) + "\n"
+
+
+def _plan_lines(root: Path, today: date) -> list[str]:
+    from datetime import timedelta
+    from . import weekly
+    out = ["## 週次企画", ""]
+    for start in (weekly.week_start(today), weekly.week_start(today) + timedelta(days=7)):
+        data = weekly.load_plan(root, start)
+        if data is None:
+            out.append(f"- {start.isoformat()} の週: なし")
+            continue
+        state = "承認済み" if data.get("approved") else "**未承認**(plans/{0}/plan.yaml の approved を true にすると承認)".format(start.isoformat())
+        out.append(f"- {start.isoformat()} の週: {state}")
+    found = weekly.item_for(root, today)
+    out.append(f"- 今日の企画: {found[1]['title']}" if found else "- 今日の企画: なし(テーマは next-theme で選ぶ)")
+    return out + [""]
 
 
 def write_briefing(root: Path, today: date | None = None) -> Path:
