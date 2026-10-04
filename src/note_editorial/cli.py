@@ -134,8 +134,13 @@ def _cmd_auto_approve(args) -> int:
 
 
 def _cmd_mark_posted(args) -> int:
-    runs.mark_posted(Path(args.root), args.run_id, args.url)
+    url = export.clean_url(args.url) if args.url else ""
+    runs.mark_posted(Path(args.root), args.run_id, url)
     print("投稿済みとして記録しました(次の記事を作れるようになります)")
+    if url:
+        ready = export.fill_article_url(Path(args.root), args.run_id, url)
+        if ready:
+            print(f"URL入りのSNS案を作りました: {ready}")
     return 0
 
 

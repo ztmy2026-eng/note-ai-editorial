@@ -40,3 +40,23 @@ def export_note(root: Path, run_id: str) -> Path:
     (out / "body.md").write_text(body, encoding="utf-8")
     log_event(root, "note_exported", run_id=run_id)
     return out
+
+
+def clean_url(url: str) -> str:
+    """共有用のおまけ(?sub_rt=… など)を外した、記事の素のURL。"""
+    url = url.strip()
+    if not re.match(r"https?://", url):
+        raise runs.RunError("URL は https:// で始まる形で指定してください")
+    return url.split("?", 1)[0].split("#", 1)[0]
+
+
+def fill_article_url(root: Path, run_id: str, url: str) -> Path | None:
+    """承認済みのSNS案(06_sns.md)の【記事URL】を実際のURLに置き換えて、06_sns_ready.md に保存する。元のファイルは変えない。"""
+    rdir = runs.run_path(Path(root), run_id)
+    src = rdir / artifacts.FILES["sns"]
+    if not src.exists():
+        return None
+    out = rdir / "06_sns_ready.md"
+    out.write_text(src.read_text(encoding="utf-8").replace(artifacts.LINK_TOKEN, clean_url(url)), encoding="utf-8")
+    log_event(Path(root), "sns_url_filled", run_id=run_id)
+    return out

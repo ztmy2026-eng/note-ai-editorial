@@ -76,3 +76,18 @@ def test_wbr_inserted_only_at_punctuation_and_text_stays_escaped():
     out = images._esc("確認表<b>、次の項目(重要)")
     assert "&lt;b&gt;" in out and "、<wbr>" in out and "<wbr>(" in out and ")<wbr>" in out
     assert "<b>" not in out
+
+
+def test_clean_url_drops_tracking_params_and_rejects_non_urls():
+    assert export.clean_url("https://note.com/a/n/nabc?sub_rt=share_pb") == "https://note.com/a/n/nabc"
+    with pytest.raises(runs.RunError):
+        export.clean_url("note.com/a")
+
+
+def test_fill_url_keeps_original_and_replaces_token(root):
+    from conftest import RESEARCH, IDEAS, DRAFT, CRITIQUE, REVISED, write
+    rid = runs.create_run(root, "ai-work")
+    (root / "runs" / rid / "06_sns.md").write_text(SNS, encoding="utf-8")
+    out = export.fill_article_url(root, rid, "https://note.com/a/n/nabc?x=1")
+    assert "https://note.com/a/n/nabc" in out.read_text(encoding="utf-8") and "【記事URL】" not in out.read_text(encoding="utf-8")
+    assert "【記事URL】" in (root / "runs" / rid / "06_sns.md").read_text(encoding="utf-8")  # 承認済みの原本は変えない
