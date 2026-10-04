@@ -91,5 +91,12 @@ def usage(root: Path, today: date | None = None) -> dict:
 LABELS = {"runs": "今日の実行数", "steps": "今日のAgent作業数", "queue": "未投稿の公開準備済み記事"}
 
 
-def reached(root: Path, today: date | None = None) -> list[str]:
-    return [f"{LABELS[k]}が上限に達しています({used}/{cap})" for k, (used, cap) in usage(root, today).items() if used >= cap]
+def reached(root: Path, today: date | None = None, include_runs: bool = True) -> list[str]:
+    """上限に達している理由の一覧。
+
+    include_runs=False は「すでに作り始めた実行の続き」の確認用。作業中の実行そのものが
+    「今日の実行数」に入っているので、続きの作業は実行数の上限で止めない(止めるのは新しい実行を作るとき)。
+    """
+    return [f"{LABELS[k]}が上限に達しています({used}/{cap})"
+            for k, (used, cap) in usage(root, today).items()
+            if used >= cap and (include_runs or k != "runs")]

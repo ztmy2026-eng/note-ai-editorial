@@ -2,10 +2,10 @@
 description: 1日分の編集部の仕事(記事1本分)を、承認なしモードで上限まで進める。投稿は人間が手動
 ---
 前提: `config/limits.yaml` の `auto_approve: true`。noteやSNSへ送信する操作は一切しない。
-**Agentを呼ぶ前に毎回** `python -m note_editorial check-limits` を実行し、終了コードが1(上限到達)なら、
-新しい作業を始めずに手順9へ進む。
+**新しい実行を作る前**は `python -m note_editorial check-limits --new-run`、**Agentを呼ぶ前**は毎回 `python -m note_editorial check-limits`
+(作業中の実行の続きの確認。実行数は見ない)を実行し、終了コードが1(上限到達)なら、新しい作業を始めずに手順9へ進む。
 
-1. `python -m note_editorial check-limits` (上限なら 9 へ)
+1. `python -m note_editorial check-limits --new-run` (上限なら 9 へ)
 2. `python -m note_editorial next-theme` でテーマを決め、`new-run --theme <id>` で実行を作る(失敗したら理由を記録して 9 へ)
 3. check-limits → researcher → `complete <ID> research`
 4. check-limits → planner → `complete <ID> ideas` → `auto-approve <ID>`

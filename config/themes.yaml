@@ -17,3 +17,7 @@ themes:
     name: "副業"
     priority: 4
     active: true
+  - id: saving-insurance
+    name: "節約・金融・保険"
+    priority: 5          # 後から変更できます(数字が小さいほど優先)
+    active: true

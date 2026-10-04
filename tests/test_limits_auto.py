@@ -86,3 +86,14 @@ def test_auto_approve_still_stopped_by_validators(root):
 def test_recommended_candidate_parse():
     assert auto.recommended_candidate("## おすすめ\n候補3 — 理由\n") == 3
     assert auto.recommended_candidate("## おすすめ\n理由のみ\n") is None
+
+
+def test_check_limits_does_not_count_the_run_in_progress(root, capsys):
+    from note_editorial import cli
+    set_limits(root, max_runs_per_day=1)
+    assert cli.main(["--root", str(root), "check-limits", "--new-run"]) == 0  # まだ1本も作っていない
+    runs.create_run(root, "ai-work")
+    assert cli.main(["--root", str(root), "check-limits"]) == 0   # 作業中の続きは止めない
+    assert cli.main(["--root", str(root), "check-limits", "--new-run"]) == 1  # 新しい実行は作れない
+    with pytest.raises(runs.RunError, match="上限"):
+        runs.create_run(root, "ai-work")
