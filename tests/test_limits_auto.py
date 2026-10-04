@@ -97,3 +97,12 @@ def test_check_limits_does_not_count_the_run_in_progress(root, capsys):
     assert cli.main(["--root", str(root), "check-limits", "--new-run"]) == 1  # 新しい実行は作れない
     with pytest.raises(runs.RunError, match="上限"):
         runs.create_run(root, "ai-work")
+
+
+def test_continuing_work_is_not_blocked_by_ready_queue(root):
+    from note_editorial import cli
+    set_limits(root, max_ready_queue=1)
+    rid = finish(root)
+    runs.approve_publish(root, rid)  # この記事自身が在庫1/1になる
+    assert cli.main(["--root", str(root), "check-limits"]) == 0              # 続き(SNSなど)は止めない
+    assert cli.main(["--root", str(root), "check-limits", "--new-run"]) == 1  # 新しい記事は始めない

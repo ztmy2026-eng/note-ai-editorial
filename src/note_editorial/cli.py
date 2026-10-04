@@ -119,7 +119,7 @@ def _cmd_check_limits(args) -> int:
     root = Path(args.root)
     for key, (used, cap) in limits.usage(root).items():
         print(f"{limits.LABELS[key]}: {used} / {cap}")
-    reasons = limits.reached(root, include_runs=args.new_run)
+    reasons = limits.reached(root, new_run=args.new_run)
     for r in reasons:
         print(f"[停止] {r}")
     print("上限に達しています。新しい作業は始めません" if reasons else "OK(まだ作業できます)")
@@ -194,7 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
         s.add_argument("run_id")
         s.set_defaults(fn=fn)
     s = sub.add_parser("check-limits", help="1日の上限の使用状況(上限に達していれば終了コード1)")
-    s.add_argument("--new-run", action="store_true", help="新しい実行を作る前の確認(実行数の上限も見る)。付けない場合は、作業中の実行の続きの確認")
+    s.add_argument("--new-run", action="store_true", help="新しい実行を作る前の確認(実行数・在庫の上限も見る)。付けない場合は、作業中の実行の続きの確認(Agent作業数だけ見る)")
     s.set_defaults(fn=_cmd_check_limits)
     s = sub.add_parser("auto-approve", help="承認なしモード:承認1〜3を自動で通す(検品は人間の承認と同じ条件)")
     s.add_argument("run_id")
