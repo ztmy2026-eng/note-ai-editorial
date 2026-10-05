@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import analytics, articles, artifacts, auto, chief, collect, export, figures, images, learn, limits, market, runs, weekly
+from . import analytics, articles, artifacts, auto, chief, collect, export, figures, images, learn, limits, market, runs, tasks, weekly
 
 
 def _cmd_check_articles(args) -> int:
@@ -202,6 +202,17 @@ def _cmd_export_metrics(args) -> int:
     return 0
 
 
+def _cmd_export_tasks(args) -> int:
+    import json
+    text = json.dumps(tasks.export_tasks(Path(args.root)), ensure_ascii=False, indent=2)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"書き出しました: {args.out}")
+    else:
+        print(text)
+    return 0
+
+
 def _cmd_import_metrics(args) -> int:
     import json
     try:
@@ -313,6 +324,9 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("export-metrics", help="ダッシュボード用に数値を書き出す(JSON)")
     s.add_argument("--out", default="")
     s.set_defaults(fn=_cmd_export_metrics)
+    s = sub.add_parser("export-tasks", help="スマホのダッシュボード用に、いま人がやること(承認待ち・空欄・投稿待ち)を書き出す(JSON)")
+    s.add_argument("--out", default="")
+    s.set_defaults(fn=_cmd_export_tasks)
     s = sub.add_parser("import-metrics", help="ダッシュボードで直した数字(手入力)を取り込む")
     s.add_argument("file")
     s.set_defaults(fn=_cmd_import_metrics)

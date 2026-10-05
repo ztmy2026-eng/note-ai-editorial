@@ -32,7 +32,7 @@ items:                        # 7本。date は W〜W+6 を1日1本
   - date: 2026-10-05
     theme: saving-insurance   # config/themes.yaml の有効な id
     ai: false                 # AIに関する記事なら true(週に1本以上)
-    title: "2026年の年末調整、会社員がやりがちな「出し忘れ」5つ。今年は戻るお金が増える年です"
+    title: "コンビニ通いを見直す5つのコツ"   # 30字以内(超えると check-plan が不合格にする)
     alt_titles: ["予備案1", "予備案2"]
     aim: "狙い(なぜ今この読者に)"
     failures: ["失敗パターン1", "失敗パターン2", "失敗パターン3"]

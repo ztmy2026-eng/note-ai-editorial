@@ -56,7 +56,7 @@ python -m pytest                                           # テスト
 
 ## ダッシュボード(インプ・PV・スキを見る/直す)
 
-https://claude.ai/artifact/R7dbtDrFCm9tiYRUCR8T1r (ソース: `dashboard/index.html`)
+https://claude.ai/artifact/QKDCrkrJ6MNY3VHRu9uixv (ソース: `dashboard/index.html`。自分だけが見られる非公開のページ。スマホの使い方は `docs/mobile_guide.md`)
 数字はその場で書き換えられ、共有データに保存されます。`/sync-metrics` で、システムの記録(`data/past_articles/`)と相互に反映します。
 手入力の数字は、メールからの自動収集より優先されます。
 

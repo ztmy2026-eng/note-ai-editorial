@@ -14,7 +14,7 @@ def plan(root, n=7, ai_day=5, **over):
         d = (W + timedelta(days=i)).isoformat()
         items.append({
             "date": d, "theme": "ai-work" if i == ai_day else "saving-insurance", "ai": i == ai_day,
-            "title": f"テーマ{i}、会社員がやりがちな「失敗」3つ。今やる理由",
+            "title": f"テーマ{i}、最初に見る3つ",
             "alt_titles": ["予備1", "予備2"], "aim": "狙い", "failures": ["a", "b", "c"],
             "figures": ["見出し画像", "fig1"], "affiliate": "",
         })
@@ -48,10 +48,10 @@ def test_missing_plan(root):
 def test_bad_theme_and_title(root):
     data = plan(root)
     data["items"][0]["theme"] = "nope"
-    data["items"][1]["title"] = "型に沿わないタイトル"
+    data["items"][1]["title"] = "とても長いタイトルは読まれにくいので、この長さは受け付けない決まりにしてあります。さらに続けます"
     (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
     probs = " ".join(weekly.validate_plan(root, W))
-    assert "nope" in probs and "型" in probs
+    assert "nope" in probs and "字以内" in probs
 
 
 def test_attach_to_run_copies_plan_draft_and_images(root):
@@ -121,3 +121,17 @@ def test_make_figures_requires_spec(root):
     rid = runs.create_run(root, "ai-work", today=W)
     with pytest.raises(figures.FigureError, match="figures.json"):
         figures.make_figures(root, rid)
+
+
+def test_old_long_title_type_is_no_longer_required(root):
+    data = plan(root)
+    data["items"][0]["title"] = "節約の始め方、まず見る3つ"
+    (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert weekly.validate_plan(root, W) == []
+
+
+def test_long_alt_title_is_also_rejected(root):
+    data = plan(root)
+    data["items"][2]["alt_titles"] = ["短い案", "あ" * (weekly.TITLE_MAX + 1)]
+    (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert "3本目" in " ".join(weekly.validate_plan(root, W))

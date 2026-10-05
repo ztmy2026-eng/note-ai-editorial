@@ -17,6 +17,7 @@ from . import runs
 
 PLAN_FILE = "plan.yaml"
 REQUIRED = ("date", "theme", "title", "alt_titles", "aim", "failures", "figures")
+TITLE_MAX = 30  # タイトルの最大字数(短くてとっつきやすいタイトルにするため。config/weekly_policy.md と合わせる)
 
 
 def week_start(d: date) -> date:
@@ -68,9 +69,9 @@ def validate_plan(root: Path, start: date) -> list[str]:
             problems.append(f"{n}本目: テーマ '{it['theme']}' は config/themes.yaml に無いか無効です")
         if len(it.get("alt_titles") or []) < 2:
             problems.append(f"{n}本目: 予備のタイトル案が2つありません")
-        title = str(it.get("title", ""))
-        if "やりがちな" not in title or "「" not in title:
-            problems.append(f"{n}本目: タイトルが型(〜がやりがちな「◯◯」N つ。〜)に沿っていません")
+        for t in [str(it.get("title", "")), *[str(a) for a in it.get("alt_titles") or []]]:
+            if len(t) > TITLE_MAX:
+                problems.append(f"{n}本目: タイトルが{len(t)}字です({TITLE_MAX}字以内に短くしてください): {t}")
         if it.get("ai"):
             ai_count += 1
         draft = it.get("draft")
