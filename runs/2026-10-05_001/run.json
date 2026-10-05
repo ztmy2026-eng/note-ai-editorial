@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-10-05_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-05T14:40:42+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-05",
+    "date": "2026-10-05",
+    "title": "2026年の年末調整、会社員がやりがちな「出し忘れ」5つ。今年は戻るお金が増える年です",
+    "approved": false
+  }
+}
