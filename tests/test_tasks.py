@@ -43,3 +43,12 @@ def test_threads_posts_keep_multiple_lines():
 
 def test_split_posts_removes_source_indentation():
     assert tasks._split_posts("- 一行目\n  二行目\n  ・箇条書き") == ["一行目\n二行目\n・箇条書き"]
+
+def test_run_waiting_for_approval_2_is_shown_as_waiting_even_in_auto_mode(root):
+    from conftest import set_limits
+    set_limits(root, auto_approve="true")
+    rid = finish(root)
+    (t,) = tasks.export_tasks(root, D)["tasks"]
+    assert t["id"] == rid and t["needs_human"] is True and "承認2" in t["next_action"]
+    assert t["note_ready"] is False and t["blanks"] == []
+

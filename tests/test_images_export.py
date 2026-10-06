@@ -113,3 +113,8 @@ def test_slash_line_breaks_in_slides_become_newlines_but_plain_slashes_stay():
     assert images.slide_text("見える形にしたいのは2つ。/寄った回数と、") == "見える形にしたいのは2つ。\n寄った回数と、"
     assert images.slide_text("コツ1 数える / コツ2 聞く") == "コツ1 数える\nコツ2 聞く"
     assert images.slide_text("AI/家計の話") == "AI/家計の話"
+
+def test_slides_can_be_written_over_several_lines():
+    text = "## Instagram投稿案\n1枚目\n表紙の言葉\nもう1行\n\n2枚目: 1行で書く形も読める\n\n3枚目\n詳しくは記事へ【記事URL】\n## Instagramキャプション\n本文\n"
+    assert images.slides_from_sns(text) == ["表紙の言葉\nもう1行", "1行で書く形も読める", "詳しくは記事へ"]
+

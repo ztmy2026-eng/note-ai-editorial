@@ -56,6 +56,11 @@ def export_tasks(root: Path, today: date | None = None) -> dict:
         rdir = runs.run_path(root, rid)
         revised = rdir / artifacts.FILES["revised"]
         public = artifacts.publishable_text(revised.read_text(encoding="utf-8")) if revised.exists() else ""
+        blanks = [b.strip() for b in BLANK_RE.findall(public)]
+        if "revised" in data["steps_done"] and not data["approvals"].get("publish") and not blanks and not human:
+            # 承認なしモードなら次の自動実行で通る段階。ただし、人が止めている(承認2は私が確認してから、など)間は、人の確認待ちとして出す
+            human = True
+            action = "公開前の確認待ち(承認2)。本文を読んで、よければ「承認2してよい」と返信してください"
         title, body, ready = _note_text(rdir, data, public)
         sns_path = rdir / "06_sns_ready.md"
         if not sns_path.exists():
@@ -69,7 +74,7 @@ def export_tasks(root: Path, today: date | None = None) -> dict:
             "steps_done": [s for s in artifacts.STEPS if s in data["steps_done"]],
             "next_action": action,
             "needs_human": human,
-            "blanks": [b.strip() for b in BLANK_RE.findall(public)],
+            "blanks": blanks,
             "unverified": public.count("要確認"),
             "note_ready": ready,
             "note_body": body,

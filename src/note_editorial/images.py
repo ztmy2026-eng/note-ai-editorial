@@ -20,7 +20,7 @@ from .log import log_event
 
 EYECATCH_SIZE = (1280, 670)
 SLIDE_SIZE = (1080, 1350)
-SLIDE_RE = re.compile(r"^\s*(?:[-*]\s*)?\**\s*(\d+)\s*枚目\s*[::]\s*(.*?)\**\s*$", re.M)
+SLIDE_RE = re.compile(r"^\s*(?:[-*]\s*)?\**\s*(\d+)\s*枚目\s*\**\s*[::]?\s*(.*?)\**\s*$")  # 「1枚目: 本文」(1行)も、「1枚目」の次の行から本文(複数行)も読める
 
 DEFAULTS = {
     "colors": {"background": "#0f2a43", "accent": "#ffb400", "text": "#ffffff", "subtext": "#b8c7d9"},
@@ -57,9 +57,20 @@ def find_browser(cfg: dict) -> str:
 
 def slides_from_sns(sns_text: str) -> list[str]:
     block = artifacts.section(sns_text, "Instagram投稿案") or ""
-    found = {int(n): t.replace(artifacts.LINK_TOKEN, "").strip() for n, t in SLIDE_RE.findall(block)}
-    found = {n: t for n, t in found.items() if t}  # URLは画像に載せない(投稿時に別途貼る)
-    return [found[k] for k in sorted(found)]
+    found: dict[int, list[str]] = {}
+    cur = None
+    for line in block.splitlines():
+        m = SLIDE_RE.match(line)
+        if m:
+            cur = int(m.group(1))
+            found[cur] = [m.group(2).strip()] if m.group(2).strip() else []
+        elif cur is not None and line.strip():
+            found[cur].append(line.strip())        # 「N枚目」の次の行から続く本文
+        else:
+            cur = None                             # 空行でそのスライドは終わり
+    texts = {n: "\n".join(parts).replace(artifacts.LINK_TOKEN, "").strip() for n, parts in found.items()}
+    texts = {n: s for n, s in texts.items() if s}  # URLは画像に載せない(投稿時に別途貼る)
+    return [texts[k] for k in sorted(texts)]
 
 
 def split_title(title: str) -> tuple[str, str]:
