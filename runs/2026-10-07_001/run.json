@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-10-07_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-06T22:46:45+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-05",
+    "date": "2026-10-07",
+    "title": "スマホ代、見直す前に見る3つ",
+    "approved": false
+  }
+}
