@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -91,3 +92,24 @@ def test_fill_url_keeps_original_and_replaces_token(root):
     out = export.fill_article_url(root, rid, "https://note.com/a/n/nabc?x=1")
     assert "https://note.com/a/n/nabc" in out.read_text(encoding="utf-8") and "【記事URL】" not in out.read_text(encoding="utf-8")
     assert "【記事URL】" in (root / "runs" / rid / "06_sns.md").read_text(encoding="utf-8")  # 承認済みの原本は変えない
+
+def test_render_passes_an_absolute_screenshot_path(tmp_path, monkeypatch):
+    """相対パスで渡すと、ブラウザが自分の作業フォルダに保存してしまい、画像ができたのに見つからなくなる(Windowsで起きた)。"""
+    seen = {}
+
+    def fake_run(cmd, **kw):
+        seen["cmd"] = cmd
+        out = next(c for c in cmd if c.startswith("--screenshot=")).split("=", 1)[1]
+        Path(out).write_bytes(b"png")
+
+    monkeypatch.setattr(images.subprocess, "run", fake_run)
+    monkeypatch.chdir(tmp_path)
+    images.render("<p>x</p>", Path("rel/out.png"), (10, 10), "browser", Path("rel/_work"))
+    shot = next(c for c in seen["cmd"] if c.startswith("--screenshot=")).split("=", 1)[1]
+    assert Path(shot).is_absolute()
+
+
+def test_slash_line_breaks_in_slides_become_newlines_but_plain_slashes_stay():
+    assert images.slide_text("見える形にしたいのは2つ。/寄った回数と、") == "見える形にしたいのは2つ。\n寄った回数と、"
+    assert images.slide_text("コツ1 数える / コツ2 聞く") == "コツ1 数える\nコツ2 聞く"
+    assert images.slide_text("AI/家計の話") == "AI/家計の話"

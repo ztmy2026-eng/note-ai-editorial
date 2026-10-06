@@ -1,0 +1,31 @@
+{
+  "run_id": "2026-10-06_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-06T13:41:32+00:00",
+  "status": "sns_done",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-06T13:45:03+00:00",
+      "by": "auto"
+    },
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-05",
+    "date": "2026-10-06",
+    "title": "コンビニ通いを見直す5つのコツ",
+    "approved": false
+  }
+}

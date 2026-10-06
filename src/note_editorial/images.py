@@ -108,10 +108,18 @@ def eyecatch_html(title: str, cfg: dict) -> str:
     return _page(cfg, *EYECATCH_SIZE, inner)
 
 
+_SLASH_BREAK = re.compile(r"(?<=[。!?!?])\s*/\s*|\s+/\s+")
+
+
+def slide_text(text: str) -> str:
+    """SNS案でスライド内の改行に使われる「/」(「。/」や「 / 」)を、本物の改行にする。「AI/家計」のような普通のスラッシュはそのまま。"""
+    return _SLASH_BREAK.sub("\n", text)
+
+
 def slide_html(index: int, total: int, text: str, cfg: dict) -> str:
     foot = f'<div class="foot">{_esc(cfg["footer"])}</div>' if cfg.get("footer") else ""
     inner = (f'<div class="frame"><div class="num">{index} / {total}</div><div class="bar"></div>'
-             f'<div class="main" style="font-size:{_size_for(text, 84, 9)}px">{_esc(text)}</div>{foot}</div>')
+             f'<div class="main" style="font-size:{_size_for(slide_text(text), 84, 9)}px">{_esc(slide_text(text))}</div>{foot}</div>')
     return _page(cfg, *SLIDE_SIZE, inner)
 
 
@@ -120,7 +128,7 @@ def render(html_text: str, out: Path, size: tuple[int, int], browser: str, work:
     src = work / (out.stem + ".html")
     src.write_text(html_text, encoding="utf-8")
     cmd = [browser, "--headless", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
-           f"--screenshot={out}", f"--window-size={size[0]},{size[1]}", src.resolve().as_uri()]
+           f"--screenshot={out.resolve()}", f"--window-size={size[0]},{size[1]}", src.resolve().as_uri()]
     try:
         subprocess.run(cmd, capture_output=True, timeout=90, check=False)
     except (OSError, subprocess.TimeoutExpired) as e:
