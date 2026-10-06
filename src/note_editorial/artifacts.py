@@ -217,8 +217,13 @@ def drop_section(text: str, heading: str) -> str:
 
 
 def publishable_text(text: str) -> str:
-    """公開用の本文。編集向けの「修正履歴」の章は取り除く。"""
-    return re.sub(r"^##\s*修正履歴[^\n]*\n.*?(?=^##\s|\Z)", "", text, flags=re.M | re.S).rstrip() + "\n"
+    """公開用の本文。編集向けの章(「修正履歴」「執筆メモ」)は取り除く。
+
+    「執筆メモ」は「公開前に削除する章」なので、noteに貼る文にも、【要入力】などの数えにも入れない。
+    """
+    for heading in ("修正履歴", "執筆メモ"):
+        text = re.sub(rf"^##\s*{heading}[^\n]*\n.*?(?=^##\s|\Z)", "", text, flags=re.M | re.S)
+    return text.rstrip() + "\n"
 
 
 def count_placeholders(path: Path) -> int:

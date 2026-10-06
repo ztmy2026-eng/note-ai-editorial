@@ -72,3 +72,12 @@ def test_article_without_external_sources_needs_explicit_note(tmp_path):
     assert any("URL" in e for e in check("draft", no_url, tmp_path))
     ok = DRAFT.replace("- https://example.com/1", "- 外部の情報源は使用していません(筆者の体験と架空例のみ)")
     assert check("draft", ok, tmp_path) == []
+
+def test_internal_chapters_are_not_public_and_not_counted(tmp_path):
+    text = "# 題名\n本文です。\n【要入力:僕の失敗】\n## 情報源\n- https://example.com\n## 執筆メモ(公開前に削除する章)\n- 体験は【要入力】のまま。(要確認)の数字は無い\n## 修正履歴\n- 問題1: 【要入力】を残した\n"
+    pub = a.publishable_text(text)
+    assert "執筆メモ" not in pub and "修正履歴" not in pub and "情報源" in pub
+    f = tmp_path / "r.md"
+    f.write_text(text, encoding="utf-8")
+    assert a.count_placeholders(f) == 1 and a.count_unverified(f) == 0
+
