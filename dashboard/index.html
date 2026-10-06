@@ -341,7 +341,9 @@ function buildApproval(t) {
   const btn = h("button", { class: "btn", type: "button", text: "確認を頼む文をコピー" });
   btn.addEventListener("click", () => copyText(approvalMessage(t), btn));
   return h("div", { class: "block" }, h("h4", { text: "公開してよいかの確認" }),
-    h("p", { text: "空欄はありません。Claudeに本文を見せてもらい、問題なければ「承認2してよい」と返信すると、noteに貼る文が出ます。" }),
+    h("p", { text: "空欄はありません。下で本文を読み、問題なければ、Claudeに「承認2してよい」と返信してください。承認すると、noteに貼る文が出ます。体験の節は、あなたが書いた事実と合っているかも見てください。" }),
+    h("details", { class: "preview", open: true }, h("summary", { text: "本文を読む(" + (t.note_body || "").length.toLocaleString("ja-JP") + "字)" }), h("pre", { text: t.note_body || "" })),
+    h("p", { class: "note-small", text: "「執筆メモ」「修正履歴」は、貼り付け用の本文には入りません。" }),
     h("div", { class: "btns" }, btn));
 }
 
