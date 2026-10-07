@@ -1,10 +1,11 @@
 ---
-title: 5分でわかる！お金の健康診断｜あなたの家計はA〜Dのどれ？
+title: 2026年の年末調整、会社員がやりがちな「出し忘れ」5つ。今年は戻るお金が増える年です
 url: ''
 published: null
 theme: ''
+impressions: null
 pv: null
-likes: 15
+likes: 3
 revenue: null
 followers_gained: null
 cta: ''
