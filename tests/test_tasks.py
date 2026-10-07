@@ -27,7 +27,7 @@ def test_ready_run_gives_note_text_and_sns_posts(root):
     assert t["note_ready"] is True and t["blanks"] == []
     assert t["note_body"].strip()
     assert len(t["x_posts"]) == 3 and len(t["threads_posts"]) == 2
-    assert "投稿" in t["next_action"]
+    assert "投稿" in t["next_action"] and "auto-approve" not in t["next_action"] and t["needs_human"] is True
 
 
 def test_posted_and_skipped_runs_are_not_listed(root):

@@ -62,6 +62,10 @@ def export_tasks(root: Path, today: date | None = None) -> dict:
             human = True
             action = "公開前の確認待ち(承認2)。本文を読んで、よければ「承認2してよい」と返信してください"
         title, body, ready = _note_text(rdir, data, public)
+        if ready and not data.get("posted"):
+            # 公開承認(承認2)が済んだら、あとは人がnoteに貼って投稿する段階(SNS案の承認は、投稿には要らない)
+            human = True
+            action = "noteに貼り付けて投稿してください。投稿したら、記事のURLを入れて「投稿したと記録」します"
         sns_path = rdir / "06_sns_ready.md"
         if not sns_path.exists():
             sns_path = rdir / artifacts.FILES["sns"]
