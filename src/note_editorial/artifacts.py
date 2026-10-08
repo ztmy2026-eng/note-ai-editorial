@@ -21,6 +21,7 @@ PLACEHOLDER = "【要入力"
 # 読むハードルを下げる言葉(「5分で読める」「3分でわかる」)。分数は本文の字数で裏づける(日本語は1分500字が目安。10%の余裕)。
 HURDLE_RE = re.compile(r"(\d+)\s*分で(?:読める|読め|わかる|分かる)")
 READ_CHARS_PER_MIN = 500
+GREETING_RE = re.compile(r"こんにちは|こんばんは|おはよう|どうも|はじめまして")
 NO_SOURCE_NOTE = "外部の情報源は使用していません"
 SEVERITY = ("【重大】", "【中】", "【軽微】")
 IDEA_LABELS = ("タイトル案", "想定読者", "読者の悩み", "切り口", "構成", "CTA", "過去記事との関係")
@@ -134,6 +135,13 @@ def _problem_count(critique_text: str) -> int:
 
 def _revised(text: str, run_dir: Path | None) -> list[str]:
     errs = _article_common(text)
+    if run_dir is not None and (Path(run_dir) / "00_plan.md").exists():  # 週次企画から作る記事は、あいさつとお礼が要る
+        pub = publishable_text(text)
+        intro = re.sub(r"【画像:[^】]*】", "", pub.split("\n## ", 1)[0])[:400]
+        if not GREETING_RE.search(intro):
+            errs.append("冒頭にあいさつがありません(見出し画像の直後に「こんにちは」などの1〜2文。config/weekly_policy.md の「あいさつ」)")
+        if "ありがとう" not in re.split(r"^##\s*情報源", pub, flags=re.M)[0]:
+            errs.append("最後のお礼の一言(「ありがとう」)がありません(まとめのあとに1文)")
     head = re.match(r"\s*#\s+(.+)", text)
     hurdle = HURDLE_RE.search(head.group(1)) if head else None
     if hurdle:  # タイトルに「N分」と書いたなら、本文がそれに収まっていること

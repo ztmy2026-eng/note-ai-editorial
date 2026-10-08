@@ -90,3 +90,15 @@ def test_title_minutes_must_fit_the_body_length():
     assert [e for e in a._revised(long, None) if "「3分」とある" in e]
     plain = "# ふつうの題\n" + "あ" * 4000 + tail
     assert not [e for e in a._revised(plain, None) if "分」とある" in e]
+
+
+def test_weekly_articles_need_a_greeting_and_a_thanks(tmp_path):
+    tail = "\n## 情報源\n- https://example.com\n## 執筆メモ\nメモ\n## 修正履歴\n- 問題1\n"
+    no_greet = "# 題\n\n【画像:cover.png】\n\n本題から始まる。\n\n## 見出し\n本文。最後まで読んでくれて、ありがとうございます。\n" + tail
+    ok = "# 題\n\n【画像:cover.png】\n\nこんにちは、人生最適化中の会社員です。\n\n## 見出し\n本文。最後まで読んでくれて、ありがとうございます。\n" + tail
+    no_thanks = "# 題\n\nどうも、地道編集部です。\n\n## 見出し\n本文。\n" + tail
+    (tmp_path / "00_plan.md").write_text("plan", encoding="utf-8")
+    assert [e for e in a._revised(no_greet, tmp_path) if "あいさつ" in e]
+    assert not [e for e in a._revised(ok, tmp_path) if "あいさつ" in e or "お礼" in e]
+    assert [e for e in a._revised(no_thanks, tmp_path) if "お礼" in e]
+    assert not [e for e in a._revised(no_greet, None) if "あいさつ" in e or "お礼" in e]  # 週次企画でない実行には求めない
