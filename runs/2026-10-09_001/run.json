@@ -1,0 +1,30 @@
+{
+  "run_id": "2026-10-09_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-08T23:10:16+00:00",
+  "status": "revised_done",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-08T23:15:25+00:00",
+      "by": "auto"
+    },
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-05",
+    "date": "2026-10-09",
+    "title": "【5分で読める】電気代を下げる、今日できる4つの工夫",
+    "approved": false
+  }
+}
