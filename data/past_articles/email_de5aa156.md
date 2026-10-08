@@ -1,7 +1,7 @@
 ---
 title: ポイントは、集めるな。気配を消せ。😾😾😾
 url: ''
-published: '2026-09-15'
+published: 2026-09-15
 theme: ''
 pv: 13
 likes: 0

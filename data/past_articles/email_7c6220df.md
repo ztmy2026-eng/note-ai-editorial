@@ -1,7 +1,7 @@
 ---
 title: 5分でわかる！お金の健康診断｜あなたの家計はA〜Dのどれ？
 url: ''
-published: '2026-10-03'
+published: 2026-10-03
 theme: ''
 pv: 46
 likes: 27

@@ -25,3 +25,12 @@ def test_bad_file_does_not_stop_others(tmp_path):
 
 def test_missing_folder_reports_problem(tmp_path):
     assert articles.load_articles(tmp_path / "none").problems
+
+
+def test_quoted_date_string_is_accepted_for_published(tmp_path):
+    (tmp_path / "a.md").write_text("---\ntitle: t\npublished: '2026-10-07'\npv: 3\n---\n本文", encoding="utf-8")
+    res = articles.load_articles(tmp_path)
+    assert not res.problems and str(res.articles[0].published) == "2026-10-07"
+
+    (tmp_path / "b.md").write_text("---\ntitle: u\npublished: '2026-13-40'\n---\n本文", encoding="utf-8")
+    assert articles.load_articles(tmp_path).problems

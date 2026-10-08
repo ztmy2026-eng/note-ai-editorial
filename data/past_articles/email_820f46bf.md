@@ -1,7 +1,7 @@
 ---
 title: 節約とご褒美のあいだ。味玉100円に学ぶ、正しいお金の使い方
 url: ''
-published: '2026-09-14'
+published: 2026-09-14
 theme: ''
 pv: 30
 likes: 7

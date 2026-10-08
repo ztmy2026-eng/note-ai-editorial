@@ -1,7 +1,7 @@
 ---
 title: 2026年の年末調整、会社員がやりがちな「出し忘れ」5つ。今年は戻るお金が増える年です
 url: ''
-published: '2026-10-03'
+published: 2026-10-03
 theme: ''
 impressions: 337
 pv: 14

@@ -6,6 +6,8 @@
 """
 from __future__ import annotations
 
+import re
+
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
@@ -78,6 +80,11 @@ def parse_article(path: Path) -> Article:
     published = meta.get("published")
     if published in (None, ""):
         published = None
+    elif isinstance(published, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", published.strip()):
+        try:  # 引用符つきの文字列("2026-10-07")で書かれていても読めるようにする
+            published = date.fromisoformat(published.strip())
+        except ValueError:
+            raise ValueError(f"published は YYYY-MM-DD で書いてください: {published!r}") from None
     elif not isinstance(published, date):
         raise ValueError(f"published は YYYY-MM-DD で書いてください: {published!r}")
     return Article(
