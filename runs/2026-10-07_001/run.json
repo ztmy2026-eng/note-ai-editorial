@@ -24,7 +24,10 @@
     },
     "sns": null
   },
-  "posted": null,
+  "posted": {
+    "at": "2026-10-08T12:39:33+00:00",
+    "url": "https://note.com/chidou_taxian/n/naaabcbcbecee"
+  },
   "plan": {
     "week_start": "2026-10-05",
     "date": "2026-10-07",
