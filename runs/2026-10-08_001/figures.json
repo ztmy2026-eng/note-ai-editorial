@@ -1,5 +1,5 @@
 [
- {"type":"cover","name":"cover","tag":"節約","title_html":"値上げの秋、<em>食費より先</em>に見る固定費4つ","icon":"yen","size":50},
+ {"type":"cover","name":"cover","tag":"節約","title_html":"値上げの秋、<em>食費より先</em>に<br>見る固定費4つ","icon":"yen","size":50},
  {"type":"timeline","name":"fig1_timeline","title":"固定費を見直す順番","items":[
   {"date":"①","label":"明細を一覧にする","desc":"毎月同じ名前の行に印をつける","hl":false},
   {"date":"②","label":"使っていないものを外す","desc":"最近使ったかを思い出す","hl":false},

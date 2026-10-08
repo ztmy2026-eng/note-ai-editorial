@@ -35,7 +35,7 @@ def test_config_override_merges(tmp_path):
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "images.yaml").write_text("colors:\n  accent: '#ff0000'\nfooter: '@me'\n", encoding="utf-8")
     cfg = images.load_config(tmp_path)
-    assert cfg["colors"]["accent"] == "#ff0000" and cfg["colors"]["background"] == "#0f2a43" and cfg["footer"] == "@me"
+    assert cfg["colors"]["accent"] == "#ff0000" and cfg["colors"]["background"] == "#ffd43b" and cfg["footer"] == "@me"
 
 
 def test_missing_browser_gives_clear_error(monkeypatch):

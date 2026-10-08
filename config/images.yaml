@@ -1,9 +1,9 @@
 # 画像の見た目の設定(後から自由に変更できます)。色は #RRGGBB。
 colors:
-  background: "#0f2a43"   # 背景
-  accent: "#ffb400"       # アクセント(線・番号)
-  text: "#ffffff"         # 文字
-  subtext: "#b8c7d9"      # 小さい文字
+  background: "#ffd43b"   # 背景(明るい黄色。目を引く)
+  accent: "#d62f1f"       # アクセント(線・番号。赤)
+  text: "#16233f"         # 文字(濃い紺)
+  subtext: "#5b4a00"      # 小さい文字
 font_family: "'Noto Sans JP','Noto Sans CJK JP','Yu Gothic','Meiryo','IPAGothic',sans-serif"
 footer: ""                # 画像の下に入れる名前(例: "@あなたのアカウント")。空なら何も入れない
 # 画像を作るブラウザ(Chrome / Edge)。空なら自動で探す。Windowsで見つからない場合はここに実行ファイルのパスを書く

@@ -135,3 +135,18 @@ def test_long_alt_title_is_also_rejected(root):
     data["items"][2]["alt_titles"] = ["短い案", "あ" * (weekly.TITLE_MAX + 1)]
     (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
     assert "3本目" in " ".join(weekly.validate_plan(root, W))
+
+
+def test_hurdle_phrase_needs_read_minutes_and_is_limited_per_week(root):
+    data = plan(root)
+    data["items"][0]["title"] = "【5分で読める】節約の始め方"
+    (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert "read_minutes" in " ".join(weekly.validate_plan(root, W))
+    data["items"][0]["read_minutes"] = 5
+    (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert weekly.validate_plan(root, W) == []
+    for i in range(1, 5):
+        data["items"][i]["title"] = f"【3分でわかる】テーマ{i}"
+        data["items"][i]["read_minutes"] = 3
+    (root / "plans" / W.isoformat() / "plan.yaml").write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    assert "3本まで" in " ".join(weekly.validate_plan(root, W))

@@ -18,6 +18,9 @@ FILES = {
     "sns": "06_sns.md",
 }
 PLACEHOLDER = "【要入力"
+# 読むハードルを下げる言葉(「5分で読める」「3分でわかる」)。分数は本文の字数で裏づける(日本語は1分500字が目安。10%の余裕)。
+HURDLE_RE = re.compile(r"(\d+)\s*分で(?:読める|読め|わかる|分かる)")
+READ_CHARS_PER_MIN = 500
 NO_SOURCE_NOTE = "外部の情報源は使用していません"
 SEVERITY = ("【重大】", "【中】", "【軽微】")
 IDEA_LABELS = ("タイトル案", "想定読者", "読者の悩み", "切り口", "構成", "CTA", "過去記事との関係")
@@ -131,6 +134,15 @@ def _problem_count(critique_text: str) -> int:
 
 def _revised(text: str, run_dir: Path | None) -> list[str]:
     errs = _article_common(text)
+    head = re.match(r"\s*#\s+(.+)", text)
+    hurdle = HURDLE_RE.search(head.group(1)) if head else None
+    if hurdle:  # タイトルに「N分」と書いたなら、本文がそれに収まっていること
+        minutes = int(hurdle.group(1))
+        body = re.split(r"^##\s*情報源", publishable_text(text), flags=re.M)[0]
+        chars = len(body.split("\n", 1)[-1].replace("\n", ""))
+        limit = int(minutes * READ_CHARS_PER_MIN * 1.1)
+        if chars > limit:
+            errs.append(f"タイトルに「{minutes}分」とあるのに、本文が{chars}字(約{chars // READ_CHARS_PER_MIN + 1}分)あります。{limit}字以内にするか、タイトルの分数を直してください")
     log = section(text, "修正履歴")
     if log is None:
         errs.append("「## 修正履歴」がありません")

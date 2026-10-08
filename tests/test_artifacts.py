@@ -81,3 +81,12 @@ def test_internal_chapters_are_not_public_and_not_counted(tmp_path):
     f.write_text(text, encoding="utf-8")
     assert a.count_placeholders(f) == 1 and a.count_unverified(f) == 0
 
+
+def test_title_minutes_must_fit_the_body_length():
+    tail = "\n## 情報源\n- https://example.com\n## 執筆メモ\nメモ\n## 修正履歴\n- 問題1\n"
+    ok = "# 【5分で読める】題\n" + "あ" * 2400 + tail
+    assert not [e for e in a._revised(ok, None) if "分」とある" in e]
+    long = "# 【3分でわかる】題\n" + "あ" * 2400 + tail
+    assert [e for e in a._revised(long, None) if "「3分」とある" in e]
+    plain = "# ふつうの題\n" + "あ" * 4000 + tail
+    assert not [e for e in a._revised(plain, None) if "分」とある" in e]

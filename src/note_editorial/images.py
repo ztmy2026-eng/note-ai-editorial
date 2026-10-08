@@ -23,7 +23,7 @@ SLIDE_SIZE = (1080, 1350)
 SLIDE_RE = re.compile(r"^\s*(?:[-*]\s*)?\**\s*(\d+)\s*枚目\s*\**\s*[::]?\s*(.*?)\**\s*$")  # 「1枚目: 本文」(1行)も、「1枚目」の次の行から本文(複数行)も読める
 
 DEFAULTS = {
-    "colors": {"background": "#0f2a43", "accent": "#ffb400", "text": "#ffffff", "subtext": "#b8c7d9"},
+    "colors": {"background": "#ffd43b", "accent": "#d62f1f", "text": "#16233f", "subtext": "#5b4a00"},
     "font_family": "'Noto Sans JP','Noto Sans CJK JP','Yu Gothic','Meiryo','IPAGothic',sans-serif",
     "footer": "",
     "browser_path": "",

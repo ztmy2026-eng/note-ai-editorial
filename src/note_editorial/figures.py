@@ -51,11 +51,11 @@ ICONS={
 }
 def cover(s):
     ill=s.get('illust_html') or ICONS.get(s.get('icon','yen'))
-    return f"""<div class="fig" id="t" style="width:1280px;height:670px;background:#16233f;padding:0;position:relative;overflow:hidden;color:#fff">
-<div style="position:absolute;left:64px;top:56px;background:#eda100;color:#16233f;font-weight:700;font-size:26px;padding:8px 22px;border-radius:6px">{html.escape(s['tag'])}</div>
-<div style="position:absolute;left:64px;top:150px;width:760px;font-size:{s.get('size',54)}px;font-weight:900;line-height:1.38;letter-spacing:.01em">{s['title_html'].replace('<em>','<span style="color:#eda100;font-style:normal">').replace('</em>','</span>')}</div>
-<div style="position:absolute;left:64px;bottom:48px;font-size:24px;font-weight:700;color:#cfd6e4">人生最適化中の会社員</div>
-<div style="position:absolute;right:60px;top:130px;width:400px;height:420px">{ill}</div></div>"""
+    return f"""<div class="fig" id="t" style="width:1280px;height:670px;background:#ffd43b;padding:0;position:relative;overflow:hidden;color:#16233f">
+<div style="position:absolute;left:64px;top:56px;background:#16233f;color:#ffd43b;font-weight:700;font-size:26px;padding:8px 22px;border-radius:6px">{html.escape(s['tag'])}</div>
+<div style="position:absolute;left:64px;top:150px;width:700px;text-wrap:balance;font-size:{s.get('size',54)}px;font-weight:900;line-height:1.38;letter-spacing:.01em">{s['title_html'].replace('<em>','<span style="background:#16233f;color:#ffd43b;font-style:normal;padding:0 .12em;border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone">').replace('</em>','</span>')}</div>
+<div style="position:absolute;left:64px;bottom:48px;font-size:24px;font-weight:700;color:#3b4a63">人生最適化中の会社員</div>
+<div style="position:absolute;right:40px;top:130px;width:400px;height:420px;background:#16233f;border-radius:36px;overflow:hidden">{ill}</div></div>"""
 def bar(s):
     labels=s['labels'];ser=s['series'];n=len(ser)
     allv=[v for x in ser for v in x['values']];mx=max(allv)*1.15

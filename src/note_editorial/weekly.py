@@ -7,16 +7,18 @@
 """
 from __future__ import annotations
 
+import re
 import shutil
 from datetime import date, timedelta
 from pathlib import Path
 
 import yaml
 
-from . import runs
+from . import artifacts, runs
 
 PLAN_FILE = "plan.yaml"
 REQUIRED = ("date", "theme", "title", "alt_titles", "aim", "failures", "figures")
+HURDLE_MAX_PER_WEEK = 3  # 「5分で読める」などを付けてよいのは、1週間に3本まで(全部に付けない)
 TITLE_MAX = 30  # タイトルの最大字数(短くてとっつきやすいタイトルにするため。config/weekly_policy.md と合わせる)
 
 
@@ -55,6 +57,7 @@ def validate_plan(root: Path, start: date) -> list[str]:
     want = {(start + timedelta(days=i)).isoformat() for i in range(7)}
     seen = set()
     ai_count = 0
+    hurdle_count = 0
     for n, it in enumerate(items, 1):
         for key in REQUIRED:
             if not it.get(key):
@@ -72,11 +75,18 @@ def validate_plan(root: Path, start: date) -> list[str]:
         for t in [str(it.get("title", "")), *[str(a) for a in it.get("alt_titles") or []]]:
             if len(t) > TITLE_MAX:
                 problems.append(f"{n}本目: タイトルが{len(t)}字です({TITLE_MAX}字以内に短くしてください): {t}")
+        hm = artifacts.HURDLE_RE.search(str(it.get("title", "")))
+        if hm:
+            hurdle_count += 1
+            if it.get("read_minutes") != int(hm.group(1)):
+                problems.append(f"{n}本目: タイトルに「{hm.group(1)}分」とあるので、read_minutes: {hm.group(1)} を書いてください(本文を{int(hm.group(1)) * artifacts.READ_CHARS_PER_MIN}字以内にするため)")
         if it.get("ai"):
             ai_count += 1
         draft = it.get("draft")
         if draft and not (plan_dir(root, start) / draft).exists():
             problems.append(f"{n}本目: 下書き {draft} が見つかりません")
+    if hurdle_count > HURDLE_MAX_PER_WEEK:
+        problems.append(f"「N分で読める」などの言葉が{hurdle_count}本のタイトルにあります(1週間に{HURDLE_MAX_PER_WEEK}本まで。全部に付けない)")
     if ai_count < 1:
         problems.append("AIに関する記事(ai: true)が1本もありません")
     return problems
@@ -105,6 +115,7 @@ def render_item(data: dict, it: dict) -> str:
         *[f"- 予備案{i}: {t}" for i, t in enumerate(it.get("alt_titles") or [], 1)],
         f"- 狙い: {it['aim']}",
         f"- AI記事: {'はい' if it.get('ai') else 'いいえ'}",
+        *([f"- 読む時間: {it['read_minutes']}分(本文は{int(it['read_minutes']) * artifacts.READ_CHARS_PER_MIN}字以内。タイトルに「{it['read_minutes']}分」と書くため。超えると検査で止まる。失敗パターンは3〜4個に絞る)"] if it.get("read_minutes") else []),
         f"- アフィリエイト: {('記事末尾に【リンク任意:' + it['affiliate'] + '】') if it.get('affiliate') else '入れない'}",
         "", "## 失敗パターン(読者層がやりがちなこと。一般的な事例として書く)", "",
         *[f"- {f}" for f in it.get("failures") or []],
