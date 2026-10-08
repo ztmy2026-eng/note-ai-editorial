@@ -165,9 +165,15 @@ def _cmd_check_limits(args) -> int:
     for key, (used, cap) in limits.usage(root).items():
         print(f"{limits.LABELS[key]}: {used} / {cap}")
     reasons = limits.reached(root, new_run=args.new_run)
+    today = limits.today_local(root)
+    made = sorted(p.name for p in (root / "runs").glob(f"{today.isoformat()}_*") if p.is_dir()) if (root / "runs").exists() else []
+    print(f"今日(日本時間 {today.isoformat()})の実行: " + (", ".join(made) if made else "まだありません"))
     for r in reasons:
         print(f"[停止] {r}")
     print("上限に達しています。新しい作業は始めません" if reasons else "OK(まだ作業できます)")
+    if args.new_run and not reasons and not made:
+        print(f"→ 今日(日本時間 {today.isoformat()})の分は、まだ作っていません。新しい実行を作ってください"
+              "(クラウドの時計が前の日でも、この日付が「今日」です。前の日の実行があるかどうかで判断しない)")
     return 1 if reasons else 0
 
 

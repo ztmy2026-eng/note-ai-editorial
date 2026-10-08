@@ -116,3 +116,17 @@ def test_skipped_run_leaves_the_ready_queue(root):
     assert limits.ready_queue(root) == []
     with pytest.raises(runs.RunError):
         runs.mark_skipped(root, "no-such-run")  # 存在しない実行はエラー
+
+
+def test_check_limits_says_whether_todays_run_exists(root, capsys):
+    import argparse
+    from note_editorial import cli, limits, runs
+    ns = argparse.Namespace(root=str(root), new_run=True)
+    assert cli._cmd_check_limits(ns) == 0
+    out = capsys.readouterr().out
+    today = limits.today_local(root).isoformat()
+    assert f"日本時間 {today}" in out and "まだありません" in out and "新しい実行を作ってください" in out
+    rid = runs.create_run(root, "ai-work", today=limits.today_local(root))
+    cli._cmd_check_limits(ns)
+    out = capsys.readouterr().out
+    assert rid in out and "新しい実行を作ってください" not in out

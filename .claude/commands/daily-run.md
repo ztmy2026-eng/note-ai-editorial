@@ -5,7 +5,10 @@ description: 1日分の編集部の仕事(記事1本分)を、承認なしモー
 **新しい実行を作る前**は `python -m note_editorial check-limits --new-run`、**Agentを呼ぶ前**は毎回 `python -m note_editorial check-limits`
 (作業中の実行の続きの確認。実行数は見ない)を実行し、終了コードが1(上限到達)なら、新しい作業を始めずに手順9へ進む。
 
-1. `python -m note_editorial check-limits --new-run` (上限なら 9 へ)
+**「今日」は、日本時間の日付**です。クラウドの時計(世界時)は、朝7:45の時点で、まだ前の日です。環境の `date` や、前の日の実行があるかどうかで判断せず、
+`check-limits --new-run` が出す「今日(日本時間 …)の実行」と、終了コードに**必ず従う**(終了コード0で、今日の実行が「まだありません」なら、必ず新しい実行を作る)。
+
+1. `python -m note_editorial check-limits --new-run` (上限なら 9 へ。0で「まだありません」と出たら、手順2で新しい実行を作る)
 2. `python -m note_editorial today-plan` で今日の週次企画を確認する。
    - あれば `new-run --plan` で実行を作る(00_plan.md・下書き・週次の画像が実行フォルダに入る)。以降の全Agentは 00_plan.md と `config/weekly_policy.md` に従う。
    - 無ければ従来どおり `next-theme` でテーマを決め、`new-run --theme <id>` で実行を作る。
