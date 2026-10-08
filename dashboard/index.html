@@ -105,6 +105,10 @@ input.text { min-height: 44px; }
 details.preview summary { cursor: pointer; font-size: .85rem; color: var(--ink-sub); min-height: 36px; display: flex; align-items: center; }
 details.preview pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .82rem; background: var(--bg); border-radius: 8px; padding: 10px 12px; max-height: 22em; overflow: auto; margin: 6px 0 0; }
 .fallback textarea { min-height: 9em; }
+.imgs { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.img-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.img-item .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+img.thumb, img.img-big { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); }
 .note-small { font-size: .78rem; color: var(--ink-sub); margin: 0; }
 .empty { color: var(--ink-sub); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 20px 16px; }
 .empty b { color: var(--ink); }
@@ -241,7 +245,7 @@ async function copyText(text, btn) {
 }
 
 /* 状態 ---------------------------------------------------------- */
-const state = { db: null, canWrite: true, tasks: new Map(), cards: new Map(), meta: null, docs: new Map(), rowEls: new Map(), order: [], chains: new Map() };
+const state = { db: null, canWrite: true, tasks: new Map(), taskDocs: null, images: new Map(), cards: new Map(), meta: null, docs: new Map(), rowEls: new Map(), order: [], chains: new Map() };
 
 /* タブ ---------------------------------------------------------- */
 const TABS = ["tasks", "metrics", "followers"];
@@ -310,6 +314,48 @@ const approvalMessage = (t) =>
 const postedMessage = (t, url) =>
   `実行 ${t.id} をnoteに投稿しました。記事のURLは ${url} です。mark-posted ${t.id} --url ${url} を実行して、SNS案のURLを埋めたファイルを作り、ダッシュボードも更新してください。`;
 
+function b64ToBlob(b64, mime) {
+  const bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new Blob([u8], { type: mime });
+}
+async function copyImage(doc, btn, slot) {
+  try {
+    if (!navigator.clipboard || !window.ClipboardItem) throw new Error("image clipboard is not available");
+    await navigator.clipboard.write([new ClipboardItem({ [doc.mime]: b64ToBlob(doc.data, doc.mime) })]);
+    flash(btn, "コピーしました ✓");
+    slot.replaceChildren();
+  } catch (e) {                    // 画像のコピーを断られたら、大きく出して、長押しで保存・コピーしてもらう
+    slot.replaceChildren(
+      h("p", { class: "hint err", text: "自動でコピーできませんでした。下の画像を長押しして、「コピー」か「写真に保存」を選んでください。" }),
+      h("img", { class: "img-big", src: `data:${doc.mime};base64,${doc.data}`, alt: doc.label }));
+  }
+}
+function imageItem(doc) {
+  const slot = h("div", { class: "img-slot" });
+  const btn = h("button", { class: "btn", type: "button", text: "画像をコピー" });
+  btn.addEventListener("click", () => copyImage(doc, btn, slot));
+  return h("div", { class: "img-item" },
+    h("div", { class: "group-title", text: doc.label }),
+    h("img", { class: "thumb", src: `data:${doc.mime};base64,${doc.data}`, alt: doc.label, loading: "lazy" }),
+    h("div", { class: "row" }, btn, h("span", { class: "hint", text: `${doc.width}×${doc.height}` })),
+    slot);
+}
+function buildImages(t) {
+  const docs = (state.images.get(t.id) || []).slice().sort((a, b) => a.order - b.order);
+  const by = (g) => docs.filter((d) => d.group === g);
+  if (!docs.length) {
+    return h("p", { class: "note-small", text: t.has_images ? "画像は、まだこのページに反映されていません。Claudeに「ダッシュボードを更新して」と送ると出ます。" : "この記事の画像は、まだありません。" });
+  }
+  return h("div", { class: "block" },
+    h("h4", { text: "画像(コピーして、noteに貼る)" }),
+    h("p", { text: "上から、本文に出てくる順番です。noteの編集画面で、本文の「【画像:…】」の行を消して、そこにカーソルを置き、貼り付けてください。貼り付けできないときは、画像を長押しして保存し、noteの「画像を追加」から選びます。" }),
+    h("div", { class: "imgs" }, by("note").map(imageItem)),
+    by("other").length ? h("details", { class: "preview" }, h("summary", { text: "見出し画像の簡易版(文字だけ)" }), h("div", { class: "imgs" }, by("other").map(imageItem))) : null,
+    by("instagram").length ? h("details", { class: "preview" }, h("summary", { text: `Instagram用の画像(${by("instagram").length}枚)` }), h("div", { class: "imgs" }, by("instagram").map(imageItem))) : null);
+}
+const imgSig = (id) => (state.images.get(id) || []).map((d) => `${d.file}:${d.bytes}`).join("|");
+
 function buildBlanks(t) {
   const fields = [], area = [];
   const msgBtn = h("button", { class: "btn", type: "button", text: "Claudeに送る文をコピー", disabled: true });
@@ -344,6 +390,7 @@ function buildApproval(t) {
     h("p", { text: "空欄はありません。下で本文を読み、問題なければ、Claudeに「承認2してよい」と返信してください。承認すると、noteに貼る文が出ます。体験の節は、あなたが書いた事実と合っているかも見てください。" }),
     h("details", { class: "preview", open: true }, h("summary", { text: "本文を読む(" + (t.note_body || "").length.toLocaleString("ja-JP") + "字)" }), h("pre", { text: t.note_body || "" })),
     h("p", { class: "note-small", text: "「執筆メモ」「修正履歴」は、貼り付け用の本文には入りません。" }),
+    buildImages(t),
     h("div", { class: "btns" }, btn));
 }
 
@@ -395,7 +442,7 @@ function buildPost(t) {
     h("h4", { text: "① noteに貼り付ける" }),
     h("div", { class: "btns" }, titleBtn, bodyBtn),
     h("details", { class: "preview" }, h("summary", { text: "本文を確認する" }), h("pre", { text: t.note_body || "" })),
-    h("p", { class: "note-small", text: `見出し画像・図・Instagram画像は、このページでは扱えません(PCの runs/${t.id}/images/ にあります)。` }),
+    buildImages(t),
     h("h4", { text: "② 投稿したら、記事のURLを入れる" }),
     h("label", { class: "field", for: urlInput.id }, h("span", { class: "lab", text: "投稿したnoteのURL" }), urlInput), urlHint,
     h("h4", { text: "③ SNSに貼り付ける" }),
@@ -431,7 +478,7 @@ function renderTasks(docs) {
   for (const id of [...state.cards.keys()]) if (!alive.has(id)) { state.cards.get(id).el.remove(); state.cards.delete(id); }
   const frag = [];
   for (const [id, t] of list) {
-    const sig = JSON.stringify(t);
+    const sig = JSON.stringify(t) + "#" + imgSig(id);
     let c = state.cards.get(id);
     if (!c || c.sig !== sig) {                         // 内容が変わった記事だけ作り直す(入力中の他の記事は触らない)
       const el = buildCard(t);
@@ -592,7 +639,13 @@ async function start() {
   if (!state.canWrite) setStatus("この画面では数字を見るだけです(書き換えの権限がありません)。");
   const onErr = (e) => { const m = e && e.code === "revoked" ? "この画面の権限が変わりました。開き直してください。" : "データを読み込めませんでした。通信を確かめて、開き直してください。"; $("synced").textContent = m; };
   db.doc("meta/summary").onSnapshot((snap) => { state.meta = snap && snap.exists !== false && snap.data ? (snap.data() || null) : null; renderHeader(); }, onErr);
-  db.collection("tasks").onSnapshot((snap) => renderTasks(snap.docs), onErr);
+  db.collection("tasks").onSnapshot((snap) => { state.taskDocs = snap.docs; renderTasks(snap.docs); }, onErr);
+  db.collection("images").onSnapshot((snap) => {
+    const m = new Map();
+    for (const s of snap.docs) { const d = s.data(); if (!d || !d.run_id || !d.data) continue; (m.get(d.run_id) || m.set(d.run_id, []).get(d.run_id)).push(d); }
+    state.images = m;
+    if (state.taskDocs) renderTasks(state.taskDocs);
+  }, onErr);
   db.collection("articles").orderBy("published", "desc").onSnapshot((snap) => renderRows(snap.docs), onErr);
   db.collection("followers").limit(120).onSnapshot((snap) => renderFollowers(snap.docs), onErr);
 }

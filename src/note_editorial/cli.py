@@ -213,6 +213,20 @@ def _cmd_export_tasks(args) -> int:
     return 0
 
 
+def _cmd_export_images(args) -> int:
+    import json
+    docs = tasks.export_image_docs(Path(args.root), args.run_id)
+    out = Path(args.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for d in docs:
+        doc_id = d.pop("id")
+        (out / f"{doc_id}.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        print(f"{doc_id}  {d['label']}  ({d['bytes']:,}バイト)")
+    if not docs:
+        print("この実行には、書き出せる画像がありません")
+    return 0
+
+
 def _cmd_import_metrics(args) -> int:
     import json
     try:
@@ -327,6 +341,10 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("export-tasks", help="スマホのダッシュボード用に、いま人がやること(承認待ち・空欄・投稿待ち)を書き出す(JSON)")
     s.add_argument("--out", default="")
     s.set_defaults(fn=_cmd_export_tasks)
+    s = sub.add_parser("export-images", help="ダッシュボードの「画像」用に、実行の画像を書類(JSON)に書き出す")
+    s.add_argument("run_id")
+    s.add_argument("--out-dir", required=True)
+    s.set_defaults(fn=_cmd_export_images)
     s = sub.add_parser("import-metrics", help="ダッシュボードで直した数字(手入力)を取り込む")
     s.add_argument("file")
     s.set_defaults(fn=_cmd_import_metrics)

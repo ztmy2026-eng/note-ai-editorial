@@ -5,11 +5,13 @@
 """
 from __future__ import annotations
 
+import base64
+import json
 import re
 from datetime import date
 from pathlib import Path
 
-from . import artifacts, chief, export, limits, runs
+from . import artifacts, chief, export, images, limits, runs
 
 BLANK_RE = re.compile(r"【要入力[::]?([^】]*)】")
 
@@ -87,3 +89,53 @@ def export_tasks(root: Path, today: date | None = None) -> dict:
             "has_images": (rdir / "images").is_dir(),
         })
     return {"limits": {"runs": list(use["runs"]), "steps": list(use["steps"]), "queue": list(use["queue"])}, "tasks": items}
+
+
+def export_image_docs(root: Path, run_id: str) -> list[dict]:
+    """ダッシュボードの「画像」に載せる、画像の書類(1枚=1書類)。スマホで、そのままコピー・保存できるようにするため。
+
+    note用(本文の【画像:…】の並び順)→ 文字だけの見出し画像 → Instagram の順。画像は base64 で書類に入れる(小さい画像だけ)。
+    """
+    rdir = runs.run_path(Path(root), run_id)
+    imgdir = rdir / "images"
+    if not imgdir.is_dir():
+        return []
+    revised = rdir / artifacts.FILES["revised"]
+    text = artifacts.publishable_text(revised.read_text(encoding="utf-8")) if revised.exists() else ""
+    titles = {}
+    spec = rdir / "figures.json"
+    if spec.exists():
+        try:
+            titles = {s.get("name"): s.get("title", "") for s in json.loads(spec.read_text(encoding="utf-8"))}
+        except (json.JSONDecodeError, AttributeError):
+            titles = {}
+    docs, used = [], set()
+
+    def add(path: Path, label: str, group: str, order: int) -> None:
+        w, h = images.png_size(path)
+        docs.append({"id": f"{run_id}__{path.stem}", "run_id": run_id, "file": path.name, "label": label, "group": group,
+                     "order": order, "mime": "image/png", "width": w, "height": h, "bytes": path.stat().st_size,
+                     "data": base64.b64encode(path.read_bytes()).decode("ascii")})
+        used.add(path)
+
+    fig_no = 0
+    for i, name in enumerate(re.findall(r"【画像:([^】]+)】", text)):
+        # 記事の中の名前に日付が付いていて、ファイル名には無い(その逆も)ことがあるので、日付を外した名前でも探す
+        short = re.sub(r"^\d{4}-\d{2}-\d{2}_", "", name)
+        path = next((p for nm in (name, short) for p in (imgdir / "figures" / nm, imgdir / nm) if p.exists()), None)
+        if path is None or path in used:
+            continue
+        if "cover" in name:
+            label = "見出し画像"
+        else:
+            fig_no += 1
+            title = titles.get(path.stem, "")
+            label = f"図{fig_no}" + (f"：{title}" if title else "")
+        add(path, label, "note", i)
+    eye = imgdir / "note_eyecatch.png"
+    if eye.exists() and eye not in used:
+        add(eye, "見出し画像(文字だけの簡易版)", "other", 0)
+    slides = sorted(imgdir.glob("instagram_*.png"))
+    for n, path in enumerate(slides, 1):
+        add(path, f"Instagram {n}/{len(slides)}", "instagram", n)
+    return docs
