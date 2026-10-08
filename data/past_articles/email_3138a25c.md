@@ -1,17 +1,19 @@
 ---
 title: 2026年の年末調整、会社員がやりがちな「出し忘れ」5つ。今年は戻るお金が増える年です
 url: ''
-published: null
+published: '2026-10-03'
 theme: ''
-impressions: null
-pv: null
-likes: 3
+impressions: 337
+pv: 14
+likes: 4
 revenue: null
 followers_gained: null
 cta: ''
 sample: false
 source: email
-likes_source: email(最新の通知の値。取り消しで減ることがある推定値)
-metrics_updated: 2026-10-07
+likes_source: 手入力(ダッシュボード)
+metrics_updated: 2026-10-08
+impressions_source: 手入力(ダッシュボード)
+pv_source: 手入力(ダッシュボード)
 ---
 (本文は未登録です。通知メールから作った記録です。本文を `data/past_articles/` に貼ると分析に使えます)
