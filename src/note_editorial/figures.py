@@ -13,7 +13,8 @@ figures.json の例:
   {"type": "timeline", "name": "fig2_xxx", "title": "…", "items": [{"date": "10月", "label": "…", "desc": "…", "hl": false}]},
   {"type": "checklist", "name": "fig3_xxx", "title": "…", "columns": ["…"], "widths": [300, 500, 352], "rows": [["…"]]}
 ]
-cover の icon: house|yen|chart|doc|shield|robot|briefcase|cart(または illust_html で自作)。
+cover の icon: house|yen|chart|doc|shield|robot|briefcase|cart|bolt(電気)|aircon(エアコン)|phone(スマホ・通信)|bulb(照明)|flame(ガス)|calendar(年払い・更新日)|receipt(明細・家計)(または illust_html で自作)。
+cover の bg(背景の黄色系): sun|lemon|amber|honey|cream、または「#ffd43b」形式の色。書かなければ、実行の日付で毎日変わる(同じ色が続かない)。
 """
 from __future__ import annotations
 
@@ -49,11 +50,32 @@ ICONS={
 'briefcase':'<div style="position:absolute;left:150px;top:70px;width:100px;height:60px;border:16px solid #fff;border-bottom:none;border-radius:16px 16px 0 0"></div><div style="position:absolute;left:60px;top:125px;width:280px;height:190px;background:#eda100;border-radius:16px"></div><div style="position:absolute;left:60px;top:200px;width:280px;height:8px;background:#16233f"></div><div style="position:absolute;left:180px;top:185px;width:40px;height:40px;background:#fff;border-radius:6px"></div><div style="position:absolute;left:280px;top:270px;font-size:80px;font-weight:900;color:#fff">→</div>',
 'cart':'<div style="position:absolute;left:60px;top:90px;width:260px;height:150px;background:#eda100;border-radius:8px 8px 30px 30px"></div><div style="position:absolute;left:20px;top:70px;width:60px;height:14px;background:#fff;border-radius:7px"></div><div style="position:absolute;left:100px;top:270px;width:50px;height:50px;border-radius:50%;background:#fff"></div><div style="position:absolute;left:240px;top:270px;width:50px;height:50px;border-radius:50%;background:#fff"></div><div style="position:absolute;left:250px;top:10px;font-size:90px;font-weight:900;color:#fff">↑</div>',
 }
+def _svg(inner):
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" width="400" height="420">{inner}</svg>'
+A='#eda100';W='#fff';N='#16233f';L='#9fc3f0'
+ICONS.update({
+'bolt':_svg(f'<polygon points="235,40 105,245 190,245 160,385 300,165 212,165" fill="{A}"/><polygon points="235,40 105,245 190,245 212,165" fill="{W}" opacity=".25"/><circle cx="90" cy="95" r="10" fill="{W}"/><circle cx="320" cy="285" r="14" fill="{W}"/><circle cx="330" cy="95" r="7" fill="{L}"/>'),
+'aircon':_svg(f'<rect x="40" y="90" width="320" height="130" rx="26" fill="{W}"/><rect x="62" y="186" width="276" height="16" rx="8" fill="{N}" opacity=".85"/><rect x="62" y="186" width="276" height="16" rx="8" fill="{A}" opacity=".0"/><circle cx="82" cy="130" r="9" fill="{A}"/><rect x="110" y="122" width="90" height="16" rx="8" fill="{L}"/>'+''.join(f'<path d="M{x} 250 q26 30 0 62 q-26 32 0 62" fill="none" stroke="{L}" stroke-width="14" stroke-linecap="round"/>' for x in (110,200,290))),
+'phone':_svg(f'<rect x="115" y="40" width="170" height="340" rx="32" fill="{W}"/><rect x="133" y="82" width="134" height="236" rx="10" fill="{L}"/><circle cx="200" cy="350" r="12" fill="{N}" opacity=".5"/><circle cx="200" cy="190" r="52" fill="{A}"/><text x="200" y="212" text-anchor="middle" font-size="68" font-weight="900" fill="{N}" font-family="sans-serif">¥</text><rect x="160" y="60" width="80" height="8" rx="4" fill="{N}" opacity=".5"/>'),
+'bulb':_svg(f'<circle cx="200" cy="170" r="105" fill="{A}"/><circle cx="165" cy="135" r="30" fill="{W}" opacity=".35"/><rect x="152" y="268" width="96" height="22" rx="8" fill="{W}"/><rect x="162" y="298" width="76" height="22" rx="8" fill="{W}"/><rect x="178" y="328" width="44" height="20" rx="10" fill="{W}"/>'+''.join(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{W}" stroke-width="12" stroke-linecap="round"/>' for x1,y1,x2,y2 in [(200,40,200,14),(70,60,50,40),(330,60,350,40),(45,170,15,170),(355,170,385,170)])),
+'flame':_svg(f'<path d="M205 35 C215 110 310 150 310 250 C310 330 260 385 200 385 C140 385 90 335 90 255 C90 200 130 170 150 120 C170 150 175 160 190 165 C195 120 190 75 205 35 Z" fill="{A}"/><path d="M200 210 C215 250 262 270 262 320 C262 355 235 380 200 380 C165 380 140 355 140 322 C140 285 185 262 200 210 Z" fill="{W}"/>'),
+'calendar':_svg(f'<rect x="65" y="75" width="270" height="280" rx="24" fill="{W}"/><rect x="65" y="75" width="270" height="78" rx="24" fill="{A}"/><rect x="65" y="125" width="270" height="28" fill="{A}"/><rect x="118" y="45" width="22" height="64" rx="11" fill="{L}"/><rect x="260" y="45" width="22" height="64" rx="11" fill="{L}"/>'+''.join(f'<rect x="{95+c*60}" y="{185+r*55}" width="36" height="30" rx="6" fill="{L if (r,c)!=(1,2) else A}"/>' for r in range(3) for c in range(4))),
+'receipt':_svg(f'<polygon points="95,40 305,40 305,380 275,360 245,380 215,360 185,380 155,360 125,380 95,360" fill="{W}"/>'+''.join(f'<rect x="130" y="{95+i*45}" width="{140 if i%2==0 else 100}" height="14" rx="7" fill="#c9d3e3"/>' for i in range(4))+f'<circle cx="255" cy="300" r="42" fill="{A}"/><text x="255" y="322" text-anchor="middle" font-size="58" font-weight="900" fill="{N}" font-family="sans-serif">¥</text>'),
+})
+# 同系色(黄色〜山吹色)の背景。濃い紺の文字がどれでも読める明るさ。bg に名前か「#ffd43b」形式の色を書く
+BG_NAMES={'sun':'#ffd43b','lemon':'#ffe066','amber':'#ffc233','honey':'#ffcf4d','cream':'#ffe98a'}
+BG_ORDER=['sun','lemon','amber','honey','cream']
+HEX_RE=re.compile(r'^#[0-9a-fA-F]{6}$')
+def _bg(s):
+    v=str(s.get('bg') or 'sun')
+    return BG_NAMES.get(v) or (v if HEX_RE.match(v) else BG_NAMES['sun'])
+EM_OPEN='<span style="background:#16233f;color:{bg};font-style:normal;padding:0 .12em;border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone">'
 def cover(s):
     ill=s.get('illust_html') or ICONS.get(s.get('icon','yen'))
-    return f"""<div class="fig" id="t" style="width:1280px;height:670px;background:#ffd43b;padding:0;position:relative;overflow:hidden;color:#16233f">
-<div style="position:absolute;left:64px;top:56px;background:#16233f;color:#ffd43b;font-weight:700;font-size:26px;padding:8px 22px;border-radius:6px">{html.escape(s['tag'])}</div>
-<div style="position:absolute;left:64px;top:150px;width:700px;text-wrap:balance;font-size:{s.get('size',54)}px;font-weight:900;line-height:1.38;letter-spacing:.01em">{s['title_html'].replace('<em>','<span style="background:#16233f;color:#ffd43b;font-style:normal;padding:0 .12em;border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone">').replace('</em>','</span>')}</div>
+    bg=_bg(s)
+    return f"""<div class="fig" id="t" style="width:1280px;height:670px;background:{bg};padding:0;position:relative;overflow:hidden;color:#16233f">
+<div style="position:absolute;left:64px;top:56px;background:#16233f;color:{bg};font-weight:700;font-size:26px;padding:8px 22px;border-radius:6px">{html.escape(s['tag'])}</div>
+<div style="position:absolute;left:64px;top:150px;width:700px;text-wrap:balance;font-size:{s.get('size',54)}px;font-weight:900;line-height:1.38;letter-spacing:.01em">{s['title_html'].replace('<em>',EM_OPEN.format(bg=bg)).replace('</em>','</span>')}</div>
 <div style="position:absolute;left:64px;bottom:48px;font-size:24px;font-weight:700;color:#3b4a63">人生最適化中の会社員</div>
 <div style="position:absolute;right:40px;top:130px;width:400px;height:420px;background:#16233f;border-radius:36px;overflow:hidden">{ill}</div></div>"""
 def bar(s):
@@ -166,11 +188,28 @@ def check_specs(specs) -> list[str]:
         for k in need:
             if not s.get(k):
                 problems.append(f"{n}個目({name}): {k} が空")
+        if s["type"] == "cover":
+            if s.get("icon") and s["icon"] not in ICONS and not s.get("illust_html"):
+                problems.append(f"{n}個目({name}): icon '{s['icon']}' は {'|'.join(ICONS)} のどれか")
+            if s.get("bg") and s["bg"] not in BG_NAMES and not HEX_RE.match(str(s["bg"])):
+                problems.append(f"{n}個目({name}): bg は {'|'.join(BG_NAMES)} か「#ffd43b」形式の色")
         if s["type"] == "bar" and s.get("labels") and s.get("series"):
             for ser in s["series"]:
                 if len(ser.get("values", [])) != len(s["labels"]):
                     problems.append(f"{n}個目({name}): 値の数がラベルの数と合いません")
     return problems
+
+
+def _vary_cover_bg(specs, run_id):
+    """cover に bg が無ければ、実行ID の日付から黄色系の背景を選ぶ(毎日、見た目が変わる)。"""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", run_id)
+    if not m:
+        return
+    import datetime
+    day = datetime.date(int(m[1]), int(m[2]), int(m[3])).toordinal()
+    for s in specs:
+        if s.get("type") == "cover" and not s.get("bg"):
+            s["bg"] = BG_ORDER[day % len(BG_ORDER)]
 
 
 def make_figures(root: Path, run_id: str) -> list[Path]:
@@ -185,6 +224,7 @@ def make_figures(root: Path, run_id: str) -> list[Path]:
     problems = check_specs(specs)
     if problems:
         raise FigureError("図の仕様に問題があります: " + " / ".join(problems))
+    _vary_cover_bg(specs, run_id)
     made = render_all(specs, rdir / "images" / "figures")
     log_event(Path(root), "figures_made", run_id=run_id, count=len(made))
     return made

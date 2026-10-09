@@ -22,7 +22,7 @@ description: 1日分の編集部の仕事(記事1本分)を、承認なしモー
     それ以外の理由なら、1回だけ editor に直させて再試行し、駄目なら 9 へ)
 8. check-limits → sns → `complete <ID> sns` → `auto-approve <ID>` → `export-note <ID>` → `make-images <ID>`
    週次企画の実行(00_plan.md がある)では、さらに図を用意する:`images/plan/` に週次の画像が無ければ、`config/weekly_policy.md` の仕様で
-   `runs/<ID>/figures.json`(見出し画像1枚+図2〜3枚)を書いて `make-figures <ID>` を実行し、Readで1枚ずつ目視して崩れがあれば直す。
+   `runs/<ID>/figures.json`(見出し画像1枚+図2〜3枚)を書いて(見出し画像の `icon` は、記事の話題に合うマークを選び、前の日と同じにしない。config/weekly_policy.md の「見出し画像は、毎日、見た目を変える」)`make-figures <ID>` を実行し、Readで1枚ずつ目視して崩れがあれば直す。
    記事中の【画像:…】の名前と、画像ファイル名を合わせる。
 9. **日曜日だけ**:`.claude/commands/weekly-plan.md` に従って翌週の週次企画を作る(上限で記事が作れなかった日も行う)。
 10. `python -m note_editorial briefing` を実行し、結果(作った記事、止まった理由、あなたがやること)を日本語で簡潔に報告する

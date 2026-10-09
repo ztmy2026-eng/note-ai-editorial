@@ -1,5 +1,5 @@
 [
-  {"type": "cover", "name": "2026-10-09_cover", "tag": "節約", "title_html": "電気代を下げる、<br><em>今日できる</em>4つの工夫", "icon": "doc"},
+  {"type": "cover", "name": "2026-10-09_cover", "tag": "節約", "title_html": "電気代を下げる、<br><em>今日できる</em>4つの工夫", "icon": "bolt"},
   {"type": "timeline", "name": "2026-10-09_fig1_review_order", "title": "見直しの順番", "sub": "契約は変えずに、今日からできること",
    "items": [
      {"date": "1", "label": "長く使うエアコンから見る", "desc": "まずフィルターを開けて見る", "hl": true},
