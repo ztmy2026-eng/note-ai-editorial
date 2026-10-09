@@ -3,8 +3,10 @@
   "theme": "saving-insurance",
   "theme_name": "節約・金融・保険",
   "created": "2026-10-09T22:46:04+00:00",
-  "status": "created",
-  "steps_done": [],
+  "status": "research_done",
+  "steps_done": [
+    "research"
+  ],
   "approvals": {
     "idea": null,
     "publish": null,
