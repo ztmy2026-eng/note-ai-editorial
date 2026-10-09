@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-10-10_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-09T22:46:04+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-05",
+    "date": "2026-10-10",
+    "title": "AIに家計相談、頼りすぎ注意の4つ",
+    "approved": false
+  }
+}
