@@ -64,91 +64,133 @@ ICONS.update({
 'receipt':_svg(f'<polygon points="95,40 305,40 305,380 275,360 245,380 215,360 185,380 155,360 125,380 95,360" fill="{W}"/>'+''.join(f'<rect x="130" y="{95+i*45}" width="{140 if i%2==0 else 100}" height="14" rx="7" fill="#c9d3e3"/>' for i in range(4))+f'<circle cx="255" cy="300" r="42" fill="{A}"/><text x="255" y="322" text-anchor="middle" font-size="58" font-weight="900" fill="{N}" font-family="sans-serif">¥</text>'),
 })
 def _cat(expr='normal'):
-    """白いマンチカン(マスコット)。写真のような、ふわふわの毛・青い大きな目・短い足・立てたしっぽ。SVGで描く(AI画像生成ではない)。
+    """白とグレーのぶちのマンチカンの子猫(マスコット)。写真を参考に、毛の1本1本の筆づかい・やわらかい陰影・つやのある青い目で、リアルに描く(SVG。AI画像生成ではない)。
     expr: normal|happy|worry|think"""
     import math
     import random
-    rnd = random.Random(11)
+    rnd = random.Random(7)
 
-    def tufts(cx, cy, rx, ry, a0, a1, n, ln, col="#d6cec3", op=.75, w=1.5):
-        out = []
+    def inside_ellipse(x, y, cx, cy, rx, ry):
+        return ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1
+
+    # --- ぶち(グレー)の範囲: 写真の子と同じ、頭の左右・背中・しっぽがグレー、顔の真ん中と胸・足は白 ---
+    def gray_at(x, y):
+        if inside_ellipse(x, y, 140, 185, 108, 92):  # 頭
+            blaze = abs(x - 140) < (10 + max(0, 190 - y) * .10) and y < 215
+            side = inside_ellipse(x, y, 78, 150, 52, 62) or inside_ellipse(x, y, 205, 150, 48, 60)
+            return side and not blaze
+        if y < 200 and x > 335:  # しっぽ
+            return True
+        return inside_ellipse(x, y, 285, 262, 62, 30) or inside_ellipse(x, y, 240, 330, 40, 22)
+
+    W = ["#ffffff", "#fbf8f4", "#f3eee7", "#e9e2d8", "#dcd3c7"]
+    G = ["#a8a29b", "#97918a", "#b9b3ab", "#847e77", "#c8c2ba"]
+
+    def strokes(sampler, n, dirf, ln, wd, jitter=.5):
+        """色ごとに、短い線(毛)をまとめて1つのpathにする。"""
+        groups = {}
         for _ in range(n):
-            ang = math.radians(a0 + (a1 - a0) * rnd.random())
-            x, y = cx + rx * math.cos(ang), cy + ry * math.sin(ang)
-            k = ln * (.6 + .8 * rnd.random())
-            dx, dy = math.cos(ang) * k + rnd.uniform(-2, 2), math.sin(ang) * k + rnd.uniform(-1, 3)
-            out.append(f"M{x - dx * .6:.1f} {y - dy * .6:.1f} Q{x + dx * .1 + rnd.uniform(-3, 3):.1f} {y + dy * .2:.1f} {x + dx:.1f} {y + dy:.1f}")
-        return f'<path d="{" ".join(out)}" fill="none" stroke="{col}" stroke-opacity="{op}" stroke-width="{w}" stroke-linecap="round"/>'
+            x, y = sampler()
+            dx, dy = dirf(x, y)
+            a = math.atan2(dy, dx) + rnd.uniform(-jitter, jitter)
+            k = ln * (.55 + .9 * rnd.random())
+            gray = gray_at(x, y)
+            pal = G if gray else W
+            col = pal[min(len(pal) - 1, int(rnd.random() ** 1.6 * len(pal)))]
+            ex, ey = x + math.cos(a) * k, y + math.sin(a) * k
+            cx_, cy_ = (x + ex) / 2 + rnd.uniform(-1.5, 1.5), (y + ey) / 2 + rnd.uniform(-1.5, 1.5)
+            groups.setdefault(col, []).append(f"M{x:.1f} {y:.1f}Q{cx_:.1f} {cy_:.1f} {ex:.1f} {ey:.1f}")
+        return ''.join(f'<path d="{"".join(v)}" fill="none" stroke="{c}" stroke-width="{wd}" stroke-linecap="round" stroke-opacity=".8"/>' for c, v in groups.items())
 
-    N = '#2a3550'
+    def in_ell(cx, cy, rx, ry):
+        def f():
+            while True:
+                x, y = cx + rx * rnd.uniform(-1, 1), cy + ry * rnd.uniform(-1, 1)
+                if inside_ellipse(x, y, cx, cy, rx, ry):
+                    return x, y
+        return f
+
     defs = ('<defs>'
-            '<filter id="fur" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="4" result="n"/>'
-            '<feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/></filter>'
-            '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>'
-            '<filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5"/></filter>'
-            '<filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#6b4f00" flood-opacity=".30"/></filter>'
-            '<radialGradient id="fw" cx="42%" cy="34%" r="78%"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#fcfaf7"/><stop offset="1" stop-color="#e4ddd3"/></radialGradient>'
-            '<radialGradient id="iris" cx="46%" cy="38%" r="62%"><stop offset="0" stop-color="#9cc3f0"/><stop offset=".5" stop-color="#5b8ac4"/><stop offset="1" stop-color="#1e3a66"/></radialGradient>'
-            '<linearGradient id="ear" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f6b7bd"/><stop offset="1" stop-color="#f9d4d6"/></linearGradient>'
-            '<radialGradient id="bell" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#d08a00"/></radialGradient>'
-            '<clipPath id="cb"><ellipse cx="232" cy="302" rx="128" ry="66"/></clipPath>'
-            '<clipPath id="ch"><ellipse cx="150" cy="187" rx="109" ry="94"/></clipPath>'
+            '<filter id="fur" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="5" result="n"/>'
+            '<feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>'
+            '<filter id="b6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>'
+            '<filter id="b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>'
+            '<filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.2"/></filter>'
+            '<filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#5e4500" flood-opacity=".32"/></filter>'
+            '<radialGradient id="fw" cx="40%" cy="32%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".65" stop-color="#f7f3ee"/><stop offset="1" stop-color="#ddd5ca"/></radialGradient>'
+            '<radialGradient id="iris" cx="48%" cy="36%" r="64%"><stop offset="0" stop-color="#7fa6d6"/><stop offset=".45" stop-color="#44689c"/><stop offset="1" stop-color="#16294a"/></radialGradient>'
+            '<clipPath id="ch"><ellipse cx="140" cy="185" rx="108" ry="92"/></clipPath>'
+            '<clipPath id="cbd"><ellipse cx="245" cy="300" rx="125" ry="70"/></clipPath>'
             '</defs>')
     P = []
-    P.append('<ellipse cx="225" cy="408" rx="160" ry="11" fill="#5a4300" opacity=".25" filter="url(#soft2)"/>')
-    # しっぽ・体・足(ふわふわの輪郭)
-    body = ['<path d="M336 296 C372 288 394 232 382 156 C378 130 352 132 350 154 C352 208 346 246 320 266 Z" fill="url(#fw)"/>',
-            '<ellipse cx="318" cy="370" rx="32" ry="23" fill="url(#fw)"/>',
-            '<ellipse cx="232" cy="302" rx="128" ry="66" fill="url(#fw)"/>',
-            '<ellipse cx="196" cy="374" rx="33" ry="22" fill="url(#fw)"/>']
-    P.append('<g filter="url(#drop)"><g filter="url(#fur)">' + ''.join(body) + '</g></g>')
-    # 体の陰影と毛並み
-    P.append('<g clip-path="url(#cb)"><ellipse cx="260" cy="350" rx="130" ry="40" fill="#cfc6ba" opacity=".55" filter="url(#soft)"/>'
-             '<ellipse cx="300" cy="270" rx="70" ry="22" fill="#ffffff" opacity=".9" filter="url(#soft2)"/></g>')
-    P.append(tufts(232, 302, 128, 66, -165, -15, 70, 11) + tufts(318, 370, 32, 23, 150, 400, 14, 6) + tufts(196, 374, 33, 22, 150, 400, 14, 6))
-    P.append(tufts(366, 190, 16, 60, -120, 100, 26, 8))
-    P.append('<path d="M308 372 v9 M326 372 v9 M186 376 v9 M204 376 v9" stroke="#e7b9bd" stroke-width="3" stroke-linecap="round"/>')
-    # 首輪(赤+金の鈴)
-    P.append('<path d="M92 270 Q150 316 208 270" fill="none" stroke="#b72a1c" stroke-width="15" stroke-linecap="round"/>'
-             '<path d="M94 267 Q150 311 206 267" fill="none" stroke="#e5533f" stroke-width="6" stroke-linecap="round"/>'
-             '<circle cx="150" cy="303" r="14" fill="url(#bell)" stroke="#a46a00" stroke-width="2"/><path d="M142 303 h16" stroke="#8a5a00" stroke-width="3"/><circle cx="145" cy="297" r="3.5" fill="#fff" opacity=".8"/>')
+    P.append('<ellipse cx="225" cy="410" rx="165" ry="11" fill="#4d3a00" opacity=".28" filter="url(#b3)"/>')
+    # 体・しっぽ・足・胸の土台(白)
+    base = ['<path d="M338 290 C374 282 396 226 384 138 C380 112 352 114 350 140 C352 196 346 240 322 262 Z" fill="#8f8982"/>',
+            '<ellipse cx="330" cy="368" rx="34" ry="23" fill="url(#fw)"/>',
+            '<ellipse cx="245" cy="300" rx="125" ry="70" fill="url(#fw)"/>',
+            '<ellipse cx="215" cy="372" rx="34" ry="22" fill="url(#fw)"/>',
+            '<ellipse cx="160" cy="288" rx="78" ry="46" fill="url(#fw)"/>',
+            '<ellipse cx="146" cy="372" rx="40" ry="23" fill="url(#fw)"/>']
+    P.append('<g filter="url(#drop)"><g filter="url(#fur)">' + ''.join(base) + '</g></g>')
+    # 体のぶち・陰影
+    P.append('<g clip-path="url(#cbd)">'
+             '<ellipse cx="285" cy="262" rx="64" ry="30" fill="#8f8982" opacity=".9" filter="url(#b6)"/>'
+             '<ellipse cx="240" cy="330" rx="40" ry="22" fill="#a09a93" opacity=".8" filter="url(#b6)"/>'
+             '<ellipse cx="260" cy="365" rx="140" ry="40" fill="#b5ada2" opacity=".6" filter="url(#b6)"/>'
+             '<ellipse cx="300" cy="258" rx="60" ry="14" fill="#fff" opacity=".35" filter="url(#b3)"/></g>')
+    # 毛(体・しっぽ・足・胸)
+    P.append(strokes(in_ell(245, 300, 125, 70), 700, lambda x, y: (1, .25 + (y - 300) / 90), 9, 1.1, .4))
+    P.append(strokes(lambda: (rnd.uniform(334, 390), rnd.uniform(118, 286)), 260, lambda x, y: (.15, -1), 14, 1.1, .35))
+    P.append(strokes(in_ell(160, 288, 78, 46), 320, lambda x, y: (0, 1), 12, 1.1, .5))
+    P.append(strokes(in_ell(146, 372, 40, 23), 70, lambda x, y: (-.2, 1), 8, 1.1, .5) + strokes(in_ell(215, 372, 34, 22), 60, lambda x, y: (0, 1), 8, 1.1, .5) + strokes(in_ell(330, 368, 34, 23), 60, lambda x, y: (0, 1), 8, 1.1, .5))
+    P.append('<path d="M126 376 v8 M142 379 v8 M160 378 v8 M205 376 v8 M221 376 v8 M318 372 v8 M334 372 v8" stroke="#e8b9bd" stroke-width="3.2" stroke-linecap="round"/>')
+    # 首輪(ブランドの赤い首輪。細め)
+    P.append('<path d="M76 262 Q140 308 204 262" fill="none" stroke="#a8281b" stroke-width="11" stroke-linecap="round"/><path d="M78 260 Q140 303 202 260" fill="none" stroke="#dd4a38" stroke-width="4" stroke-linecap="round"/>'
+             '<circle cx="140" cy="296" r="11" fill="#e6a41d" stroke="#9a6400" stroke-width="2"/><path d="M134 296 h12" stroke="#7d5200" stroke-width="2.5"/><circle cx="136" cy="291" r="3" fill="#fff" opacity=".8"/>')
     # 耳
-    ears = ['<path d="M56 146 L38 58 Q84 66 122 102 Z" fill="url(#fw)"/>', '<path d="M244 146 L262 58 Q216 66 178 102 Z" fill="url(#fw)"/>']
+    ears = ['<path d="M50 138 L40 66 Q80 70 116 100 Z" fill="url(#fw)"/>', '<path d="M232 130 L248 62 Q210 68 172 100 Z" fill="url(#fw)"/>']
     P.append('<g filter="url(#drop)"><g filter="url(#fur)">' + ''.join(ears) + '</g></g>')
-    P.append('<path d="M63 130 L52 82 Q80 88 104 108 Z" fill="url(#ear)" opacity=".95"/><path d="M237 130 L248 82 Q220 88 196 108 Z" fill="url(#ear)" opacity=".95"/>')
-    P.append(tufts(80, 112, 30, 30, 200, 290, 10, 7, "#f2d8d8", .9, 1.6) + tufts(220, 112, 30, 30, 250, 340, 10, 7, "#f2d8d8", .9, 1.6))
+    P.append('<path d="M54 126 L47 82 Q76 86 100 106 Z" fill="#a39d96" opacity=".85" filter="url(#b1)"/><path d="M60 124 L55 92 Q76 95 92 108 Z" fill="#f4b8bf" filter="url(#b1)"/>'
+             '<path d="M228 120 L242 78 Q214 84 186 104 Z" fill="#a39d96" opacity=".85" filter="url(#b1)"/><path d="M224 118 L235 88 Q214 93 196 106 Z" fill="#f4b8bf" filter="url(#b1)"/>')
+    P.append(strokes(lambda: (rnd.uniform(48, 112), rnd.uniform(78, 118)), 60, lambda x, y: (-.3, -1), 8, 1, .4) + strokes(lambda: (rnd.uniform(178, 240), rnd.uniform(74, 116)), 60, lambda x, y: (.3, -1), 8, 1, .4))
     # 頭
-    P.append('<g filter="url(#drop)"><g filter="url(#fur)"><ellipse cx="150" cy="187" rx="109" ry="94" fill="url(#fw)"/></g></g>')
-    P.append('<g clip-path="url(#ch)"><ellipse cx="150" cy="268" rx="110" ry="40" fill="#d9d1c6" opacity=".55" filter="url(#soft)"/>'
-             '<ellipse cx="120" cy="120" rx="60" ry="26" fill="#ffffff" filter="url(#soft2)"/></g>')
-    P.append(tufts(150, 187, 109, 94, 105, 175, 34, 12) + tufts(150, 187, 109, 94, 5, 75, 34, 12) + tufts(150, 187, 109, 94, 195, 345, 40, 9))
-    P.append(tufts(150, 120, 22, 20, 200, 340, 12, 9, "#d6cec3", .6, 1.4))
-    # 口もとの毛・ほほ
-    P.append('<ellipse cx="150" cy="236" rx="36" ry="24" fill="#ffffff" filter="url(#soft2)"/>'
-             '<ellipse cx="68" cy="222" rx="20" ry="11" fill="#f3b6bd" opacity=".45" filter="url(#soft2)"/><ellipse cx="232" cy="222" rx="20" ry="11" fill="#f3b6bd" opacity=".45" filter="url(#soft2)"/>')
-    eyes_cy = 190
+    P.append('<g filter="url(#drop)"><g filter="url(#fur)"><ellipse cx="140" cy="185" rx="108" ry="92" fill="url(#fw)"/></g></g>')
+    P.append('<g clip-path="url(#ch)">'
+             '<ellipse cx="68" cy="140" rx="56" ry="70" fill="#8f8982" opacity=".92" filter="url(#b6)"/>'
+             '<ellipse cx="212" cy="140" rx="52" ry="68" fill="#8f8982" opacity=".92" filter="url(#b6)"/>'
+             '<path d="M128 70 L152 70 L146 205 L134 205 Z" fill="#ffffff" filter="url(#b3)"/>'
+             '<ellipse cx="140" cy="268" rx="104" ry="42" fill="#cfc7bb" opacity=".55" filter="url(#b6)"/>'
+             '<ellipse cx="140" cy="236" rx="40" ry="28" fill="#fff" filter="url(#b3)"/></g>')
+    # 頭の毛: 鼻の周りから放射状に
+    P.append(strokes(in_ell(140, 185, 108, 92), 1500, lambda x, y: (x - 140, y - 222), 8, 1.0, .3))
+    # 目もと(涙やけ風のクリーム色)
+    P.append('<path d="M96 206 Q92 226 100 240 M184 206 Q190 226 182 240" fill="none" stroke="#e9cfa6" stroke-width="5" stroke-linecap="round" opacity=".55" filter="url(#b1)"/>')
+    # 目
+    ey = 190
     if expr == 'happy':
-        P.append(f'<path d="M82 {eyes_cy + 4} Q105 {eyes_cy - 24} 128 {eyes_cy + 4} M172 {eyes_cy + 4} Q195 {eyes_cy - 24} 218 {eyes_cy + 4}" fill="none" stroke="{N}" stroke-width="6.5" stroke-linecap="round"/>')
+        P.append(f'<path d="M72 {ey + 4} Q98 {ey - 26} 124 {ey + 4} M156 {ey + 4} Q182 {ey - 26} 208 {ey + 4}" fill="none" stroke="#2a3550" stroke-width="6.5" stroke-linecap="round"/>')
     else:
         dy = -4 if expr == 'think' else 0
-        for cx in (105, 195):
-            P.append(f'<ellipse cx="{cx}" cy="{eyes_cy}" rx="24" ry="25" fill="#f4f1ee"/>'
-                     f'<circle cx="{cx}" cy="{eyes_cy + dy}" r="21" fill="url(#iris)" stroke="#1b2c4a" stroke-width="2.5"/>'
-                     f'<circle cx="{cx}" cy="{eyes_cy + dy + 1}" r="10" fill="#0d1526"/>'
-                     f'<circle cx="{cx - 8}" cy="{eyes_cy + dy - 9}" r="6.5" fill="#fff"/><circle cx="{cx + 8}" cy="{eyes_cy + dy + 8}" r="3" fill="#fff" opacity=".85"/>'
-                     f'<path d="M{cx - 24} {eyes_cy - 8} Q{cx} {eyes_cy - 30} {cx + 24} {eyes_cy - 8}" fill="none" stroke="#8f8a84" stroke-width="2" stroke-linecap="round" opacity=".7"/>')
+        for cx in (98, 182):
+            P.append(f'<ellipse cx="{cx}" cy="{ey}" rx="24" ry="25" fill="#2b2f3c" opacity=".35" filter="url(#b1)"/>'
+                     f'<ellipse cx="{cx}" cy="{ey}" rx="22.5" ry="23.5" fill="#f3f0ec"/>'
+                     f'<circle cx="{cx}" cy="{ey + dy}" r="20" fill="url(#iris)" stroke="#142238" stroke-width="2.4"/>'
+                     f'<circle cx="{cx}" cy="{ey + dy + 1}" r="10.5" fill="#070b14"/>'
+                     f'<path d="M{cx - 18} {ey + dy + 6} Q{cx} {ey + dy + 22} {cx + 18} {ey + dy + 6}" fill="none" stroke="#9cc0ea" stroke-width="2" opacity=".6"/>'
+                     f'<circle cx="{cx - 8}" cy="{ey + dy - 9}" r="6.5" fill="#fff"/><circle cx="{cx + 8}" cy="{ey + dy + 8}" r="3" fill="#fff" opacity=".85"/>'
+                     f'<path d="M{cx - 24} {ey - 6} Q{cx} {ey - 32} {cx + 24} {ey - 6}" fill="none" stroke="#6f6a64" stroke-width="2.4" stroke-linecap="round" opacity=".75"/>')
     if expr == 'worry':
-        P.append('<path d="M80 160 Q108 146 130 156 M220 160 Q192 146 170 156" fill="none" stroke="#b9b1a7" stroke-width="3.5" stroke-linecap="round"/>'
-                 '<path d="M272 118 Q287 146 272 158 Q257 146 272 118 Z" fill="#a9cdf2" stroke="#6c9bd0" stroke-width="2.5" stroke-linejoin="round"/>')
+        P.append('<path d="M70 158 Q98 142 122 154 M210 158 Q182 142 158 154" fill="none" stroke="#c9c2b8" stroke-width="3.5" stroke-linecap="round"/>'
+                 '<path d="M262 112 Q277 140 262 152 Q247 140 262 112 Z" fill="#a9cdf2" stroke="#6c9bd0" stroke-width="2.5" stroke-linejoin="round"/>')
     if expr == 'think':
-        P.append('<path d="M176 156 Q198 146 222 154" fill="none" stroke="#b9b1a7" stroke-width="3.5" stroke-linecap="round"/>'
-                 '<text x="262" y="116" font-size="70" font-weight="900" fill="#2a3550" font-family="sans-serif">?</text>')
+        P.append('<path d="M156 154 Q180 142 206 150" fill="none" stroke="#c9c2b8" stroke-width="3.5" stroke-linecap="round"/>'
+                 '<text x="252" y="108" font-size="70" font-weight="900" fill="#2a3550" font-family="sans-serif">?</text>')
     # 鼻・口・ひげ
-    P.append('<path d="M139 221 Q150 216 161 221 Q158 232 150 235 Q142 232 139 221 Z" fill="#f08c9d" stroke="#d96a80" stroke-width="1.6" stroke-linejoin="round"/>'
-             '<ellipse cx="146" cy="222" rx="4" ry="2" fill="#fff" opacity=".7"/>'
-             '<path d="M150 235 V245 M150 245 Q139 257 126 247 M150 245 Q161 257 174 247" fill="none" stroke="#b9737f" stroke-width="2.6" stroke-linecap="round"/>'
-             '<path d="M92 236 Q60 224 20 224 M92 244 Q58 246 18 256 M208 236 Q240 224 280 224 M208 244 Q242 246 282 256" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".95"/>'
-             '<path d="M92 236 Q60 224 20 224 M92 244 Q58 246 18 256 M208 236 Q240 224 280 224 M208 244 Q242 246 282 256" fill="none" stroke="#bdb5aa" stroke-width="1" stroke-linecap="round" opacity=".8"/>')
+    P.append('<path d="M129 222 Q140 216 151 222 Q148 234 140 237 Q132 234 129 222 Z" fill="#f0909f" stroke="#cf6a7e" stroke-width="1.6" stroke-linejoin="round"/>'
+             '<ellipse cx="136" cy="222" rx="4" ry="2" fill="#fff" opacity=".7"/>'
+             '<path d="M140 237 V247 M140 247 Q129 259 116 249 M140 247 Q151 259 164 249" fill="none" stroke="#b9737f" stroke-width="2.4" stroke-linecap="round"/>')
+    wh = 'M84 236 Q52 226 12 228 M84 244 Q50 248 10 258 M196 236 Q228 226 268 228 M196 244 Q230 248 270 258'
+    P.append(f'<path d="{wh}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="{wh}" fill="none" stroke="#c9c1b6" stroke-width=".8" stroke-linecap="round" opacity=".8"/>')
     return _svg(defs + ''.join(P))
 ICONS.update({'cat':_cat('normal'),'cat_happy':_cat('happy'),'cat_worry':_cat('worry'),'cat_think':_cat('think')})
 # 同系色(黄色〜山吹色)の背景。濃い紺の文字がどれでも読める明るさ。bg に名前か「#ffd43b」形式の色を書く

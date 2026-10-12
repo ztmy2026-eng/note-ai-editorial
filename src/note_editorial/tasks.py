@@ -113,6 +113,29 @@ def _shrunk_png(path: Path, w: int, h: int) -> bytes | None:
         return None
 
 
+def _jpeg_of(path: Path, quality: float = .86, scale: float = 1.0) -> bytes | None:
+    """画像をJPEGにして返す(Chrome/Edge で描く。毛並みのように細かい絵は、PNGより、ずっと小さくなる)。できなければ None。"""
+    import subprocess
+    import tempfile
+    try:
+        browser = images.find_browser(images.load_config(Path(".")))
+        b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+        page = ('<html><body><img id="i" src="data:image/png;base64,' + b64 + f'"><pre id="o"></pre><script>var SCALE={scale};'
+                'var i=document.getElementById("i");function go(){var c=document.createElement("canvas");c.width=Math.round(i.naturalWidth*SCALE);c.height=Math.round(i.naturalHeight*SCALE);'
+                'var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(i,0,0,c.width,c.height);'
+                f'document.getElementById("o").textContent="JPEGDATA:"+c.toDataURL("image/jpeg",{quality}).split(",")[1]+":END";}}'
+                'if(i.complete){go()}else{i.onload=go}</script></body></html>')
+        with tempfile.TemporaryDirectory() as d:
+            html = Path(d) / "j.html"
+            html.write_text(page, encoding="utf-8")
+            out = subprocess.run([browser, "--headless", "--no-sandbox", "--disable-gpu", "--virtual-time-budget=8000", "--dump-dom", html.as_uri()],
+                                 capture_output=True, timeout=120, check=False).stdout.decode("utf-8", "replace")
+        m = re.search(r"JPEGDATA:([A-Za-z0-9+/=]+):END", out)
+        return base64.b64decode(m.group(1)) if m else None
+    except (OSError, subprocess.TimeoutExpired, images.ImageError):
+        return None
+
+
 def export_image_docs(root: Path, run_id: str) -> list[dict]:
     """ダッシュボードの「画像」に載せる、画像の書類(1枚=1書類)。スマホで、そのままコピー・保存できるようにするため。
 
@@ -136,12 +159,23 @@ def export_image_docs(root: Path, run_id: str) -> list[dict]:
     def add(path: Path, label: str, group: str, order: int) -> None:
         w, h = images.png_size(path)
         raw = path.read_bytes()
-        if len(raw) * 4 // 3 > MAX_IMAGE_B64:  # 書類は256KiBまで。大きい画像は、半分の大きさに縮めて入れる
+        mime = "image/png"
+        if len(raw) * 4 // 3 > MAX_IMAGE_B64:  # 書類は256KiBまで。大きい画像は、半分の大きさに縮め、それでも大きければ、JPEGにして入れる
             small = _shrunk_png(path, w, h)
-            if small:
+            if small and len(small) * 4 // 3 <= MAX_IMAGE_B64:
                 raw, w, h = small, w // 2, h // 2
+            else:
+                for q, sc in ((.88, 1.0), (.72, 1.0), (.9, .5)):  # 画質を少しずつ下げ、最後は半分の大きさにする
+                    jpg = _jpeg_of(path, q, sc)
+                    if jpg and len(jpg) * 4 // 3 <= MAX_IMAGE_B64:
+                        raw, mime = jpg, "image/jpeg"
+                        w, h = round(w * sc), round(h * sc)
+                        break
+                else:
+                    if small:
+                        raw, w, h = small, w // 2, h // 2
         docs.append({"id": f"{run_id}__{path.stem}", "run_id": run_id, "file": path.name, "label": label, "group": group,
-                     "order": order, "mime": "image/png", "width": w, "height": h, "bytes": len(raw),
+                     "order": order, "mime": mime, "width": w, "height": h, "bytes": len(raw),
                      "data": base64.b64encode(raw).decode("ascii")})
         used.add(path)
 
