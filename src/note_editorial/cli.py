@@ -45,6 +45,15 @@ def _cmd_new_run(args) -> int:
     return 0
 
 
+def _cmd_make_reel(args) -> int:
+    from . import reels
+    res = reels.make_reel(Path(args.root), args.run_id)
+    print(f"リール動画を作りました: {res['video']}({res['scenes']}場面・約{res['seconds']}秒・音なし)")
+    print(f"投稿文: {res['caption']}")
+    print("※ 曲(音源)は、インスタの画面で選んで付けてください。投稿は、あなたの手で行います(システムは投稿しません)")
+    return 0
+
+
 def _cmd_title_style(args) -> int:
     from datetime import date as _date
     from . import title_style
@@ -409,6 +418,9 @@ def build_parser() -> argparse.ArgumentParser:
         s.add_argument(f"--{opt}", type=int, default=None)
     s.set_defaults(fn=_cmd_record_metrics)
     sub.add_parser("next-theme", help="次に記事を作るテーマを選ぶ").set_defaults(fn=_cmd_next_theme)
+    s = sub.add_parser("make-reel", help="SNS案のInstagramスライドから、リール動画(縦長mp4・音なし)を作る")
+    s.add_argument("run_id")
+    s.set_defaults(fn=_cmd_make_reel)
     s = sub.add_parser("title-style", help="今日のタイトルの型(短い型/2段型)を表示する(実験期間 2026-10-13〜10-26)")
     s.add_argument("--date", default="", help="日付(YYYY-MM-DD)。省略時は今日(日本時間)")
     s.set_defaults(fn=_cmd_title_style)
