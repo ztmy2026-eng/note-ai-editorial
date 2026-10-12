@@ -1,9 +1,10 @@
-"""インスタのリール動画(縦長 1080x1920、約20〜30秒、音なし)を、SNS案のInstagramスライドから作る。
+"""インスタのリール動画(縦長 1080x1920、約25〜40秒)を、SNS案のInstagramスライドから作る。
 
 - 画面: 1枚目=タイトル+実写のマンチカンの写真(assets/mascot/)、中間=1スライド1メッセージの大きな文字、最後=「詳しくはnoteで」。
 - 動き: ゆっくりのズーム+場面のあいだのクロスフェード(ffmpeg)。
-- 音: 入れない(曲の権利の問題があるため)。インスタの画面で、流行の音源を選んで付ける。
-- 出力: runs/<ID>/reel/reel.mp4、reel/caption.txt(投稿文)、reel/frames/*.png(各場面の画像)。
+- 声: 各場面の文字を、読み上げの声(ナレーション)にして重ねる。既定は Windows の日本語の声(Microsoft Haruka。パソコンに入っている音声。追加の費用・権利の問題なし)。
+  声が使えない環境(クラウドなど)では、音なしの動画になる。曲(BGM)は入れない(権利のため)。インスタの画面で付ける。
+- 出力: runs/<ID>/reel/reel.mp4、reel/caption.txt(投稿文)、reel/narration.txt(読み上げの原稿)、reel/frames/*.png(各場面の画像)。
 - 投稿は、あなたが手で行う(システムは、インスタに投稿しない)。
 """
 from __future__ import annotations
@@ -13,16 +14,19 @@ import html
 import re
 import shutil
 import subprocess
+import wave
 from pathlib import Path
 
 from . import artifacts, images, runs
 from .log import log_event
 
 SIZE = (1080, 1920)
-SCENE_SEC = 3.4          # 1場面の長さ(秒)
+SCENE_SEC = 3.4          # 1場面の最短の長さ(秒)。声が長ければ、声に合わせて伸ばす
+VOICE_PAD = 0.9          # 声が終わってから、次の場面までの間(秒)
 FADE_SEC = 0.45          # 場面のあいだの重なり(秒)
 FPS = 30
 PHOTO = "assets/mascot/munchkin_cc0_1.jpg"
+SAPI_VOICE = "Microsoft Haruka Desktop"
 
 
 class ReelError(Exception):
@@ -90,41 +94,114 @@ def scene_frames(root: Path, texts: list[str], cfg: dict) -> list[str]:
     return out
 
 
+# ---------------------------------------------------------------- 声(ナレーション)
+def narration_text(raw: str) -> str:
+    """スライドの文字を、読み上げ用の原稿にする(改行は間にする。記号・かっこは読まない)。"""
+    parts = []
+    for line in images.slide_text(raw).splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts.append(line if line[-1] in "。!?!?、" else line + "。")
+    s = " ".join(parts)
+    s = re.sub(r"[【】「」『』]", "", s)
+    s = s.replace("(例です)", "。例です。")
+    return s.strip()
+
+
+def sapi_available() -> bool:
+    return shutil.which("powershell") is not None and shutil.which("powershell.exe") is not None and _sapi_has_voice()
+
+
+def _sapi_has_voice() -> bool:
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-Command",
+                            "Add-Type -AssemblyName System.Speech;(New-Object System.Speech.Synthesis.SpeechSynthesizer).GetInstalledVoices()|%{$_.VoiceInfo.Name}"],
+                           capture_output=True, timeout=60, check=False)
+        return SAPI_VOICE in r.stdout.decode("utf-8", "replace") or SAPI_VOICE in r.stdout.decode("cp932", "replace")
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def synthesize_sapi(texts: list[str], out_dir: Path, rate: int = 0) -> list[Path]:
+    """Windows の日本語の声で、場面ごとに wav を作る。"""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    jobs = []
+    for i, t in enumerate(texts, 1):
+        txt = out_dir / f"voice_{i:02d}.txt"
+        txt.write_text(t, encoding="utf-8")
+        jobs.append((txt, out_dir / f"voice_{i:02d}.wav"))
+    ps = out_dir / "speak.ps1"
+    lines = ["Add-Type -AssemblyName System.Speech", "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer",
+             f"$s.SelectVoice('{SAPI_VOICE}')", f"$s.Rate = {int(rate)}"]
+    for txt, wav in jobs:
+        lines += [f"$t = Get-Content -Raw -Encoding UTF8 -LiteralPath '{txt.resolve()}'", f"$s.SetOutputToWaveFile('{wav.resolve()}')", "$s.Speak($t)", "$s.SetOutputToNull()"]
+    ps.write_text("\n".join(lines), encoding="utf-8-sig")
+    r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ps)], capture_output=True, timeout=300, check=False)
+    if r.returncode != 0 or not all(w.exists() and w.stat().st_size > 0 for _, w in jobs):
+        raise ReelError("声(読み上げ)を作れませんでした: " + r.stderr.decode("utf-8", "replace")[-300:])
+    return [w for _, w in jobs]
+
+
+def wav_seconds(path: Path) -> float:
+    with wave.open(str(path), "rb") as w:
+        return w.getnframes() / float(w.getframerate())
+
+
+def scene_durations(voice_secs: list[float] | None, n: int) -> list[float]:
+    """各場面の長さ。声があれば、声の長さ+間(最短 SCENE_SEC)。"""
+    if not voice_secs:
+        return [SCENE_SEC] * n
+    return [max(SCENE_SEC, v + VOICE_PAD + FADE_SEC) for v in voice_secs]
+
+
 def _run(cmd: list[str]) -> None:
-    r = subprocess.run(cmd, capture_output=True, timeout=600, check=False)
+    r = subprocess.run(cmd, capture_output=True, timeout=900, check=False)
     if r.returncode != 0:
         raise ReelError("ffmpeg が失敗しました: " + r.stderr.decode("utf-8", "replace")[-400:])
 
 
-def build_video(frames: list[Path], out: Path, ffmpeg: str) -> None:
-    """各場面の画像を、ゆっくりズームする短い動画にして、クロスフェードでつなぐ。"""
+def build_video(frames: list[Path], out: Path, ffmpeg: str, durations: list[float], voices: list[Path] | None = None) -> None:
+    """各場面の画像を、ゆっくりズームする動画にして、クロスフェードでつなぎ、声(あれば)を場面の頭に合わせて重ねる。"""
     work = out.parent / "_clips"
     work.mkdir(parents=True, exist_ok=True)
-    clips = []
-    frames_per_clip = int(SCENE_SEC * FPS)
     w, h = SIZE
-    for i, fr in enumerate(frames):
+    clips = []
+    for i, (fr, dur) in enumerate(zip(frames, durations)):
         clip = work / f"c{i:02d}.mp4"
-        vf = (f"scale={w * 2}:{h * 2},zoompan=z='min(zoom+0.0007,1.07)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames_per_clip}:s={w}x{h}:fps={FPS},"
+        vf = (f"scale={w * 2}:{h * 2},zoompan=z='min(zoom+0.0007,1.07)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={int(dur * FPS)}:s={w}x{h}:fps={FPS},"
               "format=yuv420p")
-        _run([ffmpeg, "-y", "-loglevel", "error", "-loop", "1", "-i", str(fr), "-vf", vf, "-t", f"{SCENE_SEC}", "-r", str(FPS),
+        _run([ffmpeg, "-y", "-loglevel", "error", "-loop", "1", "-i", str(fr), "-vf", vf, "-t", f"{dur:.2f}", "-r", str(FPS),
               "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", str(clip)])
         clips.append(clip)
+    cmd = [ffmpeg, "-y", "-loglevel", "error"]
+    for c in clips:
+        cmd += ["-i", str(c)]
+    for v in voices or []:
+        cmd += ["-i", str(v)]
+    parts, last = [], "[0:v]"
+    starts = [0.0]                                   # 各場面が、画面にはっきり出る時刻
+    offset = 0.0
+    for i in range(1, len(clips)):
+        offset += durations[i - 1] - FADE_SEC
+        parts.append(f"{last}[{i}:v]xfade=transition=fade:duration={FADE_SEC}:offset={offset:.2f}[v{i}]")
+        last = f"[v{i}]"
+        starts.append(offset + FADE_SEC)
+    maps = ["-map", last if len(clips) > 1 else "[0:v]"]
     if len(clips) == 1:
-        shutil.copy(clips[0], out)
-    else:
-        cmd = [ffmpeg, "-y", "-loglevel", "error"]
-        for c in clips:
-            cmd += ["-i", str(c)]
-        parts, last, offset = [], "[0:v]", 0.0
-        for i in range(1, len(clips)):
-            offset += SCENE_SEC - FADE_SEC
-            label = f"[v{i}]"
-            parts.append(f"{last}[{i}:v]xfade=transition=fade:duration={FADE_SEC}:offset={offset:.2f}{label}")
-            last = label
-        cmd += ["-filter_complex", ";".join(parts), "-map", last, "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
-                "-movflags", "+faststart", "-r", str(FPS), str(out)]
-        _run(cmd)
+        parts = ["[0:v]null[v0]"]
+        maps = ["-map", "[v0]"]
+    if voices:
+        labels = []
+        for k, st in enumerate(starts):
+            ms = int((st + 0.25) * 1000)
+            parts.append(f"[{len(clips) + k}:a]adelay={ms}|{ms},aformat=sample_rates=44100:channel_layouts=stereo[a{k}]")
+            labels.append(f"[a{k}]")
+        parts.append("".join(labels) + f"amix=inputs={len(labels)}:normalize=0:duration=longest[aout]")
+        maps += ["-map", "[aout]", "-c:a", "aac", "-b:a", "160k"]
+    cmd += ["-filter_complex", ";".join(parts), *maps, "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart", "-r", str(FPS), str(out)]
+    _run(cmd)
     shutil.rmtree(work, ignore_errors=True)
 
 
@@ -132,7 +209,8 @@ def caption_of(sns_text: str) -> str:
     return (artifacts.section(sns_text, "Instagramキャプション") or "").strip()
 
 
-def make_reel(root: Path, run_id: str) -> dict:
+def make_reel(root: Path, run_id: str, voice: str = "auto") -> dict:
+    """voice: auto(声が使えれば声つき)| sapi(Windowsの声)| none(音なし)"""
     root = Path(root)
     data = runs.read_run(root, run_id)
     if "sns" not in data["steps_done"]:
@@ -154,10 +232,21 @@ def make_reel(root: Path, run_id: str) -> dict:
         images.render(page, fr, SIZE, browser, out_dir / "_work")
         frames.append(fr)
     shutil.rmtree(out_dir / "_work", ignore_errors=True)
+    narr = [narration_text(t) for t in texts]
+    (out_dir / "narration.txt").write_text("\n".join(f"{i}. {t}" for i, t in enumerate(narr, 1)) + "\n", encoding="utf-8")
+    voices, used = None, "none"
+    if voice in ("auto", "sapi"):
+        if sapi_available():
+            voices = synthesize_sapi(narr, out_dir / "_voice")
+            used = "sapi"
+        elif voice == "sapi":
+            raise ReelError(f"声({SAPI_VOICE})が、このパソコンにありません")
+    durations = scene_durations([wav_seconds(v) for v in voices] if voices else None, len(frames))
     mp4 = out_dir / "reel.mp4"
-    build_video(frames, mp4, ffmpeg)
+    build_video(frames, mp4, ffmpeg, durations, voices)
+    shutil.rmtree(out_dir / "_voice", ignore_errors=True)
     cap = caption_of(sns)
     (out_dir / "caption.txt").write_text(cap + "\n", encoding="utf-8")
-    seconds = round(len(frames) * SCENE_SEC - (len(frames) - 1) * FADE_SEC, 1)
-    log_event(root, "reel_made", run_id=run_id, scenes=len(frames), seconds=seconds)
-    return {"video": mp4, "caption": out_dir / "caption.txt", "scenes": len(frames), "seconds": seconds}
+    seconds = round(sum(durations) - (len(frames) - 1) * FADE_SEC, 1)
+    log_event(root, "reel_made", run_id=run_id, scenes=len(frames), seconds=seconds, voice=used)
+    return {"video": mp4, "caption": out_dir / "caption.txt", "narration": out_dir / "narration.txt", "scenes": len(frames), "seconds": seconds, "voice": used}
