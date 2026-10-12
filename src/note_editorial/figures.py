@@ -146,11 +146,62 @@ def _launch(p):
             raise FigureError(f"図を描くブラウザを起動できません: {str(first).splitlines()[0][:120]} / {second}") from second
 
 
+def _page_html(s: dict, script: str = "") -> str:
+    return '<html><head><meta charset="utf-8">' + BASE + '</head><body>' + R[s["type"]](s) + script + '</body></html>'
+
+
+_MEASURE = ('<script>window.addEventListener("load",function(){var d=document.createElement("pre");'
+            'd.textContent="HEIGHT="+document.getElementById("t").offsetHeight;document.body.appendChild(d);});</script>')
+
+
+def render_all_cli(specs: list[dict], out_dir: Path) -> list[Path]:
+    """Playwright が無い環境(クラウドなど)用。画像づくりと同じ、Chrome/Edge の命令だけで描く(追加の導入が要らない)。
+    高さは、先にページを読み込んで測る(--dump-dom)。"""
+    import subprocess
+    from . import images
+    browser = images.find_browser(images.load_config(Path(".")))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    work = out_dir / "_work"
+    work.mkdir(exist_ok=True)
+    base = [browser, "--headless", "--no-sandbox", "--disable-gpu", "--hide-scrollbars"]
+    made = []
+    try:
+        for s in specs:
+            out = out_dir / f"{s['name']}.png"
+            measure = work / f"{s['name']}_m.html"
+            measure.write_text(_page_html(s, _MEASURE), encoding="utf-8")
+            try:
+                dom = subprocess.run(base + ["--virtual-time-budget=3000", "--dump-dom", measure.resolve().as_uri()],
+                                     capture_output=True, timeout=90, check=False).stdout.decode("utf-8", "replace")
+            except (OSError, subprocess.TimeoutExpired) as e:
+                raise FigureError(f"図の高さを測れませんでした({s['name']}): {e}") from e
+            m = re.search(r"HEIGHT=(\d+)", dom)
+            if not m:
+                raise FigureError(f"図の高さを測れませんでした({s['name']})")
+            src = work / f"{s['name']}.html"
+            src.write_text(_page_html(s), encoding="utf-8")
+            out.unlink(missing_ok=True)
+            cmd = base + ["--force-device-scale-factor=2", f"--screenshot={out.resolve()}",
+                          f"--window-size=1280,{int(m.group(1))}", src.resolve().as_uri()]
+            try:
+                subprocess.run(cmd, capture_output=True, timeout=90, check=False)
+            except (OSError, subprocess.TimeoutExpired) as e:
+                raise FigureError(f"図の作成に失敗しました({s['name']}): {e}") from e
+            if not out.exists() or out.stat().st_size == 0:
+                raise FigureError(f"図ができませんでした: {s['name']}")
+            made.append(out)
+    finally:
+        for f in work.glob("*"):
+            f.unlink(missing_ok=True)
+        work.rmdir()
+    return made
+
+
 def render_all(specs: list[dict], out_dir: Path) -> list[Path]:
     try:
         from playwright.sync_api import sync_playwright
-    except ImportError as e:
-        raise FigureError("Playwright がありません(pip install playwright)。図は作れませんでした") from e
+    except ImportError:
+        return render_all_cli(specs, out_dir)  # Playwright が無ければ、Chrome/Edge の命令だけで描く
     out_dir.mkdir(parents=True, exist_ok=True)
     made = []
     with sync_playwright() as p:
