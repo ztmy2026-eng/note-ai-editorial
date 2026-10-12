@@ -14,7 +14,7 @@ from pathlib import Path
 
 import yaml
 
-from . import artifacts, runs
+from . import artifacts, runs, title_style
 
 PLAN_FILE = "plan.yaml"
 REQUIRED = ("date", "theme", "title", "alt_titles", "aim", "failures", "figures")
@@ -72,8 +72,16 @@ def validate_plan(root: Path, start: date) -> list[str]:
             problems.append(f"{n}本目: テーマ '{it['theme']}' は config/themes.yaml に無いか無効です")
         if len(it.get("alt_titles") or []) < 2:
             problems.append(f"{n}本目: 予備のタイトル案が2つありません")
+        try:
+            item_date = date.fromisoformat(d)
+        except ValueError:
+            item_date = None
         for t in [str(it.get("title", "")), *[str(a) for a in it.get("alt_titles") or []]]:
-            if len(t) > TITLE_MAX:
+            if item_date is not None and title_style.style_for(item_date):  # タイトルの型の実験の期間は、その日の型に合わせる
+                msg = title_style.problem(t, item_date)
+                if msg:
+                    problems.append(f"{n}本目: {msg}")
+            elif len(t) > TITLE_MAX:
                 problems.append(f"{n}本目: タイトルが{len(t)}字です({TITLE_MAX}字以内に短くしてください): {t}")
         hm = artifacts.HURDLE_RE.search(str(it.get("title", "")))
         if hm:

@@ -13,7 +13,8 @@ figures.json の例:
   {"type": "timeline", "name": "fig2_xxx", "title": "…", "items": [{"date": "10月", "label": "…", "desc": "…", "hl": false}]},
   {"type": "checklist", "name": "fig3_xxx", "title": "…", "columns": ["…"], "widths": [300, 500, 352], "rows": [["…"]]}
 ]
-cover の icon: house|yen|chart|doc|shield|robot|briefcase|cart|bolt(電気)|aircon(エアコン)|phone(スマホ・通信)|bulb(照明)|flame(ガス)|calendar(年払い・更新日)|receipt(明細・家計)(または illust_html で自作)。
+cover の icon: cat(白いマンチカン。普通)|cat_happy(笑顔)|cat_worry(困り顔)|cat_think(考える)|house|yen|chart|doc|shield|robot|briefcase|cart|bolt(電気)|aircon(エアコン)|phone(スマホ・通信)|bulb(照明)|flame(ガス)|calendar(年払い・更新日)|receipt(明細・家計)(または illust_html で自作)。
+cover の title_html: <em>…</em>=紺の地に黄の文字、<b>…</b>=赤い文字。sub=タイトルの下の白い帯(2段型タイトルのサブ)。
 cover の bg(背景の黄色系): sun|lemon|amber|honey|cream、または「#ffd43b」形式の色。書かなければ、実行の日付で毎日変わる(同じ色が続かない)。
 """
 from __future__ import annotations
@@ -62,6 +63,38 @@ ICONS.update({
 'calendar':_svg(f'<rect x="65" y="75" width="270" height="280" rx="24" fill="{W}"/><rect x="65" y="75" width="270" height="78" rx="24" fill="{A}"/><rect x="65" y="125" width="270" height="28" fill="{A}"/><rect x="118" y="45" width="22" height="64" rx="11" fill="{L}"/><rect x="260" y="45" width="22" height="64" rx="11" fill="{L}"/>'+''.join(f'<rect x="{95+c*60}" y="{185+r*55}" width="36" height="30" rx="6" fill="{L if (r,c)!=(1,2) else A}"/>' for r in range(3) for c in range(4))),
 'receipt':_svg(f'<polygon points="95,40 305,40 305,380 275,360 245,380 215,360 185,380 155,360 125,380 95,360" fill="{W}"/>'+''.join(f'<rect x="130" y="{95+i*45}" width="{140 if i%2==0 else 100}" height="14" rx="7" fill="#c9d3e3"/>' for i in range(4))+f'<circle cx="255" cy="300" r="42" fill="{A}"/><text x="255" y="322" text-anchor="middle" font-size="58" font-weight="900" fill="{N}" font-family="sans-serif">¥</text>'),
 })
+def _cat(expr='normal'):
+    """白いマンチカン(マスコット)。濃い紺の線+白の毛+ピンク。マンチカンの特徴=長い胴と、とても短い足、大きな丸い頭。expr: normal|happy|worry|think"""
+    N='#16233f';W='#ffffff';P='#f6a5b0'
+    st=f'stroke="{N}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"'
+    parts=['<ellipse cx="225" cy="410" rx="158" ry="9" fill="#000" opacity=".10"/>',
+     f'<path d="M350 305 C382 296 380 236 356 204" fill="none" stroke="{N}" stroke-width="40" stroke-linecap="round"/>',
+     f'<path d="M350 305 C382 296 380 236 356 204" fill="none" stroke="{W}" stroke-width="29" stroke-linecap="round"/>',
+     f'<ellipse cx="318" cy="370" rx="31" ry="22" fill="{W}" {st}/><path d="M308 372 v11 M326 372 v11" stroke="{N}" stroke-width="3" stroke-linecap="round"/>',
+     f'<ellipse cx="232" cy="302" rx="128" ry="66" fill="{W}" {st}/>',
+     f'<ellipse cx="196" cy="374" rx="32" ry="21" fill="{W}" {st}/><path d="M186 376 v11 M204 376 v11" stroke="{N}" stroke-width="3" stroke-linecap="round"/>',
+     '<path d="M92 270 Q150 314 208 270" fill="none" stroke="#d62f1f" stroke-width="13" stroke-linecap="round"/>',
+     f'<circle cx="150" cy="301" r="13" fill="#eda100" stroke="{N}" stroke-width="4"/><path d="M143 301 h14" stroke="{N}" stroke-width="3"/>',
+     f'<path d="M55 142 L40 60 Q82 68 120 100 Z" fill="{W}" {st}/><path d="M63 128 L54 86 Q80 91 102 108 Z" fill="{P}"/>',
+     f'<path d="M245 142 L260 60 Q218 68 180 100 Z" fill="{W}" {st}/><path d="M237 128 L246 86 Q220 91 198 108 Z" fill="{P}"/>',
+     f'<ellipse cx="150" cy="187" rx="109" ry="94" fill="{W}" {st}/>',
+     f'<ellipse cx="66" cy="224" rx="20" ry="12" fill="{P}" opacity=".7"/><ellipse cx="234" cy="224" rx="20" ry="12" fill="{P}" opacity=".7"/>']
+    if expr=='happy':
+        parts+= [f'<path d="M86 192 Q105 166 124 192 M176 192 Q195 166 214 192" fill="none" stroke="{N}" stroke-width="7" stroke-linecap="round"/>']
+    else:
+        parts+= [f'<ellipse cx="105" cy="187" rx="16" ry="22" fill="{N}"/><ellipse cx="195" cy="187" rx="16" ry="22" fill="{N}"/>',
+                 f'<circle cx="100" cy="178" r="6.5" fill="{W}"/><circle cx="190" cy="178" r="6.5" fill="{W}"/><circle cx="110" cy="196" r="3" fill="{W}"/><circle cx="200" cy="196" r="3" fill="{W}"/>']
+    if expr=='worry':
+        parts+= [f'<path d="M83 156 L124 148 M217 156 L176 148" stroke="{N}" stroke-width="5" stroke-linecap="round"/>',
+                 f'<path d="M270 118 Q284 144 270 156 Q256 144 270 118 Z" fill="#9fc3f0" stroke="{N}" stroke-width="3" stroke-linejoin="round"/>']
+    if expr=='think':
+        parts+= [f'<path d="M176 150 L218 142" stroke="{N}" stroke-width="5" stroke-linecap="round"/>',
+                 f'<text x="262" y="116" font-size="70" font-weight="900" fill="{N}" font-family="sans-serif">?</text>']
+    parts+= [f'<path d="M139 219 L161 219 L150 232 Z" fill="#f48fa0" stroke="{N}" stroke-width="3" stroke-linejoin="round"/>',
+             f'<path d="M150 232 V243 M150 243 Q138 256 125 245 M150 243 Q162 256 175 245" fill="none" stroke="{N}" stroke-width="4" stroke-linecap="round"/>',
+             f'<path d="M78 230 L18 218 M78 241 L16 246 M222 230 L282 218 M222 241 L284 246" stroke="{N}" stroke-width="3" stroke-linecap="round"/>']
+    return _svg(''.join(parts))
+ICONS.update({'cat':_cat('normal'),'cat_happy':_cat('happy'),'cat_worry':_cat('worry'),'cat_think':_cat('think')})
 # 同系色(黄色〜山吹色)の背景。濃い紺の文字がどれでも読める明るさ。bg に名前か「#ffd43b」形式の色を書く
 BG_NAMES={'sun':'#ffd43b','lemon':'#ffe066','amber':'#ffc233','honey':'#ffcf4d','cream':'#ffe98a'}
 BG_ORDER=['sun','lemon','amber','honey','cream']
@@ -70,14 +103,27 @@ def _bg(s):
     v=str(s.get('bg') or 'sun')
     return BG_NAMES.get(v) or (v if HEX_RE.match(v) else BG_NAMES['sun'])
 EM_OPEN='<span style="background:#16233f;color:{bg};font-style:normal;padding:0 .12em;border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone">'
+def _rich(text):
+    """文字は安全に変換し、<b>…</b>(赤い文字)だけ使えるようにする。"""
+    return html.escape(text).replace('&lt;b&gt;','<span style="color:#d62f1f">').replace('&lt;/b&gt;','</span>')
 def cover(s):
     ill=s.get('illust_html') or ICONS.get(s.get('icon','yen'))
     bg=_bg(s)
+    cat=str(s.get('icon','')).startswith('cat')
+    title=s['title_html'].replace('<em>',EM_OPEN.format(bg=bg)).replace('</em>','</span>').replace('<b>','<span style="color:#d62f1f">').replace('</b>','</span>')
+    sub=(f'<div style="display:inline-block;margin-top:26px;background:#fff;color:#16233f;font-size:{s.get("sub_size",30)}px;font-weight:900;'
+         f'padding:12px 28px;border-radius:44px;border:4px solid #16233f">{_rich(s["sub"])}</div>') if s.get('sub') else ''
+    if cat:  # 白いマンチカン(マスコット)は、背景に直接置く
+        big = ill.replace('width="400" height="420"', 'width="460" height="483"')
+        pic = f'<div style="position:absolute;right:24px;top:120px;width:460px;height:483px">{big}</div>'
+    else:
+        pic = f'<div style="position:absolute;right:40px;top:130px;width:400px;height:420px;background:#16233f;border-radius:36px;overflow:hidden">{ill}</div>'
     return f"""<div class="fig" id="t" style="width:1280px;height:670px;background:{bg};padding:0;position:relative;overflow:hidden;color:#16233f">
 <div style="position:absolute;left:64px;top:56px;background:#16233f;color:{bg};font-weight:700;font-size:26px;padding:8px 22px;border-radius:6px">{html.escape(s['tag'])}</div>
-<div style="position:absolute;left:64px;top:150px;width:700px;text-wrap:balance;font-size:{s.get('size',54)}px;font-weight:900;line-height:1.38;letter-spacing:.01em">{s['title_html'].replace('<em>',EM_OPEN.format(bg=bg)).replace('</em>','</span>')}</div>
+<div style="position:absolute;left:64px;top:140px;width:{720 if cat else 700}px">
+<div style="text-wrap:balance;font-size:{s.get('size',62 if cat else 54)}px;font-weight:900;line-height:1.32;letter-spacing:.01em">{title}</div>{sub}</div>
 <div style="position:absolute;left:64px;bottom:48px;font-size:24px;font-weight:700;color:#3b4a63">人生最適化中の会社員</div>
-<div style="position:absolute;right:40px;top:130px;width:400px;height:420px;background:#16233f;border-radius:36px;overflow:hidden">{ill}</div></div>"""
+{pic}</div>"""
 def bar(s):
     labels=s['labels'];ser=s['series'];n=len(ser)
     allv=[v for x in ser for v in x['values']];mx=max(allv)*1.15

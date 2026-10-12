@@ -45,6 +45,15 @@ def _cmd_new_run(args) -> int:
     return 0
 
 
+def _cmd_title_style(args) -> int:
+    from datetime import date as _date
+    from . import title_style
+    root = Path(args.root)
+    d = _date.fromisoformat(args.date) if args.date else limits.today_local(root)
+    print(title_style.rule_text(d))
+    return 0
+
+
 def _cmd_today_plan(args) -> int:
     root = Path(args.root)
     found = weekly.item_for(root, limits.today_local(root))
@@ -400,6 +409,9 @@ def build_parser() -> argparse.ArgumentParser:
         s.add_argument(f"--{opt}", type=int, default=None)
     s.set_defaults(fn=_cmd_record_metrics)
     sub.add_parser("next-theme", help="次に記事を作るテーマを選ぶ").set_defaults(fn=_cmd_next_theme)
+    s = sub.add_parser("title-style", help="今日のタイトルの型(短い型/2段型)を表示する(実験期間 2026-10-13〜10-26)")
+    s.add_argument("--date", default="", help="日付(YYYY-MM-DD)。省略時は今日(日本時間)")
+    s.set_defaults(fn=_cmd_title_style)
     sub.add_parser("today-plan", help="今日の週次企画を表示(無ければ終了コード1)").set_defaults(fn=_cmd_today_plan)
     s = sub.add_parser("check-plan", help="週次企画(plans/<週の月曜>/plan.yaml)の形式検査")
     s.add_argument("--week", default="", help="週の開始日(月曜, YYYY-MM-DD)。省略時は今週")

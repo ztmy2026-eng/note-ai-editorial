@@ -6,7 +6,10 @@ AIが書く部分は自由だが、「出典がある」「問題点が具体的
 from __future__ import annotations
 
 import re
+from datetime import date
 from pathlib import Path
+
+from . import title_style
 
 STEPS = ["research", "ideas", "draft", "critique", "revised", "sns"]
 FILES = {
@@ -143,6 +146,12 @@ def _revised(text: str, run_dir: Path | None) -> list[str]:
         if "ありがとう" not in re.split(r"^##\s*情報源", pub, flags=re.M)[0]:
             errs.append("最後のお礼の一言(「ありがとう」)がありません(まとめのあとに1文)")
     head = re.match(r"\s*#\s+(.+)", text)
+    if head and run_dir is not None:  # タイトルの型の実験の期間は、その日の型に合っていること(run_dir の名前 YYYY-MM-DD_NNN の日付)
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})_", Path(run_dir).name)
+        if m:
+            msg = title_style.problem(head.group(1).strip(), date(int(m[1]), int(m[2]), int(m[3])))
+            if msg:
+                errs.append(msg)
     hurdle = HURDLE_RE.search(head.group(1)) if head else None
     if hurdle:  # タイトルに「N分」と書いたなら、本文がそれに収まっていること
         minutes = int(hurdle.group(1))

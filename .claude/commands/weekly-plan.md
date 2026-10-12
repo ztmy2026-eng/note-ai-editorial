@@ -20,6 +20,7 @@ description: 翌週(月〜日)7本分の週次企画を作る(日曜に実行)�
    - `plans/<W>/weekly-plan.md`:冒頭に「未承認」と明記する。中身は、企画表(投稿日/タイトル/狙い/失敗パターン/入れる図)、
      リサーチの要約、7日目(日曜)に集める数字(各記事のビュー・スキ・フォロー増)のチェックリスト。
 5. `python -m note_editorial check-plan --week <W>` を実行し、不合格なら直す(最大2回)。それでも駄目なら止めて理由を報告する。
+   - **タイトルの型の実験(2026-10-13〜10-26の日付が入る週)**: 各日の `title` と `alt_titles` は、その日の型(奇数日=2段型・偶数日=短い型)にする。型は `python -m note_editorial title-style --date YYYY-MM-DD` で出る。`check-plan` が機械で見る(config/weekly_policy.md の「タイトルの型の実験」)。
 6. 報告:来週のテーマ7本(日付・タイトル)と、ユーザーがやること(weekly-plan.md を読んで承認する場合は plan.yaml の `approved: true`。
    修正したい企画は plan.yaml を直す)を短く書く。
 

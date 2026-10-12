@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from . import title_style
 from .articles import Article
 
 MIN_N_FOR_TREND = 10  # これ未満は傾向と呼ばず「参考程度」
@@ -57,6 +58,8 @@ def compute_facts(articles: list[Article]) -> dict:
         yes = [a for a in measured if title_features(a.title)[name]]
         no = [a for a in measured if not title_features(a.title)[name]]
         features[name] = {"あり": _group(yes), "なし": _group(no)}
+    styles = {label: _group([a for a in measured if title_style.style_of(a.title) == key])
+              for key, label in ((title_style.SHORT, "短い型(1文)"), (title_style.TWO_PART, "2段型(2文・「｜」)"))}
     ranked = sorted((a for a in measured if like_rate(a) is not None), key=lambda a: like_rate(a), reverse=True)
     return {
         "total": len(articles),
@@ -66,6 +69,7 @@ def compute_facts(articles: list[Article]) -> dict:
         "small_sample": len(measured) < MIN_N_FOR_TREND,
         "by_theme": {k: _group(v) for k, v in by_theme.items()},
         "features": features,
+        "title_styles": styles,
         "ranking": [(a.title, like_rate(a), a.pv) for a in ranked],
     }
 
@@ -90,6 +94,10 @@ def render_facts(facts: dict) -> str:
     for name, g in facts["features"].items():
         y, n = g["あり"], g["なし"]
         out.append(f"| {name} | {_f(y['avg_like_rate'], True)} ({y['n']}) | {_f(n['avg_like_rate'], True)} ({n['n']}) |")
+    out += ["", "## タイトルの型別(実験: 2026-10-13〜10-26。インプレッションで比べる)", "",
+            "| 型 | n | 平均インプ | 平均PV | 平均スキ率 |", "|---|---|---|---|---|"]
+    for label, g in facts.get("title_styles", {}).items():
+        out.append(f"| {label} | {g['n']} | {_f(g['avg_impressions'])} | {_f(g['avg_pv'])} | {_f(g['avg_like_rate'], True)} |")
     out += ["", "## スキ率ランキング", ""]
     out += [f"{i}. {t}(スキ率 {_f(r, True)} / PV {_f(pv)})" for i, (t, r, pv) in enumerate(facts["ranking"], 1)] or ["- データなし"]
     return "\n".join(out) + "\n"
