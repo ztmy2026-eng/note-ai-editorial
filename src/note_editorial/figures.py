@@ -64,36 +64,92 @@ ICONS.update({
 'receipt':_svg(f'<polygon points="95,40 305,40 305,380 275,360 245,380 215,360 185,380 155,360 125,380 95,360" fill="{W}"/>'+''.join(f'<rect x="130" y="{95+i*45}" width="{140 if i%2==0 else 100}" height="14" rx="7" fill="#c9d3e3"/>' for i in range(4))+f'<circle cx="255" cy="300" r="42" fill="{A}"/><text x="255" y="322" text-anchor="middle" font-size="58" font-weight="900" fill="{N}" font-family="sans-serif">¥</text>'),
 })
 def _cat(expr='normal'):
-    """白いマンチカン(マスコット)。濃い紺の線+白の毛+ピンク。マンチカンの特徴=長い胴と、とても短い足、大きな丸い頭。expr: normal|happy|worry|think"""
-    N='#16233f';W='#ffffff';P='#f6a5b0'
-    st=f'stroke="{N}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"'
-    parts=['<ellipse cx="225" cy="410" rx="158" ry="9" fill="#000" opacity=".10"/>',
-     f'<path d="M350 305 C382 296 380 236 356 204" fill="none" stroke="{N}" stroke-width="40" stroke-linecap="round"/>',
-     f'<path d="M350 305 C382 296 380 236 356 204" fill="none" stroke="{W}" stroke-width="29" stroke-linecap="round"/>',
-     f'<ellipse cx="318" cy="370" rx="31" ry="22" fill="{W}" {st}/><path d="M308 372 v11 M326 372 v11" stroke="{N}" stroke-width="3" stroke-linecap="round"/>',
-     f'<ellipse cx="232" cy="302" rx="128" ry="66" fill="{W}" {st}/>',
-     f'<ellipse cx="196" cy="374" rx="32" ry="21" fill="{W}" {st}/><path d="M186 376 v11 M204 376 v11" stroke="{N}" stroke-width="3" stroke-linecap="round"/>',
-     '<path d="M92 270 Q150 314 208 270" fill="none" stroke="#d62f1f" stroke-width="13" stroke-linecap="round"/>',
-     f'<circle cx="150" cy="301" r="13" fill="#eda100" stroke="{N}" stroke-width="4"/><path d="M143 301 h14" stroke="{N}" stroke-width="3"/>',
-     f'<path d="M55 142 L40 60 Q82 68 120 100 Z" fill="{W}" {st}/><path d="M63 128 L54 86 Q80 91 102 108 Z" fill="{P}"/>',
-     f'<path d="M245 142 L260 60 Q218 68 180 100 Z" fill="{W}" {st}/><path d="M237 128 L246 86 Q220 91 198 108 Z" fill="{P}"/>',
-     f'<ellipse cx="150" cy="187" rx="109" ry="94" fill="{W}" {st}/>',
-     f'<ellipse cx="66" cy="224" rx="20" ry="12" fill="{P}" opacity=".7"/><ellipse cx="234" cy="224" rx="20" ry="12" fill="{P}" opacity=".7"/>']
-    if expr=='happy':
-        parts+= [f'<path d="M86 192 Q105 166 124 192 M176 192 Q195 166 214 192" fill="none" stroke="{N}" stroke-width="7" stroke-linecap="round"/>']
+    """白いマンチカン(マスコット)。写真のような、ふわふわの毛・青い大きな目・短い足・立てたしっぽ。SVGで描く(AI画像生成ではない)。
+    expr: normal|happy|worry|think"""
+    import math
+    import random
+    rnd = random.Random(11)
+
+    def tufts(cx, cy, rx, ry, a0, a1, n, ln, col="#d6cec3", op=.75, w=1.5):
+        out = []
+        for _ in range(n):
+            ang = math.radians(a0 + (a1 - a0) * rnd.random())
+            x, y = cx + rx * math.cos(ang), cy + ry * math.sin(ang)
+            k = ln * (.6 + .8 * rnd.random())
+            dx, dy = math.cos(ang) * k + rnd.uniform(-2, 2), math.sin(ang) * k + rnd.uniform(-1, 3)
+            out.append(f"M{x - dx * .6:.1f} {y - dy * .6:.1f} Q{x + dx * .1 + rnd.uniform(-3, 3):.1f} {y + dy * .2:.1f} {x + dx:.1f} {y + dy:.1f}")
+        return f'<path d="{" ".join(out)}" fill="none" stroke="{col}" stroke-opacity="{op}" stroke-width="{w}" stroke-linecap="round"/>'
+
+    N = '#2a3550'
+    defs = ('<defs>'
+            '<filter id="fur" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="4" result="n"/>'
+            '<feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/></filter>'
+            '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>'
+            '<filter id="soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5"/></filter>'
+            '<filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#6b4f00" flood-opacity=".30"/></filter>'
+            '<radialGradient id="fw" cx="42%" cy="34%" r="78%"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#fcfaf7"/><stop offset="1" stop-color="#e4ddd3"/></radialGradient>'
+            '<radialGradient id="iris" cx="46%" cy="38%" r="62%"><stop offset="0" stop-color="#9cc3f0"/><stop offset=".5" stop-color="#5b8ac4"/><stop offset="1" stop-color="#1e3a66"/></radialGradient>'
+            '<linearGradient id="ear" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f6b7bd"/><stop offset="1" stop-color="#f9d4d6"/></linearGradient>'
+            '<radialGradient id="bell" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#d08a00"/></radialGradient>'
+            '<clipPath id="cb"><ellipse cx="232" cy="302" rx="128" ry="66"/></clipPath>'
+            '<clipPath id="ch"><ellipse cx="150" cy="187" rx="109" ry="94"/></clipPath>'
+            '</defs>')
+    P = []
+    P.append('<ellipse cx="225" cy="408" rx="160" ry="11" fill="#5a4300" opacity=".25" filter="url(#soft2)"/>')
+    # しっぽ・体・足(ふわふわの輪郭)
+    body = ['<path d="M336 296 C372 288 394 232 382 156 C378 130 352 132 350 154 C352 208 346 246 320 266 Z" fill="url(#fw)"/>',
+            '<ellipse cx="318" cy="370" rx="32" ry="23" fill="url(#fw)"/>',
+            '<ellipse cx="232" cy="302" rx="128" ry="66" fill="url(#fw)"/>',
+            '<ellipse cx="196" cy="374" rx="33" ry="22" fill="url(#fw)"/>']
+    P.append('<g filter="url(#drop)"><g filter="url(#fur)">' + ''.join(body) + '</g></g>')
+    # 体の陰影と毛並み
+    P.append('<g clip-path="url(#cb)"><ellipse cx="260" cy="350" rx="130" ry="40" fill="#cfc6ba" opacity=".55" filter="url(#soft)"/>'
+             '<ellipse cx="300" cy="270" rx="70" ry="22" fill="#ffffff" opacity=".9" filter="url(#soft2)"/></g>')
+    P.append(tufts(232, 302, 128, 66, -165, -15, 70, 11) + tufts(318, 370, 32, 23, 150, 400, 14, 6) + tufts(196, 374, 33, 22, 150, 400, 14, 6))
+    P.append(tufts(366, 190, 16, 60, -120, 100, 26, 8))
+    P.append('<path d="M308 372 v9 M326 372 v9 M186 376 v9 M204 376 v9" stroke="#e7b9bd" stroke-width="3" stroke-linecap="round"/>')
+    # 首輪(赤+金の鈴)
+    P.append('<path d="M92 270 Q150 316 208 270" fill="none" stroke="#b72a1c" stroke-width="15" stroke-linecap="round"/>'
+             '<path d="M94 267 Q150 311 206 267" fill="none" stroke="#e5533f" stroke-width="6" stroke-linecap="round"/>'
+             '<circle cx="150" cy="303" r="14" fill="url(#bell)" stroke="#a46a00" stroke-width="2"/><path d="M142 303 h16" stroke="#8a5a00" stroke-width="3"/><circle cx="145" cy="297" r="3.5" fill="#fff" opacity=".8"/>')
+    # 耳
+    ears = ['<path d="M56 146 L38 58 Q84 66 122 102 Z" fill="url(#fw)"/>', '<path d="M244 146 L262 58 Q216 66 178 102 Z" fill="url(#fw)"/>']
+    P.append('<g filter="url(#drop)"><g filter="url(#fur)">' + ''.join(ears) + '</g></g>')
+    P.append('<path d="M63 130 L52 82 Q80 88 104 108 Z" fill="url(#ear)" opacity=".95"/><path d="M237 130 L248 82 Q220 88 196 108 Z" fill="url(#ear)" opacity=".95"/>')
+    P.append(tufts(80, 112, 30, 30, 200, 290, 10, 7, "#f2d8d8", .9, 1.6) + tufts(220, 112, 30, 30, 250, 340, 10, 7, "#f2d8d8", .9, 1.6))
+    # 頭
+    P.append('<g filter="url(#drop)"><g filter="url(#fur)"><ellipse cx="150" cy="187" rx="109" ry="94" fill="url(#fw)"/></g></g>')
+    P.append('<g clip-path="url(#ch)"><ellipse cx="150" cy="268" rx="110" ry="40" fill="#d9d1c6" opacity=".55" filter="url(#soft)"/>'
+             '<ellipse cx="120" cy="120" rx="60" ry="26" fill="#ffffff" filter="url(#soft2)"/></g>')
+    P.append(tufts(150, 187, 109, 94, 105, 175, 34, 12) + tufts(150, 187, 109, 94, 5, 75, 34, 12) + tufts(150, 187, 109, 94, 195, 345, 40, 9))
+    P.append(tufts(150, 120, 22, 20, 200, 340, 12, 9, "#d6cec3", .6, 1.4))
+    # 口もとの毛・ほほ
+    P.append('<ellipse cx="150" cy="236" rx="36" ry="24" fill="#ffffff" filter="url(#soft2)"/>'
+             '<ellipse cx="68" cy="222" rx="20" ry="11" fill="#f3b6bd" opacity=".45" filter="url(#soft2)"/><ellipse cx="232" cy="222" rx="20" ry="11" fill="#f3b6bd" opacity=".45" filter="url(#soft2)"/>')
+    eyes_cy = 190
+    if expr == 'happy':
+        P.append(f'<path d="M82 {eyes_cy + 4} Q105 {eyes_cy - 24} 128 {eyes_cy + 4} M172 {eyes_cy + 4} Q195 {eyes_cy - 24} 218 {eyes_cy + 4}" fill="none" stroke="{N}" stroke-width="6.5" stroke-linecap="round"/>')
     else:
-        parts+= [f'<ellipse cx="105" cy="187" rx="16" ry="22" fill="{N}"/><ellipse cx="195" cy="187" rx="16" ry="22" fill="{N}"/>',
-                 f'<circle cx="100" cy="178" r="6.5" fill="{W}"/><circle cx="190" cy="178" r="6.5" fill="{W}"/><circle cx="110" cy="196" r="3" fill="{W}"/><circle cx="200" cy="196" r="3" fill="{W}"/>']
-    if expr=='worry':
-        parts+= [f'<path d="M83 156 L124 148 M217 156 L176 148" stroke="{N}" stroke-width="5" stroke-linecap="round"/>',
-                 f'<path d="M270 118 Q284 144 270 156 Q256 144 270 118 Z" fill="#9fc3f0" stroke="{N}" stroke-width="3" stroke-linejoin="round"/>']
-    if expr=='think':
-        parts+= [f'<path d="M176 150 L218 142" stroke="{N}" stroke-width="5" stroke-linecap="round"/>',
-                 f'<text x="262" y="116" font-size="70" font-weight="900" fill="{N}" font-family="sans-serif">?</text>']
-    parts+= [f'<path d="M139 219 L161 219 L150 232 Z" fill="#f48fa0" stroke="{N}" stroke-width="3" stroke-linejoin="round"/>',
-             f'<path d="M150 232 V243 M150 243 Q138 256 125 245 M150 243 Q162 256 175 245" fill="none" stroke="{N}" stroke-width="4" stroke-linecap="round"/>',
-             f'<path d="M78 230 L18 218 M78 241 L16 246 M222 230 L282 218 M222 241 L284 246" stroke="{N}" stroke-width="3" stroke-linecap="round"/>']
-    return _svg(''.join(parts))
+        dy = -4 if expr == 'think' else 0
+        for cx in (105, 195):
+            P.append(f'<ellipse cx="{cx}" cy="{eyes_cy}" rx="24" ry="25" fill="#f4f1ee"/>'
+                     f'<circle cx="{cx}" cy="{eyes_cy + dy}" r="21" fill="url(#iris)" stroke="#1b2c4a" stroke-width="2.5"/>'
+                     f'<circle cx="{cx}" cy="{eyes_cy + dy + 1}" r="10" fill="#0d1526"/>'
+                     f'<circle cx="{cx - 8}" cy="{eyes_cy + dy - 9}" r="6.5" fill="#fff"/><circle cx="{cx + 8}" cy="{eyes_cy + dy + 8}" r="3" fill="#fff" opacity=".85"/>'
+                     f'<path d="M{cx - 24} {eyes_cy - 8} Q{cx} {eyes_cy - 30} {cx + 24} {eyes_cy - 8}" fill="none" stroke="#8f8a84" stroke-width="2" stroke-linecap="round" opacity=".7"/>')
+    if expr == 'worry':
+        P.append('<path d="M80 160 Q108 146 130 156 M220 160 Q192 146 170 156" fill="none" stroke="#b9b1a7" stroke-width="3.5" stroke-linecap="round"/>'
+                 '<path d="M272 118 Q287 146 272 158 Q257 146 272 118 Z" fill="#a9cdf2" stroke="#6c9bd0" stroke-width="2.5" stroke-linejoin="round"/>')
+    if expr == 'think':
+        P.append('<path d="M176 156 Q198 146 222 154" fill="none" stroke="#b9b1a7" stroke-width="3.5" stroke-linecap="round"/>'
+                 '<text x="262" y="116" font-size="70" font-weight="900" fill="#2a3550" font-family="sans-serif">?</text>')
+    # 鼻・口・ひげ
+    P.append('<path d="M139 221 Q150 216 161 221 Q158 232 150 235 Q142 232 139 221 Z" fill="#f08c9d" stroke="#d96a80" stroke-width="1.6" stroke-linejoin="round"/>'
+             '<ellipse cx="146" cy="222" rx="4" ry="2" fill="#fff" opacity=".7"/>'
+             '<path d="M150 235 V245 M150 245 Q139 257 126 247 M150 245 Q161 257 174 247" fill="none" stroke="#b9737f" stroke-width="2.6" stroke-linecap="round"/>'
+             '<path d="M92 236 Q60 224 20 224 M92 244 Q58 246 18 256 M208 236 Q240 224 280 224 M208 244 Q242 246 282 256" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".95"/>'
+             '<path d="M92 236 Q60 224 20 224 M92 244 Q58 246 18 256 M208 236 Q240 224 280 224 M208 244 Q242 246 282 256" fill="none" stroke="#bdb5aa" stroke-width="1" stroke-linecap="round" opacity=".8"/>')
+    return _svg(defs + ''.join(P))
 ICONS.update({'cat':_cat('normal'),'cat_happy':_cat('happy'),'cat_worry':_cat('worry'),'cat_think':_cat('think')})
 # 同系色(黄色〜山吹色)の背景。濃い紺の文字がどれでも読める明るさ。bg に名前か「#ffd43b」形式の色を書く
 BG_NAMES={'sun':'#ffd43b','lemon':'#ffe066','amber':'#ffc233','honey':'#ffcf4d','cream':'#ffe98a'}
