@@ -105,3 +105,16 @@ SNS = """# SNS投稿案
 ## 確認メモ
 - 数字は使っていません
 """
+
+
+import pytest as _pytest
+
+
+@_pytest.fixture(autouse=True)
+def _no_title_experiment_outside_its_tests(request, monkeypatch):
+    """タイトルの型の実験(2026-10-13〜10-26)は、実行IDの日付で効く。ほかのテストが「今日」の日付で実行を作っても止まらないよう、
+    実験そのもののテスト以外では、実験を無効にする。"""
+    if request.module.__name__.endswith("test_title_style"):
+        return
+    from note_editorial import title_style
+    monkeypatch.setattr(title_style, "style_for", lambda d: None)

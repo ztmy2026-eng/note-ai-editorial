@@ -143,6 +143,42 @@ def synthesize_sapi(texts: list[str], out_dir: Path, rate: int = 2) -> list[Path
     return [w for _, w in jobs]
 
 
+EDGE_VOICE = "ja-JP-NanamiNeural"   # 親しみやすい(Friendly)・前向き(Positive)な女性の声。男性なら ja-JP-KeitaNeural
+
+
+def edge_available() -> bool:
+    try:
+        import edge_tts  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def synthesize_edge(texts: list[str], out_dir: Path, ffmpeg: str, voice: str = EDGE_VOICE, rate: str = "+6%", pitch: str = "+3Hz") -> list[Path]:
+    """Microsoft Edge の読み上げの声(ニューラル。親しみやすい声)で、場面ごとに wav を作る。ネット接続が要る。
+    注意: edge-tts は非公式のクライアントで、利用条件の扱いが明確でない。個人の発信での利用にとどめる。"""
+    import asyncio
+
+    import edge_tts
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    async def run_all() -> None:
+        async def one(i: int, t: str) -> None:
+            await edge_tts.Communicate(t, voice, rate=rate, pitch=pitch).save(str(out_dir / f"voice_{i:02d}.mp3"))
+        await asyncio.gather(*(one(i, t) for i, t in enumerate(texts, 1)))
+
+    try:
+        asyncio.run(run_all())
+    except Exception as e:  # noqa: BLE001
+        raise ReelError(f"声(Edgeの読み上げ)を作れませんでした: {str(e)[:200]}") from e
+    wavs = []
+    for i in range(1, len(texts) + 1):
+        mp3, wav = out_dir / f"voice_{i:02d}.mp3", out_dir / f"voice_{i:02d}.wav"
+        _run([ffmpeg, "-y", "-loglevel", "error", "-i", str(mp3), "-ar", "44100", "-ac", "2", str(wav)])
+        wavs.append(wav)
+    return wavs
+
+
 def wav_seconds(path: Path) -> float:
     with wave.open(str(path), "rb") as w:
         return w.getnframes() / float(w.getframerate())
@@ -235,7 +271,16 @@ def make_reel(root: Path, run_id: str, voice: str = "auto") -> dict:
     narr = [narration_text(t) for t in texts]
     (out_dir / "narration.txt").write_text("\n".join(f"{i}. {t}" for i, t in enumerate(narr, 1)) + "\n", encoding="utf-8")
     voices, used = None, "none"
-    if voice in ("auto", "sapi"):
+    if voice in ("auto", "edge") and edge_available():  # 親しみやすい声(ネット接続が要る)。だめなら Windows の声へ
+        try:
+            voices = synthesize_edge(narr, out_dir / "_voice", ffmpeg)
+            used = "edge"
+        except ReelError:
+            if voice == "edge":
+                raise
+    elif voice == "edge":
+        raise ReelError("edge-tts が入っていません。`python -m pip install edge-tts` を実行してください")
+    if voices is None and voice in ("auto", "sapi"):
         if sapi_available():
             voices = synthesize_sapi(narr, out_dir / "_voice")
             used = "sapi"
