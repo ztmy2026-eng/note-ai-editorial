@@ -14,6 +14,7 @@ figures.json の例:
   {"type": "checklist", "name": "fig3_xxx", "title": "…", "columns": ["…"], "widths": [300, 500, 352], "rows": [["…"]]}
 ]
 cover の icon: cat(白いマンチカン。普通)|cat_happy(笑顔)|cat_worry(困り顔)|cat_think(考える)|house|yen|chart|doc|shield|robot|briefcase|cart|bolt(電気)|aircon(エアコン)|phone(スマホ・通信)|bulb(照明)|flame(ガス)|calendar(年払い・更新日)|receipt(明細・家計)(または illust_html で自作)。
+cover の photo: 写真のファイル(例: assets/mascot/munchkin_cc0_1.jpg。ライセンスが明確なものだけ。assets/mascot/README.md)。猫の絵(icon: cat…)のかわりに、実写を右に置く。
 cover の title_html: <em>…</em>=紺の地に黄の文字、<b>…</b>=赤い文字。sub=タイトルの下の白い帯(2段型タイトルのサブ)。
 cover の bg(背景の黄色系): sun|lemon|amber|honey|cream、または「#ffd43b」形式の色。書かなければ、実行の日付で毎日変わる(同じ色が続かない)。
 """
@@ -201,6 +202,18 @@ def _bg(s):
     v=str(s.get('bg') or 'sun')
     return BG_NAMES.get(v) or (v if HEX_RE.match(v) else BG_NAMES['sun'])
 EM_OPEN='<span style="background:#16233f;color:{bg};font-style:normal;padding:0 .12em;border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone">'
+def _photo_card(path):
+    """写真を、白い縁と影のついた、角の丸いカードにして返す(HTML)。写真は、ファイルの中に埋め込む。"""
+    import base64
+    from pathlib import Path as _P
+    f = _P(path)
+    if not f.exists():
+        raise FigureError(f"写真が見つかりません: {path}")
+    mime = "image/png" if f.suffix.lower() == ".png" else "image/jpeg"
+    b64 = base64.b64encode(f.read_bytes()).decode("ascii")
+    return ('<div style="position:absolute;right:44px;top:92px;width:560px;height:474px;border-radius:30px;border:9px solid #fff;overflow:hidden;'
+            'box-shadow:0 14px 30px rgba(80,58,0,.35);transform:rotate(1.6deg);background:#fff">'
+            f'<img src="data:{mime};base64,{b64}" style="width:100%;height:100%;object-fit:cover;display:block"></div>')
 def _rich(text):
     """文字は安全に変換し、<b>…</b>(赤い文字)だけ使えるようにする。"""
     return html.escape(text).replace('&lt;b&gt;','<span style="color:#d62f1f">').replace('&lt;/b&gt;','</span>')
@@ -211,15 +224,18 @@ def cover(s):
     title=s['title_html'].replace('<em>',EM_OPEN.format(bg=bg)).replace('</em>','</span>').replace('<b>','<span style="color:#d62f1f">').replace('</b>','</span>')
     sub=(f'<div style="display:inline-block;margin-top:26px;background:#fff;color:#16233f;font-size:{s.get("sub_size",30)}px;font-weight:900;'
          f'padding:12px 28px;border-radius:44px;border:4px solid #16233f">{_rich(s["sub"])}</div>') if s.get('sub') else ''
-    if cat:  # 白いマンチカン(マスコット)は、背景に直接置く
+    photo = s.get('photo')
+    if photo:  # 実写の写真(ライセンスが明確なもの。assets/mascot/README.md)を、右に丸い角のカードで置く
+        pic = _photo_card(photo)
+    elif cat:  # 白いマンチカン(マスコット)は、背景に直接置く
         big = ill.replace('width="400" height="420"', 'width="460" height="483"')
         pic = f'<div style="position:absolute;right:24px;top:120px;width:460px;height:483px">{big}</div>'
     else:
         pic = f'<div style="position:absolute;right:40px;top:130px;width:400px;height:420px;background:#16233f;border-radius:36px;overflow:hidden">{ill}</div>'
     return f"""<div class="fig" id="t" style="width:1280px;height:670px;background:{bg};padding:0;position:relative;overflow:hidden;color:#16233f">
 <div style="position:absolute;left:64px;top:56px;background:#16233f;color:{bg};font-weight:700;font-size:26px;padding:8px 22px;border-radius:6px">{html.escape(s['tag'])}</div>
-<div style="position:absolute;left:64px;top:140px;width:{720 if cat else 700}px">
-<div style="text-wrap:balance;font-size:{s.get('size',62 if cat else 54)}px;font-weight:900;line-height:1.32;letter-spacing:.01em">{title}</div>{sub}</div>
+<div style="position:absolute;left:64px;top:140px;width:{600 if photo else 720 if cat else 700}px">
+<div style="text-wrap:balance;font-size:{s.get('size',(56 if photo else 62) if (cat or photo) else 54)}px;font-weight:900;line-height:1.32;letter-spacing:.01em">{title}</div>{sub}</div>
 <div style="position:absolute;left:64px;bottom:48px;font-size:24px;font-weight:700;color:#3b4a63">人生最適化中の会社員</div>
 {pic}</div>"""
 def bar(s):

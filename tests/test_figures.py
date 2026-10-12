@@ -45,3 +45,15 @@ def test_cat_mascot_cover_with_sub_and_red_text():
     html = figures.cover(spec)
     assert "#d62f1f" in html and "続ける" in html and "&lt;b&gt;" not in html
     assert 'width="460" height="483"' in html  # 猫は、背景に直接置く(大きめ)
+
+
+def test_cover_with_photo_embeds_the_file(tmp_path):
+    from note_editorial import figures
+    img = tmp_path / "cat.jpg"
+    img.write_bytes(b"\xff\xd8\xff\xd9")
+    spec = {"type": "cover", "name": "c", "tag": "節約", "title_html": "題", "photo": str(img)}
+    html = figures.cover(spec)
+    assert "data:image/jpeg;base64," in html and "object-fit:cover" in html
+    import pytest
+    with pytest.raises(figures.FigureError):
+        figures.cover(dict(spec, photo=str(tmp_path / "none.jpg")))
