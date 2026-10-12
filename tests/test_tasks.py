@@ -84,3 +84,24 @@ def test_export_image_docs_match_names_with_or_without_the_date_prefix(root):
     (root / "runs" / rid / "images" / "figures").mkdir(parents=True)
     (root / "runs" / rid / "images" / "figures" / "cover.png").write_bytes(PNG_1X1)
     assert [d["file"] for d in tasks.export_image_docs(root, rid)] == ["cover.png"]
+
+
+def test_export_image_docs_shrinks_large_images(tmp_path, monkeypatch):
+    import struct
+    import zlib
+    from note_editorial import runs, tasks
+
+    def png(w, h, extra=0):
+        def chunk(t, d):
+            return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+        return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(b"\x00" * 10) + b"\x00" * extra) + chunk(b"IEND", b""))
+
+    rdir = tmp_path / "runs" / "2026-10-12_001"
+    (rdir / "images").mkdir(parents=True)
+    (rdir / "images" / "note_eyecatch.png").write_bytes(png(2560, 1300, extra=200_000))
+    monkeypatch.setattr(runs, "run_path", lambda root, rid: rdir)
+    monkeypatch.setattr(tasks, "_shrunk_png", lambda path, w, h: png(w // 2, h // 2))
+    docs = tasks.export_image_docs(tmp_path, "2026-10-12_001")
+    assert docs[0]["width"] == 1280 and docs[0]["height"] == 650
+    assert len(docs[0]["data"]) < 1000

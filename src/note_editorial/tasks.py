@@ -91,6 +91,28 @@ def export_tasks(root: Path, today: date | None = None) -> dict:
     return {"limits": {"runs": list(use["runs"]), "steps": list(use["steps"]), "queue": list(use["queue"])}, "tasks": items}
 
 
+MAX_IMAGE_B64 = 235_000  # 1書類は256KiBまで(base64と、ほかの項目の分を残す)
+
+
+def _shrunk_png(path: Path, w: int, h: int) -> bytes | None:
+    """画像を半分の大きさに縮めたPNGを返す(Chrome/Edge の命令で描く)。できなければ None(元の画像を使う)。"""
+    import subprocess
+    import tempfile
+    try:
+        browser = images.find_browser(images.load_config(Path(".")))
+        with tempfile.TemporaryDirectory() as d:
+            html = Path(d) / "s.html"
+            out = Path(d) / "s.png"
+            html.write_text(f'<html><body style="margin:0"><img src="{path.resolve().as_uri()}" width="{w // 2}" height="{h // 2}" '
+                            f'style="display:block"></body></html>', encoding="utf-8")
+            subprocess.run([browser, "--headless", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
+                            f"--screenshot={out}", f"--window-size={w // 2},{h // 2}", html.as_uri()],
+                           capture_output=True, timeout=90, check=False)
+            return out.read_bytes() if out.exists() and out.stat().st_size else None
+    except (OSError, subprocess.TimeoutExpired, images.ImageError):
+        return None
+
+
 def export_image_docs(root: Path, run_id: str) -> list[dict]:
     """ダッシュボードの「画像」に載せる、画像の書類(1枚=1書類)。スマホで、そのままコピー・保存できるようにするため。
 
@@ -113,9 +135,14 @@ def export_image_docs(root: Path, run_id: str) -> list[dict]:
 
     def add(path: Path, label: str, group: str, order: int) -> None:
         w, h = images.png_size(path)
+        raw = path.read_bytes()
+        if len(raw) * 4 // 3 > MAX_IMAGE_B64:  # 書類は256KiBまで。大きい画像は、半分の大きさに縮めて入れる
+            small = _shrunk_png(path, w, h)
+            if small:
+                raw, w, h = small, w // 2, h // 2
         docs.append({"id": f"{run_id}__{path.stem}", "run_id": run_id, "file": path.name, "label": label, "group": group,
-                     "order": order, "mime": "image/png", "width": w, "height": h, "bytes": path.stat().st_size,
-                     "data": base64.b64encode(path.read_bytes()).decode("ascii")})
+                     "order": order, "mime": "image/png", "width": w, "height": h, "bytes": len(raw),
+                     "data": base64.b64encode(raw).decode("ascii")})
         used.add(path)
 
     fig_no = 0
