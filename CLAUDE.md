@@ -20,9 +20,9 @@
 - 実行に失敗したら、隠さず、そのまま報告する。
 
 ## 環境のメモ(クラウド)
-- 最初に `pip install -e ".[dev]"`。それでも `python -m note_editorial` が見つからなければ、`export PYTHONPATH=src` を付けて実行する。
+- 最初に `python -m pip install -e ".[dev]"`(`pip` ではなく `python -m pip`。別のPythonに入ることがある)。それでも `python -m note_editorial` が見つからなければ、`export PYTHONPATH=src` を付けて実行する。
 - クラウドのネットワークは、設定した公的機関などのサイトにだけつながる。つながらないサイトは、無理に回避しない(「通信制限で開けなかった」と報告する)。
-- 画像づくり(`make-images` `make-figures`)は、ブラウザが要る。クラウドで動かないときは、「画像はPCで作り直す」と伝える(すでにある画像は `runs/<ID>/images/` にある)。
+- 画像づくり(`make-images` `make-figures`)は、クラウドでも動く(Playwright が無くても、Chrome/Edge の命令で描く。2026-10-12に対応)。それでも動かないときだけ、「画像はPCで作り直す」と伝える(すでにある画像は `runs/<ID>/images/` にある)。
 
 ## スマホでよく来る頼みと、やること
 | 頼み | やること |
@@ -34,8 +34,11 @@
 | 「投稿用の文を出して」 | `runs/<ID>/note_post/title.txt` と `body.md` を、コードブロックで出す。SNS案は `06_sns.md`(URLが決まっていれば `06_sns_ready.md`)から出す。【記事URL】が残っている案は、URLをもらってから置き換える |
 | 「投稿した。URLは〜」 | `mark-posted <ID> --url <URL>` を実行する(URLは、https:// で始まるnoteの記事URL)。SNS案のURLを埋めたファイルができる。コミット・push |
 | 「数字を入れて(インプ・PV・スキ)」 | `record-metrics <ID> --impressions … --pv … --likes …`。コミット・push |
-| 「ダッシュボードを更新して」 | `.claude/commands/sync-metrics.md` の手順。**`ArtifactData` が使えない環境なら、「ダッシュボードの更新はPCが入っているときにします」と伝えて止める**(更新したことにしない)。ほかの作業はダッシュボードなしでできる |
+| 「ダッシュボードを更新して」 | `.claude/commands/sync-metrics.md` の手順。クラウドでも動く(先に ToolSearch で `select:ArtifactData`。2026-10-12に確認済み)。**それでも使えないときだけ、「ダッシュボードの更新はPCが入っているときにします」と伝えて止める**(更新したことにしない) |
 | 「見送りにして」 | `mark-skipped <ID> --reason …`(ファイルは消さない)。コミット・push |
+
+## ダッシュボードは、作業のあとに自動で更新する
+- 承認2・投稿の記録・空欄の反映・見送りなど、「やること」が変わる作業をしたら、**最後に、頼まれなくても**ダッシュボードを更新する(`.claude/commands/sync-metrics.md` の手順4。`export-dashboard`)。持ち主は、PCが切れた状態で、スマホのダッシュボードだけを見ている。更新できなかったときは、そう報告する。
 
 ## 場所
 - 手順書: `.claude/commands/`(`daily-run` `weekly-plan` `sync-metrics` `collect-metrics` `analyze` `editorial-run`)。担当Agent: `.claude/agents/`。

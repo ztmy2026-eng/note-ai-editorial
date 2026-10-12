@@ -233,6 +233,35 @@ def _cmd_export_images(args) -> int:
     return 0
 
 
+def _cmd_export_dashboard(args) -> int:
+    """ダッシュボードに載せる「やること」「画像」「更新時刻」を、1書類=1ファイルで書き出す(PCが切れた状態でも、クラウドで実行できる)。"""
+    import datetime
+    import json
+    root = Path(args.root)
+    out = Path(args.out_dir)
+    (out / "tasks").mkdir(parents=True, exist_ok=True)
+    (out / "images").mkdir(parents=True, exist_ok=True)
+    data = tasks.export_tasks(root)
+    manifest = {"tasks": [], "images": {}}
+    for t in data["tasks"]:
+        doc = dict(t)
+        rid = doc.pop("id")
+        (out / "tasks" / f"{rid}.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+        manifest["tasks"].append(rid)
+        ids = []
+        for d in tasks.export_image_docs(root, rid):
+            doc_id = d.pop("id")
+            (out / "images" / f"{doc_id}.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            ids.append(doc_id)
+        manifest["images"][rid] = ids
+    meta = {"synced_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), "limits": data["limits"]}
+    (out / "meta.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+    (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    n_img = sum(len(v) for v in manifest["images"].values())
+    print(f"書き出しました: {out}(やること {len(manifest['tasks'])}件・画像 {n_img}枚)。manifest.json に、書類の名前の一覧があります")
+    return 0
+
+
 def _cmd_import_metrics(args) -> int:
     import json
     try:
@@ -351,6 +380,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_id")
     s.add_argument("--out-dir", required=True)
     s.set_defaults(fn=_cmd_export_images)
+    s = sub.add_parser("export-dashboard", help="ダッシュボードの更新用に、やること・画像・更新時刻をまとめて書き出す(sync-metrics の手順で使う)")
+    s.add_argument("--out-dir", required=True)
+    s.set_defaults(fn=_cmd_export_dashboard)
     s = sub.add_parser("import-metrics", help="ダッシュボードで直した数字(手入力)を取り込む")
     s.add_argument("file")
     s.set_defaults(fn=_cmd_import_metrics)

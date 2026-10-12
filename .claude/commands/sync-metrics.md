@@ -3,7 +3,7 @@ description: ダッシュボード(スマホ用の共有ページ)とシステ�
 ---
 ダッシュボード: https://claude.ai/artifact/QKDCrkrJ6MNY3VHRu9uixv (ソースは dashboard/index.html。自分だけが見られる非公開のページ)
 共有データ: コレクション `articles`(記事ごとの数字)・`followers`(日ごとの新規フォロー)・`tasks`(いまやること。実行ID=書類名)・`images`(記事の画像。1枚=1書類。書類名=`<実行ID>__<ファイル名の幹>`。base64入りで、ダッシュボードでコピーできる)・`meta`(書類名 `summary`:反映時刻と上限)。
-`ArtifactData` が使えない環境では、この手順は実行できない。その場合は「ダッシュボードはPC(VS Code)側で更新します」と短く伝えて止める(作り話で更新したことにしない)。
+**クラウドのセッション(PCが切れていても動く)でも、この手順は実行できる**(2026-10-12に確認。`ArtifactData` は、最初に ToolSearch で `select:ArtifactData` を実行すると使える)。それでも使えないときだけ、「ダッシュボードの更新はPCが入っているときにします」と短く伝えて止める(作り話で更新したことにしない)。
 
 1. **ページで直した数字を取り込む**
    `ArtifactData` の list(collection: articles)で全記事を読み、`src` が `manual` の項目を持つ記事だけを
@@ -15,6 +15,9 @@ description: ダッシュボード(スマホ用の共有ページ)とシステ�
    - 既存の記事は `update` で `title/theme/published/url/impressions/pv/likes/src` を更新する(`if_version` は list で読んだ値)。
    - `src.<項目>` が `manual` のものは、ページ側の値を残す(システム側の値で上書きしない)。
 4. **「やること」をページに反映する**(毎回、最後に必ず行う)
+   - **まとめて書き出す(おすすめ)**: `python -m note_editorial export-dashboard --out-dir <一時フォルダ>`。`tasks/<実行ID>.json`、`images/<書類名>.json`、`meta.json`、`manifest.json`(書類の名前の一覧)ができる。
+   - 書き込み(batch)の決まり: **1回につき、50書類まで・全体で1MiBまで**(画像は大きいので、実行ごとに分けて送る)。**1書類は256KiBまで**(大きい画像は、書き出しのときに自動で半分の大きさに縮めてある)。既存の書類を上書きするときは、list で読んだ `version` を `if_version` に付ける。`file_path` は、`/` 区切りで書く。
+   - 以下は、個別に書き出す場合の手順。
    - `python -m note_editorial export-tasks --out <一時ファイル>` を実行する。
    - `tasks` の各記事を、書類名=実行ID、中身=その記事の項目(`id` は除く)で `set` する(既存の書類は `if_version` を付ける)。1書類ごとに一時ファイルにして batch の `file_path` で渡す。
    - `tasks` を list し、今回の書き出しに無い実行(投稿済み・見送り済みになったもの)の書類は `delete` する。

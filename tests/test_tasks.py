@@ -105,3 +105,19 @@ def test_export_image_docs_shrinks_large_images(tmp_path, monkeypatch):
     docs = tasks.export_image_docs(tmp_path, "2026-10-12_001")
     assert docs[0]["width"] == 1280 and docs[0]["height"] == 650
     assert len(docs[0]["data"]) < 1000
+
+
+def test_export_dashboard_writes_one_file_per_document(tmp_path, monkeypatch):
+    import json
+    from note_editorial import cli, tasks
+
+    monkeypatch.setattr(tasks, "export_tasks", lambda root: {"limits": {"runs": [1, 1]}, "tasks": [{"id": "r1", "status": "sns_done"}]})
+    monkeypatch.setattr(tasks, "export_image_docs", lambda root, rid: [{"id": f"{rid}__cover", "data": "AA", "bytes": 1}])
+    parser = cli.build_parser()
+    args = parser.parse_args(["--root", str(tmp_path), "export-dashboard", "--out-dir", str(tmp_path / "d")])
+    assert args.fn(args) == 0
+    assert json.loads((tmp_path / "d" / "tasks" / "r1.json").read_text(encoding="utf-8")) == {"status": "sns_done"}
+    assert (tmp_path / "d" / "images" / "r1__cover.json").exists()
+    manifest = json.loads((tmp_path / "d" / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest == {"tasks": ["r1"], "images": {"r1": ["r1__cover"]}}
+    assert "synced_at" in json.loads((tmp_path / "d" / "meta.json").read_text(encoding="utf-8"))
