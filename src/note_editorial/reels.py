@@ -123,7 +123,7 @@ def _sapi_has_voice() -> bool:
         return False
 
 
-def synthesize_sapi(texts: list[str], out_dir: Path, rate: int = 0) -> list[Path]:
+def synthesize_sapi(texts: list[str], out_dir: Path, rate: int = 2) -> list[Path]:
     """Windows の日本語の声で、場面ごとに wav を作る。"""
     out_dir.mkdir(parents=True, exist_ok=True)
     jobs = []
