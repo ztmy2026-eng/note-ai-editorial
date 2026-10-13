@@ -3,14 +3,11 @@
   "theme": "saving-insurance",
   "theme_name": "節約・金融・保険",
   "created": "2026-10-09T22:46:04+00:00",
-  "status": "sns_done",
+  "status": "draft_done",
   "steps_done": [
     "research",
     "ideas",
-    "draft",
-    "critique",
-    "revised",
-    "sns"
+    "draft"
   ],
   "approvals": {
     "idea": {
@@ -27,5 +24,6 @@
     "date": "2026-10-10",
     "title": "AIに家計相談、頼りすぎ注意の4つ",
     "approved": false
-  }
+  },
+  "rounds": 2
 }
