@@ -35,6 +35,7 @@
 | 「投稿した。URLは〜」 | `mark-posted <ID> --url <URL>` を実行する(URLは、https:// で始まるnoteの記事URL)。SNS案のURLを埋めたファイルができる。コミット・push |
 | 「数字を入れて(インプ・PV・スキ)」 | `record-metrics <ID> --impressions … --pv … --likes …`。コミット・push |
 | 「ダッシュボードを更新して」 | `.claude/commands/sync-metrics.md` の手順。クラウドでも動く(先に ToolSearch で `select:ArtifactData`。2026-10-12に確認済み)。**それでも使えないときだけ、「ダッシュボードの更新はPCが入っているときにします」と伝えて止める**(更新したことにしない) |
+| 「リール動画を作って」 | `python -m pip install imageio-ffmpeg` のあと `make-reel <ID>`。声(VOICEVOX)はPCにだけ入っているので、クラウドでは音なしになる(そう伝える)。動画は `runs/<ID>/reel/reel.mp4` に保存してコミット・push(スマホはGitHubから保存) |
 | 「見送りにして」 | `mark-skipped <ID> --reason …`(ファイルは消さない)。コミット・push |
 
 ## ダッシュボードは、作業のあとに自動で更新する
