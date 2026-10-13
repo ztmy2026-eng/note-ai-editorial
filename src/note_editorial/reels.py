@@ -143,6 +143,71 @@ def synthesize_sapi(texts: list[str], out_dir: Path, rate: int = 2) -> list[Path
     return [w for _, w in jobs]
 
 
+VOICEVOX_URL = "http://127.0.0.1:50021"
+VOICEVOX_SPEAKER = 3            # ずんだもん(ノーマル)。かわいいキャラの声
+VOICEVOX_NAME = "ずんだもん"    # 動画の説明文に「VOICEVOX:ずんだもん」と書く(利用規約のクレジット表記)
+
+
+def _vv_get(path: str, timeout: float = 3) -> bytes | None:
+    import urllib.request
+    try:
+        with urllib.request.urlopen(VOICEVOX_URL + path, timeout=timeout) as r:
+            return r.read()
+    except OSError:
+        return None
+
+
+def find_voicevox_exe() -> Path | None:
+    import os
+    env = os.environ.get("VOICEVOX_ENGINE")
+    if env and Path(env).exists():
+        return Path(env)
+    base = Path(os.environ.get("LOCALAPPDATA", "")) / "voicevox"
+    found = sorted(base.glob("**/run.exe")) if base.exists() else []
+    return found[0] if found else None
+
+
+def voicevox_ready(start: bool = True) -> bool:
+    """VOICEVOX のエンジンが動いているか。動いていなければ、入っている場合だけ起動して待つ。"""
+    import time
+    if _vv_get("/version"):
+        return True
+    exe = find_voicevox_exe() if start else None
+    if not exe:
+        return False
+    subprocess.Popen([str(exe)], cwd=str(exe.parent), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    for _ in range(90):
+        time.sleep(1)
+        if _vv_get("/version"):
+            return True
+    return False
+
+
+def synthesize_voicevox(texts: list[str], out_dir: Path, speaker: int = VOICEVOX_SPEAKER, speed: float = 1.12) -> list[Path]:
+    """VOICEVOX(パソコンの中で動く、無料の読み上げソフト)で、場面ごとに wav を作る。"""
+    import json
+    import urllib.parse
+    import urllib.request
+    out_dir.mkdir(parents=True, exist_ok=True)
+    wavs = []
+    for i, t in enumerate(texts, 1):
+        q = urllib.request.Request(f"{VOICEVOX_URL}/audio_query?" + urllib.parse.urlencode({"text": t, "speaker": speaker}), method="POST")
+        try:
+            with urllib.request.urlopen(q, timeout=120) as r:
+                query = json.loads(r.read())
+            query["speedScale"] = speed
+            s = urllib.request.Request(f"{VOICEVOX_URL}/synthesis?speaker={speaker}", data=json.dumps(query).encode("utf-8"),
+                                       headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(s, timeout=300) as r:
+                wav = out_dir / f"voice_{i:02d}.wav"
+                wav.write_bytes(r.read())
+        except OSError as e:
+            raise ReelError(f"声(VOICEVOX)を作れませんでした: {e}") from e
+        wavs.append(wav)
+    return wavs
+
+
 EDGE_VOICE = "ja-JP-NanamiNeural"   # 親しみやすい(Friendly)・前向き(Positive)な女性の声。男性なら ja-JP-KeitaNeural
 
 
@@ -271,7 +336,13 @@ def make_reel(root: Path, run_id: str, voice: str = "auto") -> dict:
     narr = [narration_text(t) for t in texts]
     (out_dir / "narration.txt").write_text("\n".join(f"{i}. {t}" for i, t in enumerate(narr, 1)) + "\n", encoding="utf-8")
     voices, used = None, "none"
-    if voice in ("auto", "edge") and edge_available():  # 親しみやすい声(ネット接続が要る)。だめなら Windows の声へ
+    if voice in ("auto", "voicevox"):  # かわいいキャラの声(VOICEVOX。パソコンに入っていれば)
+        if voicevox_ready():
+            voices = synthesize_voicevox(narr, out_dir / "_voice")
+            used = "voicevox"
+        elif voice == "voicevox":
+            raise ReelError("VOICEVOX のエンジンが見つかりません(%LOCALAPPDATA%\\voicevox に入れるか、VOICEVOX_ENGINE に run.exe の場所を書く)")
+    if voices is None and voice in ("auto", "edge") and edge_available():  # 親しみやすい声(ネット接続が要る)。だめなら Windows の声へ
         try:
             voices = synthesize_edge(narr, out_dir / "_voice", ffmpeg)
             used = "edge"
@@ -291,6 +362,8 @@ def make_reel(root: Path, run_id: str, voice: str = "auto") -> dict:
     build_video(frames, mp4, ffmpeg, durations, voices)
     shutil.rmtree(out_dir / "_voice", ignore_errors=True)
     cap = caption_of(sns)
+    if used == "voicevox":  # VOICEVOX の利用規約: 動画の説明文にクレジットを書く
+        cap = cap.rstrip() + f"\n\nVOICEVOX:{VOICEVOX_NAME}"
     (out_dir / "caption.txt").write_text(cap + "\n", encoding="utf-8")
     seconds = round(sum(durations) - (len(frames) - 1) * FADE_SEC, 1)
     log_event(root, "reel_made", run_id=run_id, scenes=len(frames), seconds=seconds, voice=used)
