@@ -418,9 +418,12 @@ def _vary_cover_bg(specs, run_id):
         return
     import datetime
     day = datetime.date(int(m[1]), int(m[2]), int(m[3])).toordinal()
+    photos = sorted(Path("assets/mascot").glob("*.jpg"))
     for s in specs:
         if s.get("type") == "cover" and not s.get("bg"):
             s["bg"] = BG_ORDER[day % len(BG_ORDER)]
+        if s.get("type") == "cover" and s.get("photo") == "auto" and photos:  # 猫の写真を、日付で毎日かえる(同じ写真が続かない)
+            s["photo"] = str(photos[day % len(photos)])
 
 
 def make_figures(root: Path, run_id: str) -> list[Path]:

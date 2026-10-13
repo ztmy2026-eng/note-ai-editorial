@@ -9,3 +9,39 @@
 - ライセンス: CC0(表示義務なし)
 - 取得日: 2026-10-12(幅1800pxの縮小版)
 - 内容: 白とオレンジのマンチカン。短い足、青いバンダナ。
+
+## kitten_white_blue_eyes.jpg
+- 元: https://commons.wikimedia.org/wiki/File:A_focused_kitten_(Pixabay).jpg
+- ライセンス: CC0(表示義務なし)
+- 撮影者(参考): Ty Swartz
+- 取得日: 2026-10-13
+
+## kitten_tabby.jpg
+- 元: https://commons.wikimedia.org/wiki/File:A_seemingly_innocent_kitten_(Pixabay).jpg
+- ライセンス: CC0(表示義務なし)
+- 撮影者(参考): ksphotofive
+- 取得日: 2026-10-13
+
+## cat_white_odd_eyes.jpg
+- 元: https://commons.wikimedia.org/wiki/File:A_white_kitten.jpg
+- ライセンス: CC0(表示義務なし)
+- 撮影者(参考): Firman MPH
+- 取得日: 2026-10-13
+
+## kitten_white_blanket.jpg
+- 元: https://commons.wikimedia.org/wiki/File:Kitten_in_blanket.jpg
+- ライセンス: CC0(表示義務なし)
+- 撮影者(参考): AllNikArt
+- 取得日: 2026-10-13
+
+## munchkin_sleeping.jpg
+- 元: https://commons.wikimedia.org/wiki/File:Munchkin02.jpg
+- ライセンス: Public domain(表示義務なし)
+- 撮影者(参考): ja:User:Tobisako
+- 取得日: 2026-10-13
+
+## kitten_white_sitting.jpg
+- 元: https://commons.wikimedia.org/wiki/File:White_kitten_2.jpg
+- ライセンス: CC0(表示義務なし)
+- 撮影者(参考): Lisafern
+- 取得日: 2026-10-13
