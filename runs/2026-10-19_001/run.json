@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-10-19_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-18T22:46:24+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-19",
+    "title": "11月から電気代が上がる予定。先に確かめたい契約の3項目",
+    "approved": false
+  }
+}
