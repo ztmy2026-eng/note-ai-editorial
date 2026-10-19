@@ -1,0 +1,31 @@
+{
+  "run_id": "2026-10-20_001",
+  "theme": "newcomer",
+  "theme_name": "新社会人 × お金・仕事・キャリア",
+  "created": "2026-10-19T22:46:42+00:00",
+  "status": "sns_done",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-19T22:50:12+00:00",
+      "by": "auto"
+    },
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-20",
+    "title": "手取りと額面の差、どこへ行く?",
+    "approved": false
+  }
+}
