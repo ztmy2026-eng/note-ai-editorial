@@ -13,8 +13,8 @@ figures.json の例:
   {"type": "timeline", "name": "fig2_xxx", "title": "…", "items": [{"date": "10月", "label": "…", "desc": "…", "hl": false}]},
   {"type": "checklist", "name": "fig3_xxx", "title": "…", "columns": ["…"], "widths": [300, 500, 352], "rows": [["…"]]}
 ]
-cover の icon: cat(白いマンチカン。普通)|cat_happy(笑顔)|cat_worry(困り顔)|cat_think(考える)|house|yen|chart|doc|shield|robot|briefcase|cart|bolt(電気)|aircon(エアコン)|phone(スマホ・通信)|bulb(照明)|flame(ガス)|calendar(年払い・更新日)|receipt(明細・家計)(または illust_html で自作)。
-cover の photo: 写真のファイル(例: assets/mascot/munchkin_cc0_1.jpg。ライセンスが明確なものだけ。assets/mascot/README.md)。猫の絵(icon: cat…)のかわりに、実写を右に置く。
+cover の icon(ピクトグラム。書かなければタイトルの言葉から自動で選ぶ。猫は2026-10-18にやめた): house|yen|chart|doc|shield|robot|briefcase|cart|bolt(電気)|aircon(エアコン)|phone(スマホ・通信)|bulb(照明)|flame(ガス)|calendar(年払い・更新日)|receipt(明細・家計)(または illust_html で自作)。
+cover の photo: 2026-10-18から使わない(書いても無視される)。
 cover の title_html: <em>…</em>=紺の地に黄の文字、<b>…</b>=赤い文字。sub=タイトルの下の白い帯(2段型タイトルのサブ)。
 cover の bg(背景の黄色系): sun|lemon|amber|honey|cream、または「#ffd43b」形式の色。書かなければ、実行の日付で毎日変わる(同じ色が続かない)。
 """
@@ -314,6 +314,20 @@ _MEASURE = ('<script>window.addEventListener("load",function(){var d=document.cr
             'd.textContent="HEIGHT="+document.getElementById("t").offsetHeight;document.body.appendChild(d);});</script>')
 
 
+def _window_offset(base, work):
+    """Chrome の画面は、--window-size より低く描かれることがある(窓の枠の分)。足りない高さを測る(0なら補正なし)。"""
+    import subprocess
+    probe = work / "_probe.html"
+    probe.write_text('<html><body><script>document.body.textContent="IH="+window.innerHeight</script></body></html>', encoding="utf-8")
+    try:
+        dom = subprocess.run(base + ["--virtual-time-budget=2000", "--window-size=1280,400", "--dump-dom", probe.resolve().as_uri()],
+                             capture_output=True, timeout=60, check=False).stdout.decode("utf-8", "replace")
+    except (OSError, subprocess.TimeoutExpired):
+        return 0
+    m = re.search(r"IH=(\d+)", dom)
+    return max(0, 400 - int(m.group(1))) if m else 0
+
+
 def render_all_cli(specs: list[dict], out_dir: Path) -> list[Path]:
     """Playwright が無い環境(クラウドなど)用。画像づくりと同じ、Chrome/Edge の命令だけで描く(追加の導入が要らない)。
     高さは、先にページを読み込んで測る(--dump-dom)。"""
@@ -325,6 +339,7 @@ def render_all_cli(specs: list[dict], out_dir: Path) -> list[Path]:
     work.mkdir(exist_ok=True)
     base = [browser, "--headless", "--no-sandbox", "--disable-gpu", "--hide-scrollbars"]
     made = []
+    offset = _window_offset(base, work)
     try:
         for s in specs:
             out = out_dir / f"{s['name']}.png"
@@ -341,14 +356,23 @@ def render_all_cli(specs: list[dict], out_dir: Path) -> list[Path]:
             src = work / f"{s['name']}.html"
             src.write_text(_page_html(s), encoding="utf-8")
             out.unlink(missing_ok=True)
+            height = int(m.group(1))
             cmd = base + ["--force-device-scale-factor=2", f"--screenshot={out.resolve()}",
-                          f"--window-size=1280,{int(m.group(1))}", src.resolve().as_uri()]
+                          f"--window-size=1280,{height + offset}", src.resolve().as_uri()]
             try:
                 subprocess.run(cmd, capture_output=True, timeout=90, check=False)
             except (OSError, subprocess.TimeoutExpired) as e:
                 raise FigureError(f"図の作成に失敗しました({s['name']}): {e}") from e
             if not out.exists() or out.stat().st_size == 0:
                 raise FigureError(f"図ができませんでした: {s['name']}")
+            if offset:  # 窓の高さに足した分(下の余白)を切り落とす。Pillow が無ければ、そのまま(下に白い帯が出る)
+                try:
+                    from PIL import Image
+                    with Image.open(out) as im:
+                        im = im.crop((0, 0, im.width, height * 2))
+                        im.save(out)
+                except ImportError:
+                    pass
             made.append(out)
     finally:
         for f in work.glob("*"):
@@ -418,12 +442,33 @@ def _vary_cover_bg(specs, run_id):
         return
     import datetime
     day = datetime.date(int(m[1]), int(m[2]), int(m[3])).toordinal()
-    photos = sorted(Path("assets/mascot").glob("*.jpg"))
     for s in specs:
         if s.get("type") == "cover" and not s.get("bg"):
             s["bg"] = BG_ORDER[day % len(BG_ORDER)]
-        if s.get("type") == "cover" and s.get("photo") == "auto" and photos:  # 猫の写真を、日付で毎日かえる(同じ写真が続かない)
-            s["photo"] = str(photos[day % len(photos)])
+        if s.get("type") == "cover":  # 2026-10-18 決定: 見出し画像の猫(写真・絵)はやめ、ピクトグラムにする
+            s.pop("photo", None)
+            if not s.get("illust_html") and (not s.get("icon") or str(s.get("icon")).startswith("cat")):
+                s["icon"] = pick_icon(s)
+
+
+ICON_KEYWORDS = [  # タイトル・タグの言葉から、合うピクトグラムを選ぶ(上から順。icon を書けばそちらが優先)
+    ("bolt", ("電気", "電力", "停電")), ("flame", ("ガス", "暖房", "給湯")), ("aircon", ("エアコン", "冷房")),
+    ("phone", ("スマホ", "通信", "携帯", "サブスク", "アプリ")), ("bulb", ("照明", "LED", "節電")),
+    ("shield", ("保険", "医療", "防災")), ("chart", ("投資", "NISA", "iDeCo", "株", "積立", "資産")),
+    ("robot", ("AI", "ChatGPT", "自動")), ("briefcase", ("仕事", "転職", "給料", "手取り", "年収", "会社")),
+    ("house", ("賃貸", "家賃", "住", "引っ越")), ("cart", ("買い物", "コンビニ", "スーパー", "食費")),
+    ("calendar", ("年払い", "更新", "解約", "期限")), ("receipt", ("明細", "請求", "家計簿")),
+    ("doc", ("契約", "書類", "手続き")),
+]
+
+
+def pick_icon(s):
+    text = re.sub(r"<[^>]+>", "", " ".join(str(s.get(k, "")) for k in ("title_html", "sub", "tag")))
+    for name, words in ICON_KEYWORDS:
+        if any(w in text for w in words):
+            return name
+    return "yen"
+
 
 
 def make_figures(root: Path, run_id: str) -> list[Path]:
