@@ -1,0 +1,31 @@
+{
+  "run_id": "2026-10-21_001",
+  "theme": "investing",
+  "theme_name": "投資・資産形成",
+  "created": "2026-10-20T22:47:04+00:00",
+  "status": "sns_done",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-20T22:51:09+00:00",
+      "by": "auto"
+    },
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-21",
+    "title": "NISAの枠、使い切れていない人へ。確かめる3つのこと",
+    "approved": false
+  }
+}
