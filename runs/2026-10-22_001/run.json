@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-10-22_001",
+  "theme": "ai-work",
+  "theme_name": "AI × 仕事効率化",
+  "created": "2026-10-21T22:46:46+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-22",
+    "title": "AIに家計の相談、どこまで任せる?",
+    "approved": false
+  }
+}
