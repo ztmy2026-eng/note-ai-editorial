@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-10-23_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-10-22T22:47:11+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-23",
+    "title": "年末調整の書類、今年は何が変わる?｜出す前の確認5つ",
+    "approved": false
+  }
+}
