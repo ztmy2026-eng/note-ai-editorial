@@ -1,0 +1,22 @@
+{
+  "run_id": "2026-10-24_001",
+  "theme": "side-job",
+  "theme_name": "副業",
+  "created": "2026-10-23T22:46:14+00:00",
+  "status": "research_done",
+  "steps_done": [
+    "research"
+  ],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-24",
+    "title": "副業の収入、いつ申告が必要になる?",
+    "approved": false
+  }
+}
