@@ -1,0 +1,14 @@
+[
+ {"type":"cover","name":"2026-10-25_cover","tag":"iDeCoとNISA","title_html":"iDeCoとNISA、<br><em>どちらが先</em>?","sub":"迷う人の整理5ステップ","icon":"chart"},
+ {"type":"timeline","name":"2026-10-25_fig1_timeline","title":"考える順番は、お金の使い道から","sub":"制度の比較より先に、この順で見る",
+  "items":[
+   {"date":"1","label":"生活費の備え","desc":"すぐ使うお金を分ける","hl":true},
+   {"date":"2","label":"使う時期","desc":"いつ必要になるか考える","hl":true},
+   {"date":"3","label":"制度の違い","desc":"公式の言葉で確かめる","hl":false},
+   {"date":"4","label":"上限と手数料","desc":"自分に合うか見る","hl":false},
+   {"date":"5","label":"口座・商品","desc":"勧められる前に自分で選ぶ","hl":false}],
+  "note":"ステップ1と2が、順番を決める材料です"},
+ {"type":"checklist","name":"2026-10-25_fig2_checklist","title":"iDeCoとNISAの優遇のちがい","sub":"公式の説明より","columns":["制度","優遇の中身"],"widths":[300,852],
+  "rows":[["iDeCo","掛金の全額が所得控除/運用益が非課税/受け取り時にも控除"],["NISA","運用益が非課税/年360万円まで(つみたて120万円+成長240万円)"],["受け取り","iDeCoは原則60歳以降/NISAは売却できる(無期限)"]],
+  "note":"出典:厚生労働省・金融庁"}
+]

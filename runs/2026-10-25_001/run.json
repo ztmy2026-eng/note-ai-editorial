@@ -1,0 +1,31 @@
+{
+  "run_id": "2026-10-25_001",
+  "theme": "investing",
+  "theme_name": "投資・資産形成",
+  "created": "2026-10-24T22:46:52+00:00",
+  "status": "sns_done",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-10-24T22:50:38+00:00",
+      "by": "auto"
+    },
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-10-19",
+    "date": "2026-10-25",
+    "title": "iDeCoとNISA、どちらが先?。迷う人の整理5ステップ",
+    "approved": false
+  }
+}
