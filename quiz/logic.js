@@ -146,9 +146,14 @@
     function fill(list) {
       weightedOrder(list.filter(function (q) { return !used[q.id]; }), weightOf, rand).forEach(add);
     }
-    fill(Q.filter(function (q) { return q.level === level && !seen[q.id]; }));
-    fill(Q.filter(function (q) { return q.level === level; }));
-    fill(Q);
+    // wrong-list questions that are not due yet are never served as ordinary questions
+    var notDue = {};
+    (st.wrongList || []).forEach(function (e) { if (e && e.nextDue > today) notDue[e.id] = true; });
+    function ok(q) { return !notDue[q.id]; }
+    fill(Q.filter(function (q) { return q.level === level && !seen[q.id] && ok(q); }));
+    fill(Q.filter(function (q) { return q.level === level && ok(q); }));
+    fill(Q.filter(ok));
+    fill(Q); // last resort
     return out;
   }
 
@@ -240,14 +245,16 @@
       .replace(/[．。]/g, '.')
       .replace(/[－−ー]/g, '-')
       .replace(/[，,]/g, '')
+      .replace(/(\d)[\s\u3000]+(?=\d)/g, '$1\u0001')
       .replace(/[\s\u3000]/g, '')
-      .replace(/(倍|%|％|円)+$/, '');
+      .replace(/^(-?(?:\d+\.?\d*|\.\d+))[^\d.\-]+$/, '$1');
     if (!/^-?(\d+\.?\d*|\.\d+)$/.test(t)) return false;
     return Math.abs(parseFloat(t) - answer) <= tol + 1e-9;
   }
 
   function isStale(q, today) {
-    return !!(q && q.asof) && daysBetween(q.asof, today) > 90;
+    if (!q || !q.asof || q.stale === false) return false;
+    return daysBetween(q.checked || q.asof, today) > 90;
   }
 
   var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
