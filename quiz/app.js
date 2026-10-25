@@ -270,17 +270,9 @@
   // ---------- views ----------
   var Views = {};
   App.Views = Views;
-  window.QuizApp = App; // Task 8b adds Views.wrong / Views.stats / Views.words
+  window.QuizApp = App;
 
-  function placeholder(title) {
-    return function (root) {
-      root.appendChild(h('section', { class: 'card placeholder' },
-        h('h2', { text: title }), h('p', { class: 'muted', text: '準備中' })));
-    };
-  }
-  Views.wrong = placeholder('不正解リスト');
-  Views.stats = placeholder('成績');
-  Views.words = placeholder('用語帳');
+  // Views.wrong / Views.stats / Views.words live in views.js (loaded after this file).
 
   // ----- Home -----
   Views.home = function (root) {
@@ -591,8 +583,25 @@
       if (b.getAttribute('data-tab') === App.tab) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
     });
+    updateTabDot();
+  }
+  // Small count dot on the 不正解 tab when review items are due today.
+  function updateTabDot() {
+    var b = document.querySelector('.tab[data-tab="wrong"]');
+    if (!b) return;
+    var n = QL.dueWrong(App.S, today()).length;
+    var dot = b.querySelector('.tab-dot');
+    if (n > 0) {
+      if (!dot) { dot = h('span', { class: 'tab-dot', 'aria-hidden': 'true' }); b.appendChild(dot); }
+      dot.textContent = n > 9 ? '9+' : String(n);
+      b.setAttribute('aria-label', '不正解、今日出題' + n + '問');
+    } else {
+      if (dot) dot.remove();
+      b.removeAttribute('aria-label');
+    }
   }
   App.render = render;
+  App.util = { h: h, today: today, weekday: weekday, asofLine: asofLine, persist: persist, safeUrl: safeUrl };
   App.go = go;
 
   function tick() {
