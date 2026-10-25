@@ -52,59 +52,92 @@
   function weekday(dateStr) { return WEEK[new Date(dateStr + 'T00:00:00Z').getUTCDay()]; }
 
   // ---------- storage ----------
+  var CALL_MS = 8000;      // per db/user call
+  var BOOT_MS = 10000;     // shared deadline for the whole db handshake + first read
+  var WRITE_MS = 8000;
+
+  // Rejects with Error('timeout') if p does not settle in ms. Never leaves a timer behind.
+  function withTimeout(p, ms) {
+    var t;
+    var timeout = new Promise(function (_, rej) { t = setTimeout(function () { rej(new Error('timeout')); }, ms); });
+    return Promise.race([Promise.resolve(p), timeout]).then(
+      function (v) { clearTimeout(t); return v; },
+      function (e) { clearTimeout(t); throw e; });
+  }
+
   var Store = {
-    ref: null, localOk: false, failed: false,
+    ref: null, localOk: false, failed: false, cloudFailed: false,
+    deadline: 0,
+    left: function () { return Math.max(300, Math.min(CALL_MS, this.deadline - Date.now())); },
     testLocal: function () {
       try { localStorage.getItem(KEY); this.localOk = true; } catch (e) { this.localOk = false; }
     },
-    withTimeout: function (p, ms) {
-      return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]);
-    },
     init: async function () {
       this.testLocal();
+      this.deadline = Date.now() + BOOT_MS;
       try {
         if (!window.claude || typeof window.claude.use !== 'function') return;
-        var db = await this.withTimeout(window.claude.use('db'), 8000);
-        var user = await this.withTimeout(window.claude.use('user'), 8000);
+        var self = this;
+        var got = await Promise.all([
+          withTimeout(window.claude.use('db'), this.left()).catch(function () { return null; }),
+          withTimeout(window.claude.use('user'), this.left()).catch(function () { return null; })
+        ]);
+        var db = got[0], user = got[1];
         if (!db || !user) return;
-        var uid = await user.id();
+        var uid = await withTimeout(user.id(), self.left());
         if (!uid) return;
         this.ref = db.doc('data/users/' + uid + '/progress');
       } catch (e) { this.ref = null; }
     },
+    // Stored form: {json: <serialized state>, updatedAt: ISO string}
+    unwrap: function (raw) {
+      if (typeof raw !== 'string') return null;
+      try {
+        var o = JSON.parse(raw);
+        if (o && typeof o === 'object' && typeof o.json === 'string') return { json: o.json, updatedAt: typeof o.updatedAt === 'string' ? o.updatedAt : '' };
+      } catch (e) { /* fall through */ }
+      return { json: raw, updatedAt: '' };
+    },
     readLocal: function () {
       if (!this.localOk) return null;
-      try { return localStorage.getItem(KEY); } catch (e) { this.localOk = false; return null; }
+      try { return this.unwrap(localStorage.getItem(KEY)); } catch (e) { this.localOk = false; return null; }
     },
     load: async function () {
-      var raw = null;
+      var remote = null;
       if (this.ref) {
         try {
-          var snap = await this.ref.get();
-          var d = snap.exists ? snap.data() : null;
-          raw = d && typeof d.json === 'string' ? d.json : null;
-        } catch (e) { this.ref = null; }
+          var snap = await withTimeout(this.ref.get(), this.left());
+          var d = snap && snap.exists ? snap.data() : null;
+          if (d && typeof d.json === 'string') remote = { json: d.json, updatedAt: typeof d.updatedAt === 'string' ? d.updatedAt : '' };
+        } catch (e) { this.cloudFailed = true; }
       }
-      if (raw === null) raw = this.readLocal();
-      if (!this.ref && !this.localOk) this.failed = true;
-      return QL.loadState(raw);
+      var local = this.readLocal();
+      // prefer the newer copy (a failed cloud write leaves the local copy newer)
+      var pick = remote;
+      if (local && (!remote || local.updatedAt > remote.updatedAt)) pick = local;
+      if (pick) { App.updatedAt = pick.updatedAt; }
+      this.failed = !this.ref && !this.localOk;
+      return QL.loadState(pick ? pick.json : null);
     },
-    writeLocal: function (raw) {
+    writeLocal: function (raw, at) {
       if (!this.localOk) return false;
-      try { localStorage.setItem(KEY, raw); return true; } catch (e) { this.localOk = false; return false; }
+      try { localStorage.setItem(KEY, JSON.stringify({ json: raw, updatedAt: at })); return true; } catch (e) { this.localOk = false; return false; }
     },
-    write: async function (raw) {
-      var saved = false;
+    write: async function (raw, at) {
+      var localSaved = this.writeLocal(raw, at); // always keep a local copy too
+      var cloudSaved = false;
       if (this.ref) {
-        try { await this.ref.set({ json: raw }); saved = true; } catch (e) { /* fall through to local */ }
+        try { await withTimeout(this.ref.set({ json: raw, updatedAt: at }), WRITE_MS); cloudSaved = true; } catch (e) { cloudSaved = false; }
       }
-      if (!saved) saved = this.writeLocal(raw);
-      this.failed = !saved && !this.ref;
-      if (!saved) this.failed = true;
+      this.cloudFailed = !!this.ref && !cloudSaved;
+      this.failed = !cloudSaved && !localSaved;
       showBanner();
     }
   };
-  function showBanner() { $('#banner').hidden = !Store.failed; }
+  function showBanner() {
+    $('#banner').hidden = !Store.failed;
+    $('#notice').hidden = !(Store.cloudFailed && !Store.failed);
+  }
 
   var Saver = {
     timer: null, busy: false, dirty: false,
@@ -119,20 +152,22 @@
       try {
         while (this.dirty) {
           this.dirty = false;
-          await Store.write(QL.serialize(App.S));
+          await Store.write(QL.serialize(App.S), App.updatedAt);
         }
-      } finally { this.busy = false; }
+      } catch (e) { /* write() handles its own failures */ }
+      finally { this.busy = false; }
     },
+    // Synchronous local save for pagehide / tab hidden (a cloud write may not finish).
     flushLocal: function () {
-      if (this.dirty && !Store.ref) { Store.writeLocal(QL.serialize(App.S)); }
+      if (this.dirty || this.busy) Store.writeLocal(QL.serialize(App.S), App.updatedAt);
     }
   };
 
   // ---------- app state ----------
   var App = {
-    S: QL.emptyState(), tab: 'home', session: null, usedToday: {}, renderedDate: null
+    S: QL.emptyState(), tab: 'home', session: null, usedToday: {}, renderedDate: null, updatedAt: ''
   };
-  function persist() { Saver.queue(); }
+  function persist() { App.updatedAt = new Date().toISOString(); Saver.queue(); }
   function isDone(date) {
     return App.S.doneLog.some(function (e) { return e.date === date; });
   }
@@ -180,8 +215,8 @@
         h('span', { class: 'status-sub', id: 'timeleft', text: timeLeftText() + '(24時まで)' })));
     }
 
-    root.appendChild(h('button', { type: 'button', class: 'btn', id: 'start-btn', onclick: function () { startSession(); } },
-      done ? 'もっとやる(+5問)' : '今日の5問をはじめる'));
+    root.appendChild(h('button', { type: 'button', class: 'btn', id: 'start-btn', onclick: function () { if (inProgress()) go('quiz'); else startSession(); } },
+      inProgress() ? '途中の続きから' : (done ? 'もっとやる(+5問)' : '今日の5問をはじめる')));
 
     var due = QL.dueWrong(App.S, date).length;
     root.appendChild(h('p', { class: 'due-line' },
@@ -214,12 +249,16 @@
   }
 
   // ----- Quiz -----
+  function inProgress() { return !!(App.session && App.session.phase !== 'result'); }
+
   function startSession() {
+    if (!QUESTIONS.length) { App.session = null; go('quiz'); return; }
     var date = today();
     var used = App.usedToday[date] || (App.usedToday[date] = {});
     var pool = QUESTIONS.filter(function (q) { return !used[q.id]; });
     if (pool.length < PER_SET) pool = QUESTIONS;
     var picked = QL.pickDaily(App.S, pool, date, PER_SET);
+    if (!picked.length) { App.session = null; go('quiz'); return; }
     var dueIds = {};
     QL.dueWrong(App.S, date).forEach(function (e) { dueIds[e.id] = true; });
     picked.forEach(function (q) { used[q.id] = true; });
@@ -232,6 +271,10 @@
 
   Views.quiz = function (root) {
     var s = App.session;
+    if (!s && !QUESTIONS.length) {
+      root.appendChild(h('section', { class: 'card placeholder' }, h('h2', { text: '問題がありません' }), h('p', { class: 'muted', text: '問題データを読み込めませんでした。ページを開き直してください。' })));
+      return;
+    }
     if (!s) {
       var done = isDone(today());
       root.appendChild(h('section', { class: 'card placeholder' },
@@ -326,7 +369,7 @@
     if (v) v.focus({ preventScroll: false });
   }
 
-  function safeUrl(u) { return typeof u === 'string' && /^https?:\/\//i.test(u) ? u : null; }
+  function safeUrl(u) { return typeof u === 'string' && /^https:\/\//i.test(u) ? u : null; }
 
   function feedback(root, s, item) {
     var pres = item.pres, q = item.q, ok = item.correct;
@@ -340,19 +383,21 @@
     if (pres.term) {
       box.appendChild(h('p', { class: 'fb-term' }, '用語: ', h('b', { text: pres.term }), q.termDef ? ' ' + q.termDef : ''));
     }
-    if (pres.asof) {
-      var src = pres.source || {};
-      var url = safeUrl(src.url);
-      box.appendChild(h('p', { class: 'asof' },
-        '数字は ' + pres.asof + ' 時点 ／ 出典: ',
-        url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: src.name || url }) : (src.name || '不明'),
-        QL.isStale(q, s.date) ? h('span', { class: 'stale', text: '古い数字' }) : null));
-    }
+    if (pres.asof) box.appendChild(asofLine(pres, q, s.date));
     box.appendChild(reportButton(q.id));
     var last = s.idx === s.items.length - 1;
     box.appendChild(h('button', { type: 'button', class: 'btn', id: 'next-btn', onclick: function () { next(); } },
       last ? '結果を見る' : '次へ'));
     root.appendChild(box);
+  }
+
+  function asofLine(pres, q, date) {
+    var src = pres.source || {};
+    var url = safeUrl(src.url);
+    return h('p', { class: 'asof' },
+      '数字は ' + pres.asof + ' 時点 ／ 出典: ',
+      url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: src.name || url }) : (src.name || '不明'),
+      QL.isStale(q, date) ? h('span', { class: 'stale', text: '古い数字' }) : null);
   }
 
   function reportButton(id) {
@@ -396,6 +441,8 @@
 
   function resultView(root, s) {
     var n = s.items.length;
+    // s.date is the day the session started. Home uses today(); they differ only if a session
+    // runs across midnight JST (then Home, not this screen, shows the new day's streak state).
     var streak = QL.currentStreak(App.S, s.date);
     root.appendChild(h('section', { class: 'card score' },
       h('p', { class: 'muted', text: s.isMore ? 'もっとやる の結果' : '今日の5問 完了' }),
@@ -413,7 +460,8 @@
         card.appendChild(h('div', { class: 'wrongitem' },
           h('p', { class: 'qtext', text: p.question }),
           h('p', { class: 'fb-answer' }, '正解: ', h('b', { text: ans })),
-          h('p', { class: 'fb-explain', text: p.explain })));
+          h('p', { class: 'fb-explain', text: p.explain }),
+          p.asof ? asofLine(p, it.q, s.date) : null));
       });
       root.appendChild(card);
     } else {
@@ -469,9 +517,9 @@
       App.S = await Store.load();
     } catch (e) {
       App.S = QL.emptyState();
-      Store.failed = true;
+      Store.failed = !Store.ref && !Store.localOk;
     }
-    showBanner();
+    try { showBanner(); } catch (e) { /* ignore */ }
     render();
     setInterval(tick, 30000);
   }
