@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const { QUESTIONS } = require('../questions.js');
 
 // 後続の分野を足したら、ここに追加する(例: 'semi_ai', 'energy', 'health', 'robotics')
-const EXPECTED_FIELDS = ['basics', 'semi_ai', 'energy'];
+const EXPECTED_FIELDS = ['basics', 'semi_ai', 'energy', 'health'];
 const LEVELS = ['basic', 'mid', 'adv'];
 const FIELDS = ['basics', 'semi_ai', 'energy', 'health', 'robotics'];
 const TYPES = ['choice', 'number'];
@@ -114,6 +114,13 @@ test('semi_ai has at least 7 questions per level and half have variants', () => 
 
 test('energy has at least 7 questions per level and half have variants', () => {
   const b = QUESTIONS.filter((q) => q.field === 'energy');
+  for (const l of LEVELS) assert.ok(b.filter((q) => q.level === l).length >= 7, l);
+  assert.ok(b.length >= 21);
+  assert.ok(b.filter((q) => q.variants && q.variants.length).length * 2 >= b.length);
+});
+
+test('health has at least 7 questions per level and half have variants', () => {
+  const b = QUESTIONS.filter((q) => q.field === 'health');
   for (const l of LEVELS) assert.ok(b.filter((q) => q.level === l).length >= 7, l);
   assert.ok(b.length >= 21);
   assert.ok(b.filter((q) => q.variants && q.variants.length).length * 2 >= b.length);
