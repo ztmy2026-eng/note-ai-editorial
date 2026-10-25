@@ -27,7 +27,7 @@
       h('span', { class: 'chip lv', text: levelName(q.level) }));
   }
   function answerText(q) { return q.type === 'number' ? q.answer + (q.unit || '') : q.answer; }
-  function pct(r, t) { return t > 0 ? Math.round(r / t * 100) : 0; }
+  function pct(r, t) { return t > 0 ? Math.min(100, Math.max(0, Math.round(r / t * 100))) : 0; }
 
   // ======================= 不正解 =======================
   var openWrong = {};
@@ -95,7 +95,7 @@
 
   function setLevel(l) {
     if (App.S.level === l) return;
-    App.S = Object.assign({}, App.S, { level: l });
+    App.S = Object.assign({}, App.S, { level: l, recent: [] }); // recent restarts so the level-up suggestion counts from here
     U.persist();
     App.render();
     var b = document.querySelector('.lvbtn[data-level="' + l + '"]');
@@ -185,6 +185,7 @@
         rcard.appendChild(strip);
       } else {
         rcard.appendChild(h('p', { class: 'muted', text: 'まだありません。' }));
+        if (S.stats && Object.keys(S.stats).length) rcard.appendChild(h('p', { class: 'muted', text: 'レベルを変えたので、ここから数え直します。' }));
       }
       root.appendChild(rcard);
 
@@ -232,6 +233,7 @@
       if (seen[q.id]) {
         if (!t.seen) { t.seen = true; t.qs.unshift(t.qs.pop()); } // the first seen question comes first
       }
+      // Same term with a different termDef: the first one is kept (data check 2026-10: 0 such pairs in 133 questions).
       if (!t.def && q.termDef) t.def = q.termDef;
     });
     order.forEach(function (t) {

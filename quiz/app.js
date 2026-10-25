@@ -589,7 +589,9 @@
   function updateTabDot() {
     var b = document.querySelector('.tab[data-tab="wrong"]');
     if (!b) return;
-    var n = QL.dueWrong(App.S, today()).length;
+    var known = {};
+    QUESTIONS.forEach(function (q) { known[q.id] = true; });
+    var n = QL.dueWrong(App.S, today()).filter(function (e) { return known[e.id]; }).length;
     var dot = b.querySelector('.tab-dot');
     if (n > 0) {
       if (!dot) { dot = h('span', { class: 'tab-dot', 'aria-hidden': 'true' }); b.appendChild(dot); }
