@@ -47,6 +47,8 @@ for (const q of QUESTIONS) {
       assert.ok(q.asof <= TODAY, 'asof is in the future');
       assert.ok(q.source && nonEmpty(q.source.name), 'source.name');
       assert.match(q.source.url || '', /^https:\/\/\S+/);
+      // WebFetchできない公式ページは検索結果で確認したので、出典名の末尾に印を付ける
+      assert.ok(q.source.name.endsWith('(検索結果で確認)'), 'source.name must end with (検索結果で確認)');
       assert.ok(q.question.includes(q.asof.slice(0, 4)), 'asof year should appear in question text');
     }
   });
@@ -96,4 +98,10 @@ test('basics has at least 8 questions per level and half have variants', () => {
   const b = QUESTIONS.filter((q) => q.field === 'basics');
   for (const l of LEVELS) assert.ok(b.filter((q) => q.level === l).length >= 8, l);
   assert.ok(b.filter((q) => q.variants && q.variants.length).length * 2 >= b.length);
+});
+
+test('basics has at least 6 real-number questions spread over levels', () => {
+  const r = QUESTIONS.filter((q) => q.field === 'basics' && q.asof);
+  assert.ok(r.length >= 6);
+  for (const l of LEVELS) assert.ok(r.some((q) => q.level === l), l);
 });
