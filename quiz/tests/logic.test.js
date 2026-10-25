@@ -263,3 +263,22 @@ test('present: does not mutate q', () => {
   L.present(q, true, seqRng(1)); L.present(q, false, seqRng(2));
   assert.strictEqual(JSON.stringify(q), copy);
 });
+
+test('present: number question uses the variant\'s own answer on retry', () => {
+  const q = { id: 'n2', level: 'basic', field: 'basics', type: 'number', question: '10の2割は?', answer: 2, explain: 'x', term: 't',
+    variants: [{ question: '50の2割は?', answer: 10 }] };
+  const p = L.present(q, true, seqRng(1));
+  assert.strictEqual(p.question, '50の2割は?');
+  assert.strictEqual(p.answer, 10);
+  assert.strictEqual(L.present(q, false, seqRng(1)).answer, 2);
+});
+
+test('present: variant whose answer is not in its choices falls back to the original', () => {
+  const q = pq();
+  q.variants = [{ question: '壊れた言い換え', choices: ['A', 'B', 'C', 'D'], answer: 'Z' }];
+  for (let s = 1; s <= 10; s++) {
+    const p = L.present(q, true, seqRng(s));
+    assert.strictEqual(p.question, q.question);
+    assert.strictEqual(p.choices[p.correctIndex], '株価収益率');
+  }
+});

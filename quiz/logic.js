@@ -161,8 +161,15 @@
       var others = q.variants.filter(function (v) { return v && v.question && v.question !== q.question; });
       if (others.length) {
         var v = others[Math.min(Math.floor(rand() * others.length), others.length - 1)];
-        text = v.question;
-        if (v.choices && v.answer !== undefined) { choices = v.choices; answer = v.answer; }
+        if (q.type === 'number') {
+          text = v.question;
+          if (v.answer !== undefined) answer = v.answer;
+        } else if (v.choices && v.answer !== undefined) {
+          // a variant whose answer is not among its own choices is unanswerable: keep the original
+          if (v.choices.indexOf(v.answer) >= 0) { text = v.question; choices = v.choices; answer = v.answer; }
+        } else {
+          text = v.question;
+        }
       }
     }
     var out = {
