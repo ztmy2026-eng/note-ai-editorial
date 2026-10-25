@@ -90,8 +90,8 @@
       explain: 'ROAは借入も含めた総資産をどれだけ使いこなして利益を出したか、ROEは株主のお金(自己資本)に対する利益です。借入を増やすと、同じ利益でもROEは高く見えやすい点に注意が必要です。',
       term: 'ROA', termDef: '利益を総資産で割った比率。会社の資産全体の使い方の効率を見る。',
       variants: [{ question: '借入(負債)を増やすと、利益が同じでもROEが高く見えやすいのはなぜですか?',
-        choices: ['同じ資産でも自己資本の割合が小さくなり、利益が少ない自己資本に対する比率になるから', '借入をすると利益が必ず増えるから', 'ROEは負債の額で割って計算するから', '借入は税金がかからないから'],
-        answer: '同じ資産でも自己資本の割合が小さくなり、利益が少ない自己資本に対する比率になるから' }] },
+        choices: ['同じ利益を、より小さい自己資本で割ることになるから', '借入をすると利益が必ず増えるから', 'ROEは負債の額で割って計算するから', '借入は税金がかからないから'],
+        answer: '同じ利益を、より小さい自己資本で割ることになるから' }] },
     { id: 'basics-mid-03', level: 'mid', field: 'basics', type: 'number',
       question: '(例題)株価が2,000円で、一年間の配当が一株100円の会社の配当利回りは何%ですか?',
       answer: 5, tol: 0.1, unit: '%',
@@ -337,8 +337,8 @@
         choices: ['旅行代理店', '製造装置・素材の会社', '飲食店', '衣料品店'], answer: '製造装置・素材の会社' }] },
     { id: 'semi_ai-mid-02', level: 'mid', field: 'semi_ai', type: 'choice',
       question: '半導体メーカーが設備投資(CAPEX)を大きく増やしたとき、見ておきたい点として最も適切なものはどれですか?',
-      choices: ['設備投資をすると、在庫は必ずゼロになる', '需要の裏付けがあるか。需要が弱まると、固定費と減価償却の負担が重くなるから', '設備投資が多いほど、利益は必ず増えるので心配はない', '設備投資は、決算とは全く関係がない'],
-      answer: '需要の裏付けがあるか。需要が弱まると、固定費と減価償却の負担が重くなるから',
+      choices: ['設備投資をすると、在庫は必ずゼロになる', '需要の裏付けがあるか。需要が弱いと固定費の負担が重くなる', '投資が多いほど、利益は必ず増えるので心配はない', '設備投資は、決算とは全く関係がない'],
+      answer: '需要の裏付けがあるか。需要が弱いと固定費の負担が重くなる',
       explain: '工場や装置への投資は、完成後に減価償却として費用になり、稼働率が下がると負担が重くなります。逆に需要が強いときの投資は、将来の成長の土台になります。投資額と、需要の強さの両方を見ることが大切です。',
       term: '設備投資(CAPEX)', termDef: '工場や装置など、将来の生産のために使う投資。後から減価償却として費用になる。',
       variants: [{ question: '工場の稼働率が下がると、利益が悪化しやすいのはなぜですか?',
@@ -382,15 +382,15 @@
     { id: 'semi_ai-mid-07', level: 'mid', field: 'semi_ai', type: 'number',
       question: '世界半導体市場統計(WSTS)の2026年8月公表の予測では、2026年通年の世界の半導体市場は、およそ何億ドルと見込まれていますか?',
       answer: 16550, tol: 100, unit: '億ドル',
-      explain: 'WSTSは2026年8月公表の予測で、2026年通年の市場を1,655 billion(約1兆6,550億)ドル、前年比およそ108%の増加と見込みました。春の予測(約1兆5,100億ドル)から上方修正されています。予測は四半期ごとに見直されるので、この数字は変わります。',
+      explain: 'WSTSは2026年8月公表の予測で、2026年通年の市場を1,655 billion(約1兆6,550億)ドル、前年比およそ108%の増加と見込みました。春の予測より18ポイント上方修正されています。予測は四半期ごとに見直されるので、この数字は変わります。',
       term: '市場予測の見直し', termDef: '市場予測は、実績に合わせて四半期ごとなどに上方・下方修正される。数字は固定ではない。',
       asof: '2026-08-06', source: { name: '世界半導体市場統計(WSTS)「Global Semiconductor Market records exceptional growth in Q2 2026」(検索結果で確認)', url: 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026' } },
     { id: 'semi_ai-mid-08', level: 'mid', field: 'semi_ai', type: 'number',
-      question: '経済産業省の2026年7月の資料によると、2026年4月に承認された、ラピダス(次世代半導体の国内企業)への2026年度の追加支援は、およそ何億円でしたか?',
+      question: '2026年4月11日に発表された、ラピダス(次世代半導体の国内企業)への2026年度の追加支援は、およそ何億円でしたか?',
       answer: 6315, tol: 5, unit: '億円',
-      explain: '2026年4月、外部有識者の審査を経て、ラピダスの2026年度の計画と追加支援(約6,315億円)が承認されたと、経済産業省の資料に記されています。国が巨額の支援をするのは、先端半導体を国内で作る体制を整えるためですが、事業が成功する保証はありません。支援額は年度ごとに変わります。',
+      explain: '2026年4月、ラピダスへの2026年度の追加支援(約6,315億円)を承認したと、経済産業大臣が表明したと報じられました(経済産業省の資料にも同趣旨の記載があるとの検索結果)。国が巨額の支援をするのは、先端半導体を国内で作る体制を整えるためですが、事業が成功する保証はありません。支援額は年度ごとに変わります。',
       term: '半導体への公的支援', termDef: '国が補助金や出資などで、国内の半導体の生産・開発を後押しする政策。',
-      asof: '2026-07-01', source: { name: '経済産業省「Rapidus株式会社の事業の進捗状況について(2026年7月)」(検索結果で確認)', url: 'https://www.meti.go.jp/policy/mono_info_service/joho/laws/josokuho/josokuho_futaiketsugi_R8-7.pdf' } }
+      asof: '2026-04-11', source: { name: '経済産業省の発表・資料(報道で補足)(検索結果で確認)', url: 'https://www.meti.go.jp/policy/mono_info_service/joho/laws/josokuho/josokuho_futaiketsugi_R8-7.pdf' } }
   );
 
   QUESTIONS.push(
@@ -448,7 +448,7 @@
     { id: 'semi_ai-adv-07', level: 'adv', field: 'semi_ai', type: 'number',
       question: '世界半導体市場統計(WSTS)の2026年8月公表の予測では、2026年のメモリ半導体の市場は前年に比べて、およそ何%増えると見込まれていますか?',
       answer: 302, tol: 5, unit: '%',
-      explain: 'WSTSは2026年8月公表の予測で、2026年のメモリを前年比およそ302%増と見込みました(春の予測から上方修正)。AI向けのHBMなどで需要が急増し、価格も上がっているためとされます。メモリは需給で価格が大きく動く分野で、この予測も今後見直されるため、数字は変わります。',
+      explain: 'WSTSは2026年8月公表の予測で、2026年のメモリを前年比およそ302%増と見込みました(春の予測より53ポイント上方修正)。メモリは需給で価格が大きく動きやすい分野というのが一般的な見方で、AI向けの需要が背景にあると言われますが、リリース自体はその要因まで示していません。この予測も今後見直されるため、数字は変わります。',
       term: 'メモリ市況', termDef: 'メモリは需給の変化で価格・売上が大きく振れやすく、半導体の中でも特にサイクルの影響が出やすい。',
       asof: '2026-08-06', source: { name: '世界半導体市場統計(WSTS)「Global Semiconductor Market records exceptional growth in Q2 2026」(検索結果で確認)', url: 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026' } },
     { id: 'semi_ai-adv-08', level: 'adv', field: 'semi_ai', type: 'choice',
@@ -457,7 +457,7 @@
       answer: '2022年10月13日',
       explain: 'BISは2022年10月7日にこの規則を公表し、官報には2022年10月13日付(87 FR 62186)で掲載されました。先端のAI用チップや、製造装置の中国向け輸出を制限する内容で、その後2023年にも改定されています。規制は見直されることがあるため、現在の内容は公的な発表で確認してください。',
       term: '対中半導体輸出規制', termDef: '米国が安全保障を理由に、先端半導体と製造装置の中国向け輸出を制限する規制。何度も見直されている。',
-      asof: '2022-10-13', source: { name: '米国連邦官報(Federal Register)2022年10月13日号 BIS「Implementation of Additional Export Controls: Certain Advanced Computing and Semiconductor Manufacturing Items」(検索結果で確認)', url: 'https://www.federalregister.gov/documents/2022/10/13' } }
+      asof: '2022-10-13', source: { name: '米国連邦官報 BIS暫定最終規則 87 FR 62186(検索結果で確認)', url: 'https://www.federalregister.gov/documents/2022/10/13/2022-21658/implementation-of-additional-export-controls-certain-advanced-computing-and-semiconductor' } }
   );
 
   return QUESTIONS;
