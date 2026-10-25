@@ -1,0 +1,31 @@
+<title>株クイズ・毎日5問</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="毎日5問で学ぶ、株式投資の勉強用クイズです。">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="style.css">
+
+<div id="banner" class="banner" role="alert" hidden>この端末では保存できません。進み具合は、このページを閉じると消えます。</div>
+
+<main id="view" class="view" tabindex="-1">
+  <section class="card loading" aria-busy="true">
+    <p class="loading-text">読み込み中…</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>勉強用です。投資の助言ではありません</p>
+</footer>
+
+<nav id="tabs" class="tabs" aria-label="メニュー">
+  <button type="button" class="tab" data-tab="home"><span class="tab-ico" aria-hidden="true">🏠</span><span>ホーム</span></button>
+  <button type="button" class="tab" data-tab="quiz"><span class="tab-ico" aria-hidden="true">✏️</span><span>クイズ</span></button>
+  <button type="button" class="tab" data-tab="wrong"><span class="tab-ico" aria-hidden="true">🔁</span><span>不正解</span></button>
+  <button type="button" class="tab" data-tab="stats"><span class="tab-ico" aria-hidden="true">📊</span><span>成績</span></button>
+  <button type="button" class="tab" data-tab="words"><span class="tab-ico" aria-hidden="true">📖</span><span>用語帳</span></button>
+</nav>
+
+<div id="live" class="sr-only" aria-live="polite" role="status"></div>
+
+<script src="logic.js"></script>
+<script src="questions.js"></script>
+<script src="app.js"></script>
