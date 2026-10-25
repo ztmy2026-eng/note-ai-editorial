@@ -76,6 +76,82 @@
       .sort(function (a, b) { return a.nextDue < b.nextDue ? -1 : a.nextDue > b.nextDue ? 1 : 0; });
   }
 
+  function shuffle(arr, rng) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var SECTORS = ['semi_ai', 'energy', 'health', 'robotics'];
+
+  function dayOfYear(dateStr) {
+    return daysBetween(dateStr.slice(0, 4) + '-01-01', dateStr) + 1;
+  }
+
+  function accuracy(stats, field) {
+    var byLevel = (stats && stats[field]) || {};
+    var right = 0, total = 0;
+    Object.keys(byLevel).forEach(function (lv) {
+      var e = byLevel[lv] || {};
+      right += Number(e.right) || 0;
+      total += Number(e.total) || 0;
+    });
+    return total > 0 ? right / total : 0.5;
+  }
+
+  // Weighted random order (Efraimidis-Spirakis): higher weight tends to come first.
+  function weightedOrder(list, weightOf, rng) {
+    return shuffle(list, rng).map(function (q) {
+      var w = weightOf(q);
+      return { q: q, k: Math.pow(Math.max(rng(), 1e-12), 1 / w) };
+    }).sort(function (a, b) { return b.k - a.k; }).map(function (x) { return x.q; });
+  }
+
+  function pickDaily(state, Q, today, n, rng) {
+    var st = state || {};
+    var count = n === undefined ? 5 : n;
+    var rand = rng || Math.random;
+    var level = st.level || 'basic';
+    var seen = {};
+    (st.seen || []).forEach(function (id) { seen[id] = true; });
+    var byId = {};
+    Q.forEach(function (q) { byId[q.id] = q; });
+
+    var out = [];
+    var used = {};
+    function add(q) {
+      if (out.length >= count || used[q.id]) return;
+      used[q.id] = true;
+      out.push(q);
+    }
+
+    // 1) due wrong-list questions, hard cap of 2
+    var due = 0;
+    dueWrong(st, today).forEach(function (e) {
+      if (due >= 2 || !byId[e.id]) return;
+      due++;
+      add(byId[e.id]);
+    });
+
+    // 2) emphasis alternates by day parity; weak fields weigh more
+    var basicsDay = dayOfYear(today) % 2 === 0;
+    function weightOf(q) {
+      var preferred = (q.field === 'basics') === basicsDay && (basicsDay || SECTORS.indexOf(q.field) >= 0);
+      var weak = 1 + (1 - accuracy(st.stats, q.field)) * 2;
+      return (preferred ? 4 : 1) * weak;
+    }
+    function fill(list) {
+      weightedOrder(list.filter(function (q) { return !used[q.id]; }), weightOf, rand).forEach(add);
+    }
+    fill(Q.filter(function (q) { return q.level === level && !seen[q.id]; }));
+    fill(Q.filter(function (q) { return q.level === level; }));
+    fill(Q);
+    return out;
+  }
+
   var api = {
     jstDate: jstDate,
     daysBetween: daysBetween,
@@ -84,7 +160,8 @@
     addDays: addDays,
     STAGE_DAYS: STAGE_DAYS,
     recordAnswer: recordAnswer,
-    dueWrong: dueWrong
+    dueWrong: dueWrong,
+    pickDaily: pickDaily
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
