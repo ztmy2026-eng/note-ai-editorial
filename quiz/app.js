@@ -65,6 +65,10 @@
       function (e) { clearTimeout(t); throw e; });
   }
 
+  function validJson(j) {
+    if (typeof j !== 'string') return false;
+    try { var o = JSON.parse(j); return !!o && typeof o === 'object' && !Array.isArray(o); } catch (e) { return false; }
+  }
   function validAt(x) {
     return typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(x) && !isNaN(Date.parse(x)) ? x : '';
   }
@@ -83,16 +87,18 @@
       out.lastDoneDate = rl || ll;
       out.streak = rl ? R.streak : L.streak;
     } else { out.lastDoneDate = null; out.streak = Math.max(R.streak, L.streak); }
-    var seenLog = {}, log = [];
+    // one entry per date, keeping the earlier time
+    var byDate = {};
     R.doneLog.concat(L.doneLog).forEach(function (e) {
-      var k = e.date + '|' + (e.time || '');
-      if (!seenLog[k]) { seenLog[k] = true; log.push(e); }
+      var cur = byDate[e.date];
+      if (!cur || (e.time || '99:99') < (cur.time || '99:99')) byDate[e.date] = e;
     });
-    out.doneLog = log.sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : 0; });
+    out.doneLog = Object.keys(byDate).sort().map(function (d) { return byDate[d]; });
+    // ids on both sides: the newer copy's entry wins. ids on one side only are kept, so an item
+    // graduated on one side can be re-added; it self-heals through review.
     var wl = {};
-    R.wrongList.concat(L.wrongList).forEach(function (e) {
-      if (!wl[e.id] || e.nextDue > wl[e.id].nextDue) wl[e.id] = e;
-    });
+    R.wrongList.forEach(function (e) { wl[e.id] = e; });
+    L.wrongList.forEach(function (e) { if (!wl[e.id] || newerLocal) wl[e.id] = e; });
     out.wrongList = Object.keys(wl).map(function (k) { return wl[k]; });
     out.stats = {};
     [R.stats, L.stats].forEach(function (st) {
@@ -114,7 +120,7 @@
   }
 
   var Store = {
-    ref: null, uid: '', readOk: false, localOk: false, failed: false, cloudFailed: false,
+    ref: null, readOk: false, localOk: false, failed: false, cloudFailed: false,
     deadline: 0,
     left: function () { return Math.max(300, Math.min(CALL_MS, this.deadline - Date.now())); },
     testLocal: function () {
@@ -134,26 +140,24 @@
         if (!db || !user) return;
         var uid = await withTimeout(user.id(), self.left());
         if (!uid) return;
-        this.uid = String(uid);
         this.ref = db.doc('data/users/' + uid + '/progress');
       } catch (e) { this.ref = null; }
     },
-    // Local wrapper: {json, updatedAt, uid}. A copy written for another user is ignored.
+    // Local wrapper: {json, updatedAt}. One anonymous local key (single-owner app).
     unwrap: function (raw) {
       if (typeof raw !== 'string') return null;
       try {
         var o = JSON.parse(raw);
         if (o && typeof o === 'object' && typeof o.json === 'string') {
-          return { json: o.json, updatedAt: validAt(o.updatedAt), uid: typeof o.uid === 'string' ? o.uid : '' };
+          return { json: o.json, updatedAt: validAt(o.updatedAt) };
         }
       } catch (e) { /* fall through */ }
-      return { json: raw, updatedAt: '', uid: '' };
+      return { json: raw, updatedAt: '' };
     },
     readLocal: function () {
       if (!this.localOk) return null;
       try {
-        var w = this.unwrap(localStorage.getItem(KEY));
-        return w && w.uid === this.uid ? w : null;
+        return this.unwrap(localStorage.getItem(KEY));
       } catch (e) { this.localOk = false; return null; }
     },
     // One cloud read. readOk becomes true only when get() succeeds ("no document yet" counts).
@@ -163,7 +167,7 @@
         var snap = await withTimeout(this.ref.get(), this.left());
         var d = snap && snap.exists ? snap.data() : null;
         this.readOk = true;
-        var remote = d && typeof d.json === 'string' ? { json: d.json, updatedAt: validAt(d.updatedAt) } : null;
+        var remote = d && validJson(d.json) ? { json: d.json, updatedAt: validAt(d.updatedAt) } : null; // corrupt cloud doc = missing
         return { ok: true, remote: remote };
       } catch (e) {
         this.readOk = false;
@@ -174,7 +178,7 @@
       var r = await this.readRemote();
       var remote = r.remote;
       var local = this.readLocal();
-      // prefer the newer copy; a legacy cloud doc (no updatedAt) is older than a wrapped local copy
+      // prefer the newer copy; a cloud doc without a valid updatedAt loses to a local copy that has one
       var pick = remote;
       if (local && (!remote || local.updatedAt > remote.updatedAt)) pick = local;
       if (pick) App.updatedAt = pick.updatedAt;
@@ -195,7 +199,7 @@
     },
     writeLocal: function (raw, at) {
       if (!this.localOk) return false;
-      try { localStorage.setItem(KEY, JSON.stringify({ json: raw, updatedAt: at, uid: this.uid })); return true; } catch (e) { this.localOk = false; return false; }
+      try { localStorage.setItem(KEY, JSON.stringify({ json: raw, updatedAt: at })); return true; } catch (e) { this.localOk = false; return false; }
     },
     // Always saves locally first. Never calls ref.set() until a cloud read has succeeded
     // (otherwise a thin local state could overwrite the real cloud document).
