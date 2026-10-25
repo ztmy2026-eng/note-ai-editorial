@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const { QUESTIONS } = require('../questions.js');
 
 // 後続の分野を足したら、ここに追加する(例: 'semi_ai', 'energy', 'health', 'robotics')
-const EXPECTED_FIELDS = ['basics', 'semi_ai', 'energy', 'health'];
+const EXPECTED_FIELDS = ['basics', 'semi_ai', 'energy', 'health', 'robotics'];
 const LEVELS = ['basic', 'mid', 'adv'];
 const FIELDS = ['basics', 'semi_ai', 'energy', 'health', 'robotics'];
 const TYPES = ['choice', 'number'];
@@ -126,10 +126,27 @@ test('health has at least 7 questions per level and half have variants', () => {
   assert.ok(b.filter((q) => q.variants && q.variants.length).length * 2 >= b.length);
 });
 
+test('robotics has at least 7 questions per level and half have variants', () => {
+  const b = QUESTIONS.filter((q) => q.field === 'robotics');
+  for (const l of LEVELS) assert.ok(b.filter((q) => q.level === l).length >= 7, l);
+  assert.ok(b.length >= 21);
+  assert.ok(b.filter((q) => q.variants && q.variants.length).length * 2 >= b.length);
+});
+
 test('each expected field has at least 4 real-number questions over at least 2 levels', () => {
   for (const f of EXPECTED_FIELDS) {
     const r = QUESTIONS.filter((q) => q.field === f && q.asof);
     assert.ok(r.length >= 4, `${f} has ${r.length} real-number questions`);
     assert.ok(new Set(r.map((q) => q.level)).size >= 2, `${f} real-number levels`);
+  }
+});
+
+test('whole file: at least 110 questions and every field has at least 7 per level', () => {
+  assert.ok(QUESTIONS.length >= 110, `total ${QUESTIONS.length}`);
+  for (const f of FIELDS) {
+    for (const l of LEVELS) {
+      const n = QUESTIONS.filter((q) => q.field === f && q.level === l).length;
+      assert.ok(n >= 7, `${f}/${l} has ${n}`);
+    }
   }
 });
