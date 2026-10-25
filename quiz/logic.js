@@ -250,6 +250,69 @@
     return !!(q && q.asof) && daysBetween(q.asof, today) > 90;
   }
 
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  function isObj(x) { return x !== null && typeof x === 'object' && !Array.isArray(x); }
+  function isNum(x) { return typeof x === 'number' && isFinite(x); }
+  function isDateStr(x) { return typeof x === 'string' && DATE_RE.test(x); }
+
+  function emptyState() {
+    return {
+      streak: 0, lastDoneDate: null, doneLog: [], wrongList: [], stats: {},
+      recent: [], seen: [], level: 'basic', badges: [], reports: []
+    };
+  }
+
+  function strings(a) {
+    return Array.isArray(a) ? a.filter(function (x) { return typeof x === 'string'; }) : [];
+  }
+
+  function loadState(raw) {
+    var out = emptyState();
+    var p;
+    try { p = JSON.parse(raw); } catch (e) { return out; }
+    if (!isObj(p)) return out;
+    if (isNum(p.streak) && p.streak >= 0) out.streak = p.streak;
+    if (isDateStr(p.lastDoneDate)) out.lastDoneDate = p.lastDoneDate;
+    if (p.level === 'basic' || p.level === 'mid' || p.level === 'adv') out.level = p.level;
+    out.seen = strings(p.seen);
+    out.badges = strings(p.badges);
+    out.reports = strings(p.reports);
+    if (Array.isArray(p.recent)) {
+      out.recent = p.recent.filter(function (x) { return x === 0 || x === 1; }).slice(-20);
+    }
+    if (Array.isArray(p.doneLog)) {
+      out.doneLog = p.doneLog.filter(function (e) { return isObj(e) && typeof e.date === 'string'; });
+    }
+    if (Array.isArray(p.wrongList)) {
+      p.wrongList.forEach(function (e) {
+        if (!isObj(e) || typeof e.id !== 'string' || e.id === '' || !isDateStr(e.nextDue)) return;
+        out.wrongList.push({
+          id: e.id,
+          stage: isNum(e.stage) ? e.stage : 0,
+          nextDue: e.nextDue,
+          okInRow: isNum(e.okInRow) ? e.okInRow : 0
+        });
+      });
+    }
+    if (isObj(p.stats)) {
+      Object.keys(p.stats).forEach(function (f) {
+        var lv = p.stats[f];
+        if (!isObj(lv)) return;
+        var clean = {};
+        Object.keys(lv).forEach(function (l) {
+          var c = lv[l];
+          if (isObj(c) && isNum(c.right) && isNum(c.total)) clean[l] = { right: c.right, total: c.total };
+        });
+        if (Object.keys(clean).length) out.stats[f] = clean;
+      });
+    }
+    return out;
+  }
+
+  function serialize(state) {
+    return JSON.stringify(state);
+  }
+
   var api = {
     jstDate: jstDate,
     daysBetween: daysBetween,
@@ -265,7 +328,10 @@
     suggestLevel: suggestLevel,
     badgesFor: badgesFor,
     numberAnswerOk: numberAnswerOk,
-    isStale: isStale
+    isStale: isStale,
+    emptyState: emptyState,
+    loadState: loadState,
+    serialize: serialize
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

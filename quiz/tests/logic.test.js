@@ -351,3 +351,88 @@ test('numberAnswerOk: tolerance edge is inclusive despite float error', () => {
   assert.strictEqual(L.numberAnswerOk('1.1', 1, 0.1), true);
   assert.strictEqual(L.numberAnswerOk('15.4', 15.2, 0.1), false);
 });
+
+// ---- Task 6: emptyState / loadState / serialize ----
+const KEYS = ['streak', 'lastDoneDate', 'doneLog', 'wrongList', 'stats', 'recent', 'seen', 'level', 'badges', 'reports'];
+
+test('emptyState has all keys with defaults', () => {
+  const s = L.emptyState();
+  assert.deepStrictEqual(Object.keys(s).sort(), KEYS.slice().sort());
+  assert.strictEqual(s.streak, 0);
+  assert.strictEqual(s.lastDoneDate, null);
+  assert.strictEqual(s.level, 'basic');
+  assert.deepStrictEqual(s.stats, {});
+  assert.deepStrictEqual(s.wrongList, []);
+  assert.notStrictEqual(L.emptyState().wrongList, s.wrongList);
+});
+
+test('loadState survives null, broken JSON, non-objects, wrong types', () => {
+  const empty = L.emptyState();
+  assert.deepStrictEqual(L.loadState(null), empty);
+  assert.deepStrictEqual(L.loadState(undefined), empty);
+  assert.deepStrictEqual(L.loadState('{broken'), empty);
+  assert.deepStrictEqual(L.loadState('[]'), empty);
+  assert.deepStrictEqual(L.loadState('null'), empty);
+  assert.deepStrictEqual(L.loadState('5'), empty);
+  assert.deepStrictEqual(L.loadState('{"streak":"x"}'), empty);
+  const s = L.loadState('{"streak":3,"level":"zzz","lastDoneDate":"bad","recent":"x"}');
+  assert.strictEqual(s.streak, 3);
+  assert.strictEqual(s.level, 'basic');
+  assert.strictEqual(s.lastDoneDate, null);
+  assert.deepStrictEqual(s.recent, []);
+  assert.strictEqual(L.loadState('{"streak":-2}').streak, 0);
+});
+
+test('loadState sanitizes list fields', () => {
+  const raw = JSON.stringify({
+    recent: [1, 0, 2, 'a', 1], seen: ['a', 1, null, 'b'], badges: ['x', 3], reports: ['q1', {}],
+    doneLog: [{ date: '2026-10-01', time: 't' }, null, { date: 5 }, 7],
+    stats: { stock: { basic: { right: 1, total: 2 }, mid: { right: 'x' } }, bad: 5, bad2: { basic: null } }
+  });
+  const s = L.loadState(raw);
+  assert.deepStrictEqual(s.recent, [1, 0, 1]);
+  assert.deepStrictEqual(s.seen, ['a', 'b']);
+  assert.deepStrictEqual(s.badges, ['x']);
+  assert.deepStrictEqual(s.reports, ['q1']);
+  assert.strictEqual(s.doneLog.length, 1);
+  assert.strictEqual(s.doneLog[0].date, '2026-10-01');
+  assert.deepStrictEqual(s.stats.stock, { basic: { right: 1, total: 2 } });
+  assert.strictEqual(s.stats.bad, undefined);
+  const many = L.loadState(JSON.stringify({ recent: new Array(30).fill(1).map((_, i) => i % 2) }));
+  assert.strictEqual(many.recent.length, 20);
+});
+
+test('corrupted wrongList is sanitized and logic functions do not throw', () => {
+  const raw = JSON.stringify({
+    wrongList: [null, 5, 'x', {}, { id: 'a' }, { id: '', nextDue: '2026-10-01' },
+      { id: 'b', nextDue: '2026-10-20' },
+      { id: 'c', stage: 'x', okInRow: null, nextDue: '2026-10-10' },
+      { id: 'd', stage: 2, okInRow: 1, nextDue: 'tomorrow' }]
+  });
+  const s = L.loadState(raw);
+  assert.deepStrictEqual(s.wrongList, [
+    { id: 'b', stage: 0, nextDue: '2026-10-20', okInRow: 0 },
+    { id: 'c', stage: 0, nextDue: '2026-10-10', okInRow: 0 }
+  ]);
+  assert.doesNotThrow(() => L.dueWrong(s, '2026-10-25'));
+  assert.doesNotThrow(() => L.recordAnswer(s, { id: 'b' }, true, '2026-10-25'));
+  assert.doesNotThrow(() => L.recordAnswer(s, { id: 'zz' }, false, '2026-10-25'));
+  for (const bad of ['{"wrongList":[null]}', '{"wrongList":{}}', '{"wrongList":[{"id":"a"}]}']) {
+    const t = L.loadState(bad);
+    assert.deepStrictEqual(t.wrongList, []);
+    assert.doesNotThrow(() => L.dueWrong(t, '2026-10-25'));
+    assert.doesNotThrow(() => L.recordAnswer(t, { id: 'a' }, false, '2026-10-25'));
+  }
+});
+
+test('serialize/loadState round trip', () => {
+  const s = L.emptyState();
+  s.streak = 4; s.lastDoneDate = '2026-10-24'; s.level = 'mid';
+  s.doneLog = [{ date: '2026-10-24', time: '07:00' }];
+  s.wrongList = [{ id: 'q1', stage: 1, nextDue: '2026-10-27', okInRow: 1 }];
+  s.stats = { stock: { basic: { right: 3, total: 5 } } };
+  s.recent = [1, 0, 1]; s.seen = ['q1', 'q2']; s.badges = ['b1']; s.reports = ['q9'];
+  const str = L.serialize(s);
+  assert.strictEqual(typeof str, 'string');
+  assert.deepStrictEqual(L.loadState(str), s);
+});
