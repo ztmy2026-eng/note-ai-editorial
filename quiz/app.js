@@ -65,8 +65,56 @@
       function (e) { clearTimeout(t); throw e; });
   }
 
+  function validAt(x) {
+    return typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(x) && !isNaN(Date.parse(x)) ? x : '';
+  }
+
+  // Merge two copies of the progress (used only when a cloud read succeeds late, after this
+  // device already recorded answers). Conservative: union / later date / max counts.
+  // Residual risk: another device writing at the same moment can still be overwritten (last writer wins).
+  function mergeStates(R, L, rAt, lAt) {
+    var newerLocal = lAt > rAt;
+    var out = {};
+    var rl = R.lastDoneDate, ll = L.lastDoneDate;
+    if (rl && ll) {
+      out.lastDoneDate = rl > ll ? rl : ll;
+      out.streak = rl > ll ? R.streak : (ll > rl ? L.streak : Math.max(R.streak, L.streak));
+    } else if (rl || ll) {
+      out.lastDoneDate = rl || ll;
+      out.streak = rl ? R.streak : L.streak;
+    } else { out.lastDoneDate = null; out.streak = Math.max(R.streak, L.streak); }
+    var seenLog = {}, log = [];
+    R.doneLog.concat(L.doneLog).forEach(function (e) {
+      var k = e.date + '|' + (e.time || '');
+      if (!seenLog[k]) { seenLog[k] = true; log.push(e); }
+    });
+    out.doneLog = log.sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : 0; });
+    var wl = {};
+    R.wrongList.concat(L.wrongList).forEach(function (e) {
+      if (!wl[e.id] || e.nextDue > wl[e.id].nextDue) wl[e.id] = e;
+    });
+    out.wrongList = Object.keys(wl).map(function (k) { return wl[k]; });
+    out.stats = {};
+    [R.stats, L.stats].forEach(function (st) {
+      Object.keys(st).forEach(function (f) {
+        out.stats[f] = out.stats[f] || {};
+        Object.keys(st[f]).forEach(function (lv) {
+          var c = st[f][lv], o = out.stats[f][lv] || { right: 0, total: 0 };
+          out.stats[f][lv] = { right: Math.max(o.right, c.right), total: Math.max(o.total, c.total) };
+        });
+      });
+    });
+    out.recent = (newerLocal ? L : R).recent;
+    out.level = (newerLocal ? L : R).level;
+    ['seen', 'badges', 'reports'].forEach(function (k) {
+      var u = {};
+      out[k] = R[k].concat(L[k]).filter(function (x) { if (u[x]) return false; u[x] = true; return true; });
+    });
+    return QL.loadState(JSON.stringify(out));
+  }
+
   var Store = {
-    ref: null, localOk: false, failed: false, cloudFailed: false,
+    ref: null, uid: '', readOk: false, localOk: false, failed: false, cloudFailed: false,
     deadline: 0,
     left: function () { return Math.max(300, Math.min(CALL_MS, this.deadline - Date.now())); },
     testLocal: function () {
@@ -86,51 +134,91 @@
         if (!db || !user) return;
         var uid = await withTimeout(user.id(), self.left());
         if (!uid) return;
+        this.uid = String(uid);
         this.ref = db.doc('data/users/' + uid + '/progress');
       } catch (e) { this.ref = null; }
     },
-    // Stored form: {json: <serialized state>, updatedAt: ISO string}
+    // Local wrapper: {json, updatedAt, uid}. A copy written for another user is ignored.
     unwrap: function (raw) {
       if (typeof raw !== 'string') return null;
       try {
         var o = JSON.parse(raw);
-        if (o && typeof o === 'object' && typeof o.json === 'string') return { json: o.json, updatedAt: typeof o.updatedAt === 'string' ? o.updatedAt : '' };
+        if (o && typeof o === 'object' && typeof o.json === 'string') {
+          return { json: o.json, updatedAt: validAt(o.updatedAt), uid: typeof o.uid === 'string' ? o.uid : '' };
+        }
       } catch (e) { /* fall through */ }
-      return { json: raw, updatedAt: '' };
+      return { json: raw, updatedAt: '', uid: '' };
     },
     readLocal: function () {
       if (!this.localOk) return null;
-      try { return this.unwrap(localStorage.getItem(KEY)); } catch (e) { this.localOk = false; return null; }
+      try {
+        var w = this.unwrap(localStorage.getItem(KEY));
+        return w && w.uid === this.uid ? w : null;
+      } catch (e) { this.localOk = false; return null; }
+    },
+    // One cloud read. readOk becomes true only when get() succeeds ("no document yet" counts).
+    readRemote: async function () {
+      if (!this.ref) return { ok: true, remote: null };
+      try {
+        var snap = await withTimeout(this.ref.get(), this.left());
+        var d = snap && snap.exists ? snap.data() : null;
+        this.readOk = true;
+        var remote = d && typeof d.json === 'string' ? { json: d.json, updatedAt: validAt(d.updatedAt) } : null;
+        return { ok: true, remote: remote };
+      } catch (e) {
+        this.readOk = false;
+        return { ok: false, remote: null };
+      }
     },
     load: async function () {
-      var remote = null;
-      if (this.ref) {
-        try {
-          var snap = await withTimeout(this.ref.get(), this.left());
-          var d = snap && snap.exists ? snap.data() : null;
-          if (d && typeof d.json === 'string') remote = { json: d.json, updatedAt: typeof d.updatedAt === 'string' ? d.updatedAt : '' };
-        } catch (e) { this.cloudFailed = true; }
-      }
+      var r = await this.readRemote();
+      var remote = r.remote;
       var local = this.readLocal();
-      // prefer the newer copy (a failed cloud write leaves the local copy newer)
+      // prefer the newer copy; a legacy cloud doc (no updatedAt) is older than a wrapped local copy
       var pick = remote;
       if (local && (!remote || local.updatedAt > remote.updatedAt)) pick = local;
-      if (pick) { App.updatedAt = pick.updatedAt; }
+      if (pick) App.updatedAt = pick.updatedAt;
+      this.cloudFailed = !!this.ref && !this.readOk;
       this.failed = !this.ref && !this.localOk;
       return QL.loadState(pick ? pick.json : null);
     },
+    // Late read after an earlier failure: merge the cloud copy into what this device recorded.
+    syncRead: async function () {
+      var r = await this.readRemote();
+      if (!r.ok) return false;
+      if (r.remote) {
+        App.S = mergeStates(QL.loadState(r.remote.json), App.S, r.remote.updatedAt, App.updatedAt);
+        App.updatedAt = new Date().toISOString();
+        if (App.onAdopt) App.onAdopt();
+      }
+      return true;
+    },
     writeLocal: function (raw, at) {
       if (!this.localOk) return false;
-      try { localStorage.setItem(KEY, JSON.stringify({ json: raw, updatedAt: at })); return true; } catch (e) { this.localOk = false; return false; }
+      try { localStorage.setItem(KEY, JSON.stringify({ json: raw, updatedAt: at, uid: this.uid })); return true; } catch (e) { this.localOk = false; return false; }
     },
-    write: async function (raw, at) {
-      var localSaved = this.writeLocal(raw, at); // always keep a local copy too
+    // Always saves locally first. Never calls ref.set() until a cloud read has succeeded
+    // (otherwise a thin local state could overwrite the real cloud document).
+    // The cloud payload is built after the awaits, so a retry always sends the CURRENT state.
+    write: async function () {
+      var localSaved = this.writeLocal(QL.serialize(App.S), App.updatedAt);
+      if (this.ref && !this.readOk) {
+        var before = App.updatedAt;
+        await this.syncRead();
+        if (App.updatedAt !== before) localSaved = this.writeLocal(QL.serialize(App.S), App.updatedAt) || localSaved;
+      }
       var cloudSaved = false;
-      if (this.ref) {
-        try { await withTimeout(this.ref.set({ json: raw, updatedAt: at }), WRITE_MS); cloudSaved = true; } catch (e) { cloudSaved = false; }
+      if (this.ref && this.readOk) {
+        try {
+          await withTimeout(this.ref.set({ json: QL.serialize(App.S), updatedAt: App.updatedAt }), WRITE_MS);
+          cloudSaved = true;
+        } catch (e) { cloudSaved = false; }
+        // A timed-out write may still land late on the server (it cannot be cancelled) and could be
+        // overtaken by the retry; writes are single-flight and each retry sends the current state,
+        // so the newest state normally wins. Cross-device races remain possible (last writer wins).
       }
       this.cloudFailed = !!this.ref && !cloudSaved;
-      this.failed = !cloudSaved && !localSaved;
+      this.failed = !localSaved && !cloudSaved;
       showBanner();
     }
   };
@@ -152,7 +240,7 @@
       try {
         while (this.dirty) {
           this.dirty = false;
-          await Store.write(QL.serialize(App.S), App.updatedAt);
+          await Store.write();
         }
       } catch (e) { /* write() handles its own failures */ }
       finally { this.busy = false; }
@@ -249,7 +337,13 @@
   }
 
   // ----- Quiz -----
-  function inProgress() { return !!(App.session && App.session.phase !== 'result'); }
+  // A session that started on an earlier JST day is dropped (answers already recorded stay recorded).
+  function dropStale() {
+    var s = App.session;
+    if (s && s.phase !== 'result' && s.date !== today()) { App.session = null; return true; }
+    return false;
+  }
+  function inProgress() { dropStale(); return !!(App.session && App.session.phase !== 'result'); }
 
   function startSession() {
     if (!QUESTIONS.length) { App.session = null; go('quiz'); return; }
@@ -270,6 +364,7 @@
   }
 
   Views.quiz = function (root) {
+    dropStale();
     var s = App.session;
     if (!s && !QUESTIONS.length) {
       root.appendChild(h('section', { class: 'card placeholder' }, h('h2', { text: '問題がありません' }), h('p', { class: 'muted', text: '問題データを読み込めませんでした。ページを開き直してください。' })));
@@ -345,6 +440,7 @@
   }
 
   function answer(input) {
+    if (dropStale()) { render(); return; }
     var s = App.session;
     if (!s || s.phase !== 'q') return;
     var item = s.items[s.idx], q = item.q, pres = item.pres;
@@ -414,6 +510,7 @@
   }
 
   function next() {
+    if (dropStale()) { render(); return; }
     var s = App.session;
     if (s.idx < s.items.length - 1) { s.idx++; s.phase = 'q'; render(); window.scrollTo(0, 0); return; }
     complete(s);
@@ -495,6 +592,7 @@
   App.go = go;
 
   function tick() {
+    if (dropStale() && App.tab === 'quiz') { render(); return; }
     if (App.tab !== 'home') return;
     if (App.renderedDate !== today()) { render(); return; }
     var el = $('#timeleft');
@@ -510,8 +608,10 @@
     try { history.replaceState({ tab: 'home' }, ''); } catch (e) { /* ignore */ }
     window.addEventListener('pagehide', function () { Saver.flushLocal(); });
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') Saver.flushLocal(); else tick();
+      if (document.visibilityState === 'hidden') Saver.flushLocal();
+      else { tick(); if (Store.ref && !Store.readOk) Saver.queue(); }
     });
+    App.onAdopt = function () { if (App.tab === 'home') render(); };
     try {
       await Store.init();
       App.S = await Store.load();
