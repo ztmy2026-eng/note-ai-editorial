@@ -436,3 +436,52 @@ test('serialize/loadState round trip', () => {
   assert.strictEqual(typeof str, 'string');
   assert.deepStrictEqual(L.loadState(str), s);
 });
+
+test('pickDaily: not-yet-due wrong-list items are not served when other questions exist', () => {
+  const Q = mkQ(12);
+  const seen = Q.map(q => q.id);
+  const wrong = ['q0', 'q1', 'q2'].map(id => ({ id, stage: 0, nextDue: '2026-10-26', okInRow: 0 }));
+  for (let seed = 1; seed <= 30; seed++) {
+    const r = L.pickDaily({ seen, wrongList: wrong }, Q, '2026-10-25', 5, seqRng(seed));
+    assert.strictEqual(r.length, 5);
+    assert.ok(dupFree(r));
+    assert.ok(!r.some(q => ['q0', 'q1', 'q2'].includes(q.id)), 'not-due wrong item served');
+  }
+});
+
+test('pickDaily: last resort still returns distinct questions when the pool is tiny', () => {
+  const Q = mkQ(5);
+  const wrong = Q.map(q => ({ id: q.id, stage: 0, nextDue: '2026-10-26', okInRow: 0 }));
+  const r = L.pickDaily({ seen: Q.map(q => q.id), wrongList: wrong }, Q, '2026-10-25', 5, seqRng(9));
+  assert.strictEqual(r.length, 5);
+  assert.ok(dupFree(r));
+});
+
+test('pickDaily: due wrong-list items are still served', () => {
+  const Q = mkQ(12);
+  const state = { seen: Q.map(q => q.id), wrongList: [{ id: 'q3', stage: 0, nextDue: '2026-10-25', okInRow: 0 }] };
+  const r = L.pickDaily(state, Q, '2026-10-25', 5, seqRng(5));
+  assert.ok(r.some(q => q.id === 'q3'));
+});
+
+test('numberAnswerOk: trailing unit text is stripped', () => {
+  assert.strictEqual(L.numberAnswerOk('4033億ドル', 4033, 0), true);
+  assert.strictEqual(L.numberAnswerOk('120万円', 120, 0), true);
+  assert.strictEqual(L.numberAnswerOk('35.4万台', 35.4, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('３５．４ 万台', 35.4, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('12kg', 12, 0), true);
+  assert.strictEqual(L.numberAnswerOk('$12', 12, 0), false);
+  assert.strictEqual(L.numberAnswerOk('abc', 1, 1), false);
+  assert.strictEqual(L.numberAnswerOk('', 1, 1), false);
+  assert.strictEqual(L.numberAnswerOk('1 2', 12, 0), false);
+  assert.strictEqual(L.numberAnswerOk('1,2,3x4', 1234, 0), false);
+  assert.strictEqual(L.numberAnswerOk('約12', 12, 0), false);
+  assert.strictEqual(L.numberAnswerOk('4033億ドル', 4000, 0), false);
+});
+
+test('isStale: checked date and stale:false', () => {
+  assert.strictEqual(L.isStale({ asof: '2025-01-01', checked: '2026-10-25' }, '2026-10-25'), false);
+  assert.strictEqual(L.isStale({ asof: '2026-10-01', checked: '2026-07-26' }, '2026-10-25'), true);
+  assert.strictEqual(L.isStale({ asof: '2026-10-01', checked: '2026-07-27' }, '2026-10-25'), false);
+  assert.strictEqual(L.isStale({ asof: '2020-01-01', stale: false }, '2026-10-25'), false);
+});

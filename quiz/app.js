@@ -349,12 +349,12 @@
     if (pool.length < PER_SET) pool = QUESTIONS;
     var picked = QL.pickDaily(App.S, pool, date, PER_SET);
     if (!picked.length) { App.session = null; go('quiz'); return; }
-    var dueIds = {};
-    QL.dueWrong(App.S, date).forEach(function (e) { dueIds[e.id] = true; });
+    var wrongIds = {};
+    (App.S.wrongList || []).forEach(function (e) { wrongIds[e.id] = true; });
     picked.forEach(function (q) { used[q.id] = true; });
     App.session = {
       date: date, isMore: isDone(date), idx: 0, phase: 'q', score: 0, wrong: [], newBadges: [],
-      items: picked.map(function (q) { return { q: q, retry: !!dueIds[q.id], pres: null, input: null, correct: null }; })
+      items: picked.map(function (q) { return { q: q, retry: !!wrongIds[q.id], pres: null, input: null, correct: null }; })
     };
     go('quiz');
   }
@@ -486,10 +486,13 @@
   function asofLine(pres, q, date) {
     var src = pres.source || {};
     var url = safeUrl(src.url);
+    var stale = QL.isStale(q, date);
     return h('p', { class: 'asof' },
       '数字は ' + pres.asof + ' 時点 ／ 出典: ',
       url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: src.name || url }) : (src.name || '不明'),
-      QL.isStale(q, date) ? h('span', { class: 'stale', text: '古い数字' }) : null);
+      q.checked ? ' ／ 確認 ' + q.checked : null,
+      stale ? h('span', { class: 'stale', text: '古い数字(最新ではありません)' }) : null,
+      h('small', { class: 'asof-note', text: '数字は基準日時点です。最新ではない場合があります' }));
   }
 
   function reportButton(id) {
