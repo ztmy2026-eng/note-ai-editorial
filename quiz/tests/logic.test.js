@@ -345,3 +345,9 @@ test('isStale: 90 days not stale, 91 stale, no asof false', () => {
   assert.strictEqual(L.isStale({ asof: '2026-07-26' }, '2026-10-25'), true);
   assert.strictEqual(L.isStale({}, '2026-10-25'), false);
 });
+
+test('numberAnswerOk: tolerance edge is inclusive despite float error', () => {
+  assert.strictEqual(L.numberAnswerOk('15.3', 15.2, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('1.1', 1, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('15.4', 15.2, 0.1), false);
+});

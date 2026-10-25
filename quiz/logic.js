@@ -243,7 +243,7 @@
       .replace(/[\s\u3000]/g, '')
       .replace(/(倍|%|％|円)+$/, '');
     if (!/^-?(\d+\.?\d*|\.\d+)$/.test(t)) return false;
-    return Math.abs(parseFloat(t) - answer) <= tol;
+    return Math.abs(parseFloat(t) - answer) <= tol + 1e-9;
   }
 
   function isStale(q, today) {
