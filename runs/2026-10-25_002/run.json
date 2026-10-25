@@ -3,7 +3,7 @@
   "theme": "investing",
   "theme_name": "投資・資産形成",
   "created": "2026-10-25T03:34:10+00:00",
-  "status": "sns_done",
+  "status": "publish_approved",
   "steps_done": [
     "research",
     "ideas",
@@ -18,7 +18,10 @@
       "at": "2026-10-25T03:41:17+00:00",
       "by": "human"
     },
-    "publish": null,
+    "publish": {
+      "at": "2026-10-25T07:13:44+00:00",
+      "by": "human"
+    },
     "sns": null
   },
   "posted": null
