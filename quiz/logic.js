@@ -195,6 +195,61 @@
     return out;
   }
 
+  function addStat(state, q, correct) {
+    var s = Object.assign({}, state);
+    var stats = Object.assign({}, s.stats || {});
+    var byLevel = Object.assign({}, stats[q.field] || {});
+    var cur = byLevel[q.level] || { right: 0, total: 0 };
+    byLevel[q.level] = { right: cur.right + (correct ? 1 : 0), total: cur.total + 1 };
+    stats[q.field] = byLevel;
+    s.stats = stats;
+    s.recent = (s.recent || []).concat(correct ? 1 : 0).slice(-20);
+    return s;
+  }
+
+  function suggestLevel(state) {
+    var recent = (state && state.recent) || [];
+    if (recent.length < 20) return null;
+    var right = recent.reduce(function (a, b) { return a + b; }, 0);
+    if (!(right / recent.length > 0.8)) return null;
+    var order = ['basic', 'mid', 'adv'];
+    var i = order.indexOf(state.level || 'basic');
+    return i >= 0 && i < order.length - 1 ? order[i + 1] : null;
+  }
+
+  function totalAnswers(state) {
+    var n = 0, stats = (state && state.stats) || {};
+    Object.keys(stats).forEach(function (f) {
+      Object.keys(stats[f] || {}).forEach(function (l) { n += (stats[f][l] && stats[f][l].total) || 0; });
+    });
+    return n;
+  }
+
+  function badgesFor(state) {
+    var out = [], n = totalAnswers(state), st = (state && state.streak) || 0;
+    if (n >= 1) out.push('first');
+    if (st >= 7) out.push('streak7');
+    if (st >= 30) out.push('streak30');
+    if (n >= 100) out.push('q100');
+    return out;
+  }
+
+  function numberAnswerOk(input, answer, tol) {
+    var t = String(input == null ? '' : input)
+      .replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+      .replace(/[．。]/g, '.')
+      .replace(/[－−ー]/g, '-')
+      .replace(/[，,]/g, '')
+      .replace(/[\s\u3000]/g, '')
+      .replace(/(倍|%|％|円)+$/, '');
+    if (!/^-?(\d+\.?\d*|\.\d+)$/.test(t)) return false;
+    return Math.abs(parseFloat(t) - answer) <= tol;
+  }
+
+  function isStale(q, today) {
+    return !!(q && q.asof) && daysBetween(q.asof, today) > 90;
+  }
+
   var api = {
     jstDate: jstDate,
     daysBetween: daysBetween,
@@ -205,7 +260,12 @@
     recordAnswer: recordAnswer,
     dueWrong: dueWrong,
     pickDaily: pickDaily,
-    present: present
+    present: present,
+    addStat: addStat,
+    suggestLevel: suggestLevel,
+    badgesFor: badgesFor,
+    numberAnswerOk: numberAnswerOk,
+    isStale: isStale
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

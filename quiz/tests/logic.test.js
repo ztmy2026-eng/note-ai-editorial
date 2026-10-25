@@ -282,3 +282,66 @@ test('present: variant whose answer is not in its choices falls back to the orig
     assert.strictEqual(p.choices[p.correctIndex], '株価収益率');
   }
 });
+
+// ---- Task 5: stats, level suggestion, badges, number answers, staleness ----
+test('addStat: creates nested stats, counts right only if correct, returns new state', () => {
+  const s0 = {};
+  const s1 = L.addStat(s0, { field: 'basics', level: 'basic' }, true);
+  const s2 = L.addStat(s1, { field: 'basics', level: 'basic' }, false);
+  assert.deepStrictEqual(s2.stats.basics.basic, { right: 1, total: 2 });
+  assert.deepStrictEqual(s2.recent, [1, 0]);
+  assert.strictEqual(s0.stats, undefined);
+  assert.deepStrictEqual(s1.stats.basics.basic, { right: 1, total: 1 });
+});
+
+test('addStat: recent keeps only the last 20', () => {
+  let s = {};
+  for (let i = 0; i < 25; i++) s = L.addStat(s, { field: 'f', level: 'mid' }, i >= 5);
+  assert.strictEqual(s.recent.length, 20);
+  assert.ok(s.recent.every(x => x === 1));
+});
+
+function withRecent(right, total, level) {
+  const recent = [];
+  for (let i = 0; i < total; i++) recent.push(i < right ? 1 : 0);
+  return { recent, level };
+}
+
+test('suggestLevel: 17/20 suggests next, 16/20 (exactly 80%) does not', () => {
+  assert.strictEqual(L.suggestLevel(withRecent(17, 20)), 'mid');
+  assert.strictEqual(L.suggestLevel(withRecent(16, 20)), null);
+  assert.strictEqual(L.suggestLevel(withRecent(17, 20, 'mid')), 'adv');
+});
+
+test('suggestLevel: null when adv, fewer than 20, or no recent', () => {
+  assert.strictEqual(L.suggestLevel(withRecent(20, 20, 'adv')), null);
+  assert.strictEqual(L.suggestLevel(withRecent(19, 19)), null);
+  assert.strictEqual(L.suggestLevel({}), null);
+});
+
+test('badgesFor: first, streak7, streak30, q100; missing keys do not throw', () => {
+  assert.deepStrictEqual(L.badgesFor({}), []);
+  assert.deepStrictEqual(L.badgesFor({ stats: { a: { basic: { right: 1, total: 1 } } } }), ['first']);
+  const b = L.badgesFor({ streak: 7, stats: { a: { basic: { right: 50, total: 60 } }, b: { mid: { right: 30, total: 40 } } } });
+  assert.deepStrictEqual(b, ['first', 'streak7', 'q100']);
+  assert.ok(L.badgesFor({ streak: 30, stats: {} }).includes('streak30'));
+  assert.ok(!L.badgesFor({ streak: 6, stats: {} }).includes('streak7'));
+});
+
+test('numberAnswerOk: full-width, commas, units, tolerance, invalid', () => {
+  assert.strictEqual(L.numberAnswerOk('１５．２', 15.2, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('15.2倍', 15.2, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('1,234 円', 1234, 0), true);
+  assert.strictEqual(L.numberAnswerOk('１，２３４', 1234, 0), true);
+  assert.strictEqual(L.numberAnswerOk('3.5％', 3.5, 0.1), true);
+  assert.strictEqual(L.numberAnswerOk('－2', -2, 0), true);
+  assert.strictEqual(L.numberAnswerOk('15.4', 15.2, 0.1), false);
+  assert.strictEqual(L.numberAnswerOk('', 1, 1), false);
+  assert.strictEqual(L.numberAnswerOk('abc', 1, 1), false);
+});
+
+test('isStale: 90 days not stale, 91 stale, no asof false', () => {
+  assert.strictEqual(L.isStale({ asof: '2026-07-27' }, '2026-10-25'), false);
+  assert.strictEqual(L.isStale({ asof: '2026-07-26' }, '2026-10-25'), true);
+  assert.strictEqual(L.isStale({}, '2026-10-25'), false);
+});
