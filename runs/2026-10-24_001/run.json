@@ -3,7 +3,7 @@
   "theme": "side-job",
   "theme_name": "副業",
   "created": "2026-10-23T22:46:14+00:00",
-  "status": "sns_done",
+  "status": "publish_approved",
   "steps_done": [
     "research",
     "ideas",
@@ -18,7 +18,10 @@
       "at": "2026-10-23T22:49:49+00:00",
       "by": "auto"
     },
-    "publish": null,
+    "publish": {
+      "at": "2026-10-25T03:09:25+00:00",
+      "by": "human"
+    },
     "sns": null
   },
   "posted": null,
