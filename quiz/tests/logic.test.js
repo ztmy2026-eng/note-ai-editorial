@@ -183,3 +183,83 @@ test('pickDaily: does not mutate inputs', () => {
   assert.strictEqual(JSON.stringify(Q), copy);
   assert.strictEqual(JSON.stringify(st), sc);
 });
+
+const pq = () => ({
+  id: 'p1', level: 'basic', field: 'basics', type: 'choice', question: 'PERとは?',
+  choices: ['株価収益率', '配当利回り', '自己資本比率', '売上高'], answer: '株価収益率',
+  explain: 'e', term: 'PER', asof: '2026-10-01', source: 'http://x',
+  variants: [
+    { question: '株価を1株益で割った指標は?' },
+    { question: 'PERの正式名称に近いのは?', choices: ['A', 'B', 'C', 'D'], answer: 'C' }
+  ]
+});
+
+test('present: correct answer string matches choices[correctIndex]; display fields copied', () => {
+  for (let s = 1; s <= 30; s++) {
+    const q = pq();
+    const p = L.present(q, false, seqRng(s));
+    assert.strictEqual(p.choices[p.correctIndex], '株価収益率');
+    assert.strictEqual(p.question, q.question);
+    assert.deepStrictEqual([...p.choices].sort(), [...q.choices].sort());
+    assert.strictEqual(p.id, 'p1'); assert.strictEqual(p.type, 'choice');
+    assert.strictEqual(p.explain, 'e'); assert.strictEqual(p.term, 'PER');
+    assert.strictEqual(p.asof, '2026-10-01'); assert.strictEqual(p.source, 'http://x');
+  }
+});
+
+test('present: different rng gives different arrangement', () => {
+  const seen = new Set();
+  for (let s = 1; s <= 20; s++) seen.add(L.present(pq(), false, seqRng(s)).choices.join('|'));
+  assert.ok(seen.size > 1);
+});
+
+test('present: retry with variants changes the question text and still matches answer', () => {
+  const texts = new Set();
+  for (let s = 1; s <= 30; s++) {
+    const q = pq();
+    const p = L.present(q, true, seqRng(s));
+    assert.notStrictEqual(p.question, q.question);
+    texts.add(p.question);
+    const expected = p.question === q.variants[1].question ? 'C' : '株価収益率';
+    assert.strictEqual(p.choices[p.correctIndex], expected);
+  }
+  assert.strictEqual(texts.size, 2);
+});
+
+test('present: retry moves the correct position away from the original index', () => {
+  for (let s = 1; s <= 50; s++) {
+    const q = pq();
+    const orig = q.choices.indexOf(q.answer);
+    const p = L.present(q, true, seqRng(s));
+    assert.notStrictEqual(p.correctIndex, orig);
+    assert.strictEqual(new Set(p.choices).size, 4);
+  }
+});
+
+test('present: works without variants (retry and not)', () => {
+  const q = pq(); delete q.variants;
+  [false, true].forEach(r => {
+    const p = L.present(q, r, seqRng(3));
+    assert.strictEqual(p.question, q.question);
+    assert.strictEqual(p.choices[p.correctIndex], '株価収益率');
+  });
+});
+
+test('present: non-retry ignores variants', () => {
+  assert.strictEqual(L.present(pq(), false, seqRng(4)).question, 'PERとは?');
+});
+
+test('present: number type has no choices and passes answer through', () => {
+  const q = { id: 'n1', level: 'basic', field: 'basics', type: 'number', question: '1+1?', answer: 2, explain: 'x', term: 't' };
+  const p = L.present(q, true, seqRng(1));
+  assert.strictEqual(p.choices, null);
+  assert.strictEqual(p.correctIndex, -1);
+  assert.strictEqual(p.answer, 2);
+  assert.strictEqual(p.type, 'number');
+});
+
+test('present: does not mutate q', () => {
+  const q = pq(); const copy = JSON.stringify(q);
+  L.present(q, true, seqRng(1)); L.present(q, false, seqRng(2));
+  assert.strictEqual(JSON.stringify(q), copy);
+});

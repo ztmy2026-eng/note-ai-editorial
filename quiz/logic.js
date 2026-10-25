@@ -152,6 +152,42 @@
     return out;
   }
 
+  function present(q, isRetry, rng) {
+    var rand = rng || Math.random;
+    var text = q.question;
+    var choices = q.choices;
+    var answer = q.answer;
+    if (isRetry && q.variants && q.variants.length) {
+      var others = q.variants.filter(function (v) { return v && v.question && v.question !== q.question; });
+      if (others.length) {
+        var v = others[Math.min(Math.floor(rand() * others.length), others.length - 1)];
+        text = v.question;
+        if (v.choices && v.answer !== undefined) { choices = v.choices; answer = v.answer; }
+      }
+    }
+    var out = {
+      id: q.id, question: text, choices: null, correctIndex: -1, type: q.type,
+      explain: q.explain, term: q.term, asof: q.asof, source: q.source
+    };
+    if (q.type === 'number') {
+      out.answer = answer;
+      return out;
+    }
+    var arranged = shuffle(choices, rand);
+    var idx = arranged.indexOf(answer);
+    if (isRetry && arranged.length > 1 && new Set(arranged).size === arranged.length) {
+      var origIdx = q.choices.indexOf(q.answer);
+      if (idx === origIdx) {
+        var to = (idx + 1) % arranged.length;
+        var t = arranged[idx]; arranged[idx] = arranged[to]; arranged[to] = t;
+        idx = to;
+      }
+    }
+    out.choices = arranged;
+    out.correctIndex = idx;
+    return out;
+  }
+
   var api = {
     jstDate: jstDate,
     daysBetween: daysBetween,
@@ -161,7 +197,8 @@
     STAGE_DAYS: STAGE_DAYS,
     recordAnswer: recordAnswer,
     dueWrong: dueWrong,
-    pickDaily: pickDaily
+    pickDaily: pickDaily,
+    present: present
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
