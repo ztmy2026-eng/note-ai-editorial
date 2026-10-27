@@ -47,3 +47,5 @@
 - 週次企画: `plans/<週の月曜>/plan.yaml`。企画案: `plans/ideas/`。
 - ダッシュボード(非公開のページ。持ち主が見る): https://claude.ai/artifact/QKDCrkrJ6MNY3VHRu9uixv (ソース `dashboard/index.html`)。
 - 操作ガイド: `docs/mobile_guide.md`。
+
+- 【2026-10-27 変更】失敗談は、持ち主が書いた内容からの推察で書いてよい(数字・書かれていない出来事は足さない。追加の確認は不要)。config/weekly_policy.md の「失敗談は、書いた内容からの推察で書いてよい」に従う。
