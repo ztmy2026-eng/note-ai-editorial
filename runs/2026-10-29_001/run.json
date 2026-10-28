@@ -3,8 +3,10 @@
   "theme": "side-job",
   "theme_name": "副業",
   "created": "2026-10-28T22:46:58+00:00",
-  "status": "created",
-  "steps_done": [],
+  "status": "research_done",
+  "steps_done": [
+    "research"
+  ],
   "approvals": {
     "idea": null,
     "publish": null,
