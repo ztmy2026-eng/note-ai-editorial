@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-11-02_001",
+  "theme": "saving-insurance",
+  "theme_name": "節約・金融・保険",
+  "created": "2026-11-01T22:46:36+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-11-02",
+    "date": "2026-11-02",
+    "title": "検針票の「前月より高い」、そのままにしてない?",
+    "approved": false
+  }
+}
