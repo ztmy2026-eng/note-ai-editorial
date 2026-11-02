@@ -3,8 +3,10 @@
   "theme": "newcomer",
   "theme_name": "新社会人 × お金・仕事・キャリア",
   "created": "2026-11-02T22:46:09+00:00",
-  "status": "created",
-  "steps_done": [],
+  "status": "research_done",
+  "steps_done": [
+    "research"
+  ],
   "approvals": {
     "idea": null,
     "publish": null,
