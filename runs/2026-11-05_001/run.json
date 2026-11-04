@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-11-05_001",
+  "theme": "ai-work",
+  "theme_name": "AI × 仕事効率化",
+  "created": "2026-11-04T22:46:59+00:00",
+  "status": "created",
+  "steps_done": [],
+  "approvals": {
+    "idea": null,
+    "publish": null,
+    "sns": null
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-11-02",
+    "date": "2026-11-05",
+    "title": "AIに家計簿を見せる前の、3つの確認",
+    "approved": false
+  }
+}
