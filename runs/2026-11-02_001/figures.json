@@ -1,5 +1,5 @@
 [
- {"type":"cover","name":"cover","tag":"電気代のお知らせ","title_html":"電気代の紙を<br>見て<em>2つ変える</em>と、<br>年<b>約1,650円</b>の目安","icon":"bolt"},
+ {"type":"cover","name":"cover","tag":"電気代のお知らせ","title_html":"電気代の紙を<br>見て<em>2つ変える</em>と、<br>年<b>約1,650円</b>の<br>節約の目安","icon":"bolt"},
  {"type":"timeline","name":"fig1","title":"電気代の紙で見る3か所","sub":"契約や会社によって、表示の名前や並びは違います",
   "items":[
    {"date":"1","label":"使用期間の欄","desc":"いつの分か、何日分かを確かめる","hl":false},
