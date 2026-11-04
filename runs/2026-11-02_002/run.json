@@ -21,5 +21,9 @@
     "publish": null,
     "sns": null
   },
-  "posted": null
+  "posted": null,
+  "skipped": {
+    "at": "2026-11-04T10:31:22+00:00",
+    "reason": "持ち主の指示(2026-11-04): 通販の返品は読まれない題材。携帯料金の記事にする"
+  }
 }
