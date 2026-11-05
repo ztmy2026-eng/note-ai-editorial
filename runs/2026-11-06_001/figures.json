@@ -1,0 +1,14 @@
+[
+ {"type":"cover","name":"cover_furusato-ato-de","tag":"ふるさと納税","title_html":"ふるさと納税、<br>年末にまとめて<br><em>「あとで」</em>にしがち","icon":"calendar"},
+ {"type":"timeline","name":"fig1_furusato-order","title":"年末までの、見る順番","items":[
+  {"date":"1 先に","label":"上限額を調べる","desc":"計算ツールか市区町村の窓口で","hl":false},
+  {"date":"2 次に","label":"寄附をする","desc":"その年の1月〜12月の分が対象","hl":false},
+  {"date":"3 そのあと","label":"手続きをする","desc":"申請書は届いたら早めに。期限は寄附先の案内で","hl":true}]},
+ {"type":"checklist","name":"fig2_furusato-checklist","title":"年末の前のチェックリスト","columns":["見るところ","やること"],"widths":[300,852],"boxes":true,"rows":[
+  ["1 上限額","シミュレーションか窓口で調べた"],
+  ["2 申告","確定申告をする予定があるか見た"],
+  ["3 寄附先","5団体以内か数えた"],
+  ["4 期限","申請書の期限を寄附先の案内で見た"],
+  ["5 書類","控えをなくさない場所に置いた"]],
+  "note":"制度の細かい条件は、国税庁・総務省の案内と寄附先の案内で確かめてください。"}
+]
