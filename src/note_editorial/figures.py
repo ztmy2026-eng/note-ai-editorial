@@ -219,6 +219,9 @@ def _rich(text):
     return html.escape(text).replace('&lt;b&gt;','<span style="color:#d62f1f">').replace('&lt;/b&gt;','</span>')
 def cover(s):
     ill=s.get('illust_html') or ICONS.get(s.get('icon','yen'))
+    if s.get('style'):  # 2026-11-05: パワポ風でない別デザイン(covers_alt.py)
+        from .covers_alt import STYLES
+        return STYLES[s['style']](s, ill)
     bg=_bg(s)
     cat=str(s.get('icon','')).startswith('cat')
     title=s['title_html'].replace('<em>',EM_OPEN.format(bg=bg)).replace('</em>','</span>').replace('<b>','<span style="color:#d62f1f">').replace('</b>','</span>')
@@ -426,6 +429,9 @@ def check_specs(specs) -> list[str]:
         if s["type"] == "cover":
             if s.get("icon") and s["icon"] not in ICONS and not s.get("illust_html"):
                 problems.append(f"{n}個目({name}): icon '{s['icon']}' は {'|'.join(ICONS)} のどれか")
+            from .covers_alt import STYLES as _ST
+            if s.get("style") and s["style"] not in _ST:
+                problems.append(f"{n}個目({name}): style は {'|'.join(_ST)} のどれか")
             if s.get("bg") and s["bg"] not in BG_NAMES and not HEX_RE.match(str(s["bg"])):
                 problems.append(f"{n}個目({name}): bg は {'|'.join(BG_NAMES)} か「#ffd43b」形式の色")
         if s["type"] == "bar" and s.get("labels") and s.get("series"):
