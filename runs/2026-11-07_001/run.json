@@ -1,0 +1,37 @@
+{
+  "run_id": "2026-11-07_001",
+  "theme": "side-job",
+  "theme_name": "副業",
+  "created": "2026-11-06T22:46:20+00:00",
+  "status": "sns_approved",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-11-06T22:49:20+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-11-06T22:53:49+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-11-06T22:54:42+00:00",
+      "by": "auto"
+    }
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-11-02",
+    "date": "2026-11-07",
+    "title": "副業の「少しだけなら」、書類は要る?3つの確認",
+    "approved": false
+  }
+}
