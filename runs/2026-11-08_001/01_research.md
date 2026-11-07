@@ -103,5 +103,5 @@
 - [S12] 受給手続(ハローワークインターネットサービス) | https://www.hellowork.mhlw.go.jp/insurance/insurance_procedure.html | 公開日:2026-11-07(ページの更新日の記載なし。取得日で代用) | 取得日:2026-11-07 | 信頼度:高
 - [S13] 基本手当の支給を受けることができる日数は(北海道労働局・ハローワーク) | https://jsite.mhlw.go.jp/hokkaido-hellowork/list/sapporo/kyusyokusya/hokenzyukyu/ippan/1-3.html | 公開日:2026-11-07(日付の記載なし。取得日で代用。表の列が崩れて読み取り) | 取得日:2026-11-07 | 信頼度:中
 - [S14] 児童手当制度のご案内(こども家庭庁) | https://www.cfa.go.jp/policies/kokoseido/jidouteate/annai/ | 公開日:2026-11-07(更新日の記載なし。取得日で代用) | 取得日:2026-11-07 | 信頼度:高
-- [S15] 出産育児一時金等について(厚生労働省)。検索結果の要約で内容を確認(ページ本文は未取得) | https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryouhoken/shussan/index.html | 公開日:2026-11-07(日付の記載を確認できず。取得日で代用) | 取得日:2026-11-07 | 信頼度:中
+- [S15] 出産育児一時金等について(厚生労働省)。ページ本文で確認(取得日2026-11-08。「お子さん1人につき原則50万円が加入の保険者から支給」「令和5年4月から42万円→50万円」) | https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryouhoken/shussan/index.html | 公開日:2026-11-07(日付の記載を確認できず。取得日で代用) | 取得日:2026-11-07 | 信頼度:中
 - [S16] 基本手当の所定給付日数(ハローワークインターネットサービス)。表の列がずれて読み取れたため、参考どまり | https://www.hellowork.mhlw.go.jp/insurance/insurance_benefitdays.html | 公開日:2026-11-07(更新日の記載なし。取得日で代用) | 取得日:2026-11-07 | 信頼度:中
