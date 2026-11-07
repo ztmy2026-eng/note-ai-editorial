@@ -358,13 +358,13 @@
     if (ratio >= 1) return '今回は+' + Math.round((ratio - 1) * 100) + '%';
     return '今回は' + MINUS + Math.round((1 - ratio) * 100) + '%';
   }
-  function rateSummary(rows, cur) {
+  function rateSummary(rows, cur, peers) {
     var best = null;
     rows.forEach(function (r) {
       if (!r.current && r.value > 0 && (!best || r.value > best.value)) best = r;
     });
     if (!cur || !best) return undefined;
-    var head = '今回の' + fmtPct(cur.value) + 'は、過去の最高(' + best.label + ' ' + fmtPct(best.value) + ')';
+    var head = '今回の' + fmtPct(cur.value) + 'は、' + (peers ? 'ほかのカテゴリーで最高(' : 'ここに並べた過去の中で最高(') + best.label + ' ' + fmtPct(best.value) + ')';
     if (cur.value <= 0) return head + 'を下回っています';
     if (cur.value > best.value) {
       var x = cur.value / best.value;
@@ -403,8 +403,8 @@
         })
       };
       if (kind === 'rate') {
-        var sm = rateSummary(rows.map(function (r) { return { label: String(r.label || ''), value: r.value, current: r === cur }; }), cur ? { value: cur.value } : null);
-        if (sm) { view.summary = sm; if (!out.hot) out.hot = 'ホットさの目安:' + sm; }
+        var sm = rateSummary(rows.map(function (r) { return { label: String(r.label || ''), value: r.value, current: r === cur }; }), cur ? { value: cur.value } : null, g.compareTo === 'peers');
+        if (sm) { view.summary = sm; if (!out.hot && g.compareTo !== 'peers') out.hot = 'ホットさの目安:' + sm; }
       }
       out.groups.push(view);
     });

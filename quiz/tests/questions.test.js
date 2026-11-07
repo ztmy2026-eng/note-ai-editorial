@@ -73,6 +73,7 @@ for (const q of QUESTIONS) {
     for (const g of gs) {
       assert.ok(nonEmpty(g.title), 'group title');
       assert.ok(['level', 'rate'].includes(g.kind), 'group kind');
+      if (g.compareTo !== undefined) assert.ok(['past', 'peers'].includes(g.compareTo), 'group compareTo');
       if (g.noRatio !== undefined) assert.strictEqual(g.noRatio, true, 'group noRatio');
       assert.ok(Array.isArray(g.rows) && g.rows.length >= 2 && g.rows.length <= 8, `rows 2-8 in ${g.title}`);
       assert.strictEqual(g.rows.filter((r) => r.current === true).length, 1, `exactly one current in ${g.title}`);

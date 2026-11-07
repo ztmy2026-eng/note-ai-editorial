@@ -519,7 +519,7 @@
       term: 'メモリ市況', termDef: 'メモリは需給の変化で価格・売上が大きく振れやすく、半導体の中でも特にサイクルの影響が出やすい。',
       asof: '2026-08-06', checked: '2026-11-07', source: { name: '世界半導体市場統計(WSTS)「Global Semiconductor Market records exceptional growth in Q2 2026」(検索結果で確認)', url: 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026' },
       compare: { groups: [
-        { title: 'ほかと比べる', kind: 'rate', rows: [
+        { title: 'ほかと比べる', kind: 'rate', compareTo: 'peers', rows: [
           cmpRow('メモリ(2026年の春の予測)', 249.5, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { current: true, note: '6月の予測。8月の見直しでメモリは+302%に上がりました' }),
           cmpRow('ロジック(2026年の春の予測)', 37.3, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { note: '6月の予測' }),
           cmpRow('マイコン(2026年の春の予測)', 19.8, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { note: '6月の予測' }),
