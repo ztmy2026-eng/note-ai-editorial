@@ -9,8 +9,7 @@
     "ideas",
     "draft",
     "critique",
-    "revised",
-    "sns"
+    "revised"
   ],
   "approvals": {
     "idea": {
@@ -31,5 +30,5 @@
     "title": "検針票の「前月より高い」、そのままにしてない?",
     "approved": false
   },
-  "rounds": 2
+  "rounds": 3
 }
