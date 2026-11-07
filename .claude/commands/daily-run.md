@@ -15,7 +15,7 @@ description: 1日分の編集部の仕事(記事1本分)を、承認なしモー
    - あれば `new-run --plan` で実行を作る(00_plan.md・下書き・週次の画像が実行フォルダに入る)。以降の全Agentは 00_plan.md と `config/weekly_policy.md` に従う。
    - 無ければ従来どおり `next-theme` でテーマを決め、`new-run --theme <id>` で実行を作る。
    - 失敗したら理由を記録して 9 へ
-3. check-limits → researcher → `complete <ID> research`
+3. check-limits → trend(トレンド係。`01b_trends.md`。テーマが週次企画で決まっているときは、その時期の話題と合うかの確認だけでよい) → researcher → `complete <ID> research`
 4. check-limits → planner → `complete <ID> ideas` → `auto-approve <ID>`
 5. check-limits → writer → `complete <ID> draft`(config/editorial_rules.md の「自動モード」に従い、空欄を残さない。週次企画の実行では体験の欄だけ【要入力】で残す)
 6. check-limits → critic → `complete <ID> critique`

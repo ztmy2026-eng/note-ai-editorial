@@ -10,7 +10,7 @@ argument-hint: <テーマID 例: ai-work> [phase1|phase2 候補番号と体験�
 
 ## phase1(企画まで)
 1. `python -m note_editorial new-run --theme <テーマID>` で実行IDを得る
-2. researcher → `01_research.md` → `complete <実行ID> research`
+2. (トレンド係 `trend` → `01b_trends.md`。企画の前に、いま関心の高い話題を調べる。検査は無し) researcher → `01_research.md` → `complete <実行ID> research`
 3. planner → `02_ideas.md` → `complete <実行ID> ideas`
 4. **ここで止まる(承認1)。** 候補5件とおすすめ・質問を人間に提示し、
    人間が `approve-idea <実行ID> <番号>` を指示するまで待つ
