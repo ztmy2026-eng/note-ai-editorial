@@ -270,6 +270,7 @@
     r.asof = asof; r.source = source;
     if (opt && opt.basis) r.basis = opt.basis;
     if (opt && opt.note) r.note = opt.note;
+    if (opt && opt.noRatio) r.noRatio = true;
     return r;
   }
 
@@ -335,7 +336,7 @@
           cmpRow('2021年7〜9月期', 1448, '億ドル', '2021-11-01', cmpSrc('SIA「Q3 Global Semiconductor Sales Increase 27.6% Year-to-Year」', 'https://www.semiconductors.org/q3-global-semiconductor-sales-increase-27-6-year-to-year/'), { basis: 'quarter', note: '発表時点の値' }),
           cmpRow('2024年7〜9月期', 1660, '億ドル', '2024-11-06', cmpSrc('SIA「Global Semiconductor Sales Increase 23.2% in Q3 2024 YoY; QoQ Sales Up 10.7%」(iconnect007転載)', 'https://iconnect007.com/article/142915/global-semiconductor-sales-increase-232-in-q3-2024-yoy-qoq-sales-up-107/142912/ein'), { basis: 'quarter', note: '発表時点の値' }),
           cmpRow('2025年7〜9月期(1年前)', 2084, '億ドル', '2025-11-03', cmpSrc('SIA「Global Semiconductor Sales Increase 15.8% from Q2 to Q3; Month-to-Month Sales Grow 7.0% in September」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-15-8-from-q2-to-q3-month-to-month-sales-grow-7-0-in-september/'), { basis: 'quarter', note: '発表時点の値' }),
-          cmpRow('2026年4〜6月期(1つ前)', 4033, '億ドル', '2026-08-06', cmpSrc('SIA「Global Semiconductor Sales Increase 35.1% from Q1 2026 to Q2 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-35-1-from-q1-2026-to-q2-2026/'), { basis: 'quarter', note: '発表時点の値。のちに修正されることがある' }),
+          cmpRow('2026年4〜6月期(1つ前)', 4033, '億ドル', '2026-08-06', cmpSrc('SIA「Global Semiconductor Sales Increase 35.1% from Q1 2026 to Q2 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-35-1-from-q1-2026-to-q2-2026/'), { basis: 'quarter', noRatio: true, note: '発表時点の値。のちに修正されることがある。SIAの24.1%は修正後の4〜6月期との比較' }),
           cmpRow('2026年7〜9月期', 5177, '億ドル', '2026-11-03', cmpSrc('SIA「Global Semiconductor Sales Increase 24.1% from Q2 2026 to Q3 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-24-1-from-q2-2026-to-q3-2026/'), { current: true, basis: 'quarter' })
         ] },
         { title: '過去の伸び率と比べる', kind: 'rate', rows: [
@@ -451,7 +452,7 @@
           cmpRow('2025年度の追加支援', 8025, '億円', '2025-03-31', cmpSrc('時事通信「ラピダスに追加支援8025億円 半導体支援で25年度―経産省」', 'https://sp.m.jiji.com/english/show/39175'), { basis: 'fiscal-year', note: '上限額。報道ベース' }),
           cmpRow('2026年度の追加支援', 6315, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { current: true, basis: 'fiscal-year', note: '上限額。報道ベース' })
         ] },
-        { title: '支援の規模を比べる', kind: 'level', rows: [
+        { title: '支援の規模を比べる', kind: 'level', noRatio: true, rows: [
           cmpRow('累計(2022〜2026年度。今年度分を含む)', 23540, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」(支援額は総額2兆3540億円に)', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { note: '研究開発の支援の合計。政府の出資は別' }),
           cmpRow('2026年度の追加支援(ラピダス)', 6315, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { current: true, note: '1年度分' }),
           cmpRow('熊本のTSMC第2工場への支援(2026年10月に減額後)', 6451.5, '億円', '2026-10-16', cmpSrc('EE Times Japan「経産省、TSMC熊本第2工場の計画変更を認定(助成額6451.5億円)」', 'https://eetimes.itmedia.co.jp/ee/spv/2610/19/news041.html'), { note: '上限額。2024年2月の7,320億円から減額' })

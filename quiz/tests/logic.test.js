@@ -485,3 +485,128 @@ test('isStale: checked date and stale:false', () => {
   assert.strictEqual(L.isStale({ asof: '2026-10-01', checked: '2026-07-27' }, '2026-10-25'), false);
   assert.strictEqual(L.isStale({ asof: '2020-01-01', stale: false }, '2026-10-25'), false);
 });
+
+// ---------- compare card: formatting and view ----------
+test('fmtAmount', () => {
+  assert.strictEqual(L.fmtAmount(16550, '億ドル'), '1兆6,550億ドル');
+  assert.strictEqual(L.fmtAmount(5177, '億ドル'), '5,177億ドル');
+  assert.strictEqual(L.fmtAmount(10000, '億円'), '1兆円');
+  assert.strictEqual(L.fmtAmount(6451.5, '億円'), '6,451.5億円');
+  assert.strictEqual(L.fmtAmount(23540, '億円'), '2兆3,540億円');
+  assert.strictEqual(L.fmtAmount(6315.0, '億円'), '6,315億円');
+  assert.strictEqual(L.fmtAmount(12.34, '%'), '12.3%');
+  assert.strictEqual(L.fmtAmount(1234567, '台'), '1,234,567台');
+});
+
+test('fmtPct', () => {
+  assert.strictEqual(L.fmtPct(102), '+102%');
+  assert.strictEqual(L.fmtPct(-5), '−5%');
+  assert.strictEqual(L.fmtPct(24.1), '+24.1%');
+  assert.strictEqual(L.fmtPct(7.0), '+7%');
+  assert.strictEqual(L.fmtPct(0), '0%');
+});
+
+function lvl(rows, extra) {
+  return { groups: [Object.assign({ title: 'T', kind: 'level', rows: rows }, extra || {})] };
+}
+function row(label, value, o) {
+  return Object.assign({ label: label, value: value, unit: '億ドル', asof: '2026-01-01', source: { name: 's', url: 'https://x.example/' } }, o || {});
+}
+
+test('compareView level ratios: >=2, 1-2, <1, integer for >=10', () => {
+  const v = L.compareView(lvl([
+    row('a', 2000), row('b', 4000), row('c', 5000), row('d', 100), row('e', 10000),
+    row('now', 5177, { current: true })
+  ]));
+  const r = {};
+  v.groups[0].rows.forEach((x) => { r[x.label] = x; });
+  assert.strictEqual(r.a.ratioText, '今回は約2.6倍');
+  assert.strictEqual(r.b.ratioText, '今回は+29%');
+  assert.strictEqual(r.c.ratioText, '今回は+4%');
+  assert.strictEqual(r.d.ratioText, '今回は約52倍');
+  assert.strictEqual(r.e.ratioText, '今回は−48%');
+  assert.strictEqual(r.now.ratioText, undefined);
+  assert.strictEqual(r.now.current, true);
+  assert.strictEqual(r.now.text, '5,177億ドル');
+});
+
+test('compareView ratio: 5177 vs 2084 and 1660', () => {
+  const v = L.compareView(lvl([row('y1', 2084), row('y3', 1660), row('now', 5177, { current: true })]));
+  assert.strictEqual(v.groups[0].rows[0].ratioText, '今回は約2.5倍');
+  assert.strictEqual(v.groups[0].rows[1].ratioText, '今回は約3.1倍');
+});
+
+test('compareView: basis mismatch, row.noRatio, group.noRatio give no ratio', () => {
+  let v = L.compareView(lvl([row('a', 1000, { basis: 'half' }), row('b', 1000), row('now', 2000, { current: true })]));
+  assert.strictEqual(v.groups[0].rows[0].ratioText, undefined);
+  assert.strictEqual(v.groups[0].rows[1].ratioText, '今回は約2.0倍');
+  v = L.compareView(lvl([row('a', 1000, { noRatio: true }), row('now', 2000, { current: true })]));
+  assert.strictEqual(v.groups[0].rows[0].ratioText, undefined);
+  v = L.compareView(lvl([row('a', 1000), row('now', 2000, { current: true })], { noRatio: true }));
+  assert.strictEqual(v.groups[0].noRatio, true);
+  assert.strictEqual(v.groups[0].rows[0].ratioText, undefined);
+  assert.ok(v.groups[0].rows[0].widthPct > 0);
+});
+
+test('compareView: no ratio when row value <= 0', () => {
+  const v = L.compareView(lvl([row('a', 0), row('now', 10, { current: true })]));
+  assert.strictEqual(v.groups[0].rows[0].ratioText, undefined);
+});
+
+test('compareView widthPct scales to max abs, min 2', () => {
+  const v = L.compareView(lvl([row('a', 10), row('b', 5000), row('now', 2500, { current: true })]));
+  const w = v.groups[0].rows.map((x) => x.widthPct);
+  assert.strictEqual(w[1], 100);
+  assert.strictEqual(w[2], 50);
+  assert.strictEqual(w[0], 2);
+});
+
+function rate(rows) {
+  return { groups: [{ title: 'R', kind: 'rate', rows: rows }] };
+}
+function rrow(label, value, o) {
+  return Object.assign({ label: label, value: value, asof: '2026-01-01', source: { name: 's', url: 'https://x.example/' } }, o || {});
+}
+
+test('compareView rate summary: higher, lower, negative, none', () => {
+  let v = L.compareView(rate([rrow('p1', 7.4), rrow('p2', 15.8), rrow('now', 24.1, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+24.1%は、過去の最高(p2 +15.8%)の約1.5倍');
+  assert.strictEqual(v.hot, 'ホットさの目安:今回の+24.1%は、過去の最高(p2 +15.8%)の約1.5倍');
+  assert.strictEqual(v.groups[0].rows[2].text, '+24.1%');
+  v = L.compareView(rate([rrow('p', 40), rrow('now', 10, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+10%は、過去の最高(p +40%)の約3割');
+  v = L.compareView(rate([rrow('p', 40), rrow('now', -3, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の−3%は、過去の最高(p +40%)を下回っています');
+  v = L.compareView(rate([rrow('p', 200), rrow('now', 1, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+1%は、過去の最高(p +200%)の約1割');
+  v = L.compareView(rate([rrow('p', 5), rrow('now', 102, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+102%は、過去の最高(p +5%)の約20倍');
+  v = L.compareView(rate([rrow('p', -5), rrow('now', 10, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, undefined);
+  assert.strictEqual(v.hot, null);
+  v = L.compareView(rate([rrow('now', 10, { current: true }), rrow('x', 0)]));
+  assert.strictEqual(v.groups[0].summary, undefined);
+});
+
+test('compareView hot uses first rate group summary', () => {
+  const v = L.compareView({ groups: [
+    { title: 'L', kind: 'level', rows: [row('a', 1), row('now', 2, { current: true })] },
+    { title: 'R1', kind: 'rate', rows: [rrow('now', 5, { current: true })] },
+    { title: 'R2', kind: 'rate', rows: [rrow('p', 5), rrow('now', 10, { current: true })] }
+  ] });
+  assert.strictEqual(v.hot, 'ホットさの目安:今回の+10%は、過去の最高(p +5%)の約2.0倍');
+});
+
+test('compareView is defensive', () => {
+  [undefined, null, 5, 'x', {}, { groups: 3 }, { groups: [null, 1, {}] },
+   { groups: [{ kind: 'level', rows: 'x' }] },
+   { groups: [{ title: 't', kind: 'level', rows: [null, { label: 'a', value: NaN }, { label: 'b', value: Infinity, unit: 'x' }] }] }
+  ].forEach((c) => {
+    const v = L.compareView(c);
+    assert.deepStrictEqual(v.groups, []);
+    assert.strictEqual(v.hot, null);
+  });
+  const v = L.compareView(lvl([row('a', 'zz'), row('b', 3), row('c', 4)]));
+  assert.strictEqual(v.groups[0].rows.length, 2);
+  assert.strictEqual(v.groups[0].rows[0].ratioText, undefined);
+});

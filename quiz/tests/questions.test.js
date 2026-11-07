@@ -73,6 +73,7 @@ for (const q of QUESTIONS) {
     for (const g of gs) {
       assert.ok(nonEmpty(g.title), 'group title');
       assert.ok(['level', 'rate'].includes(g.kind), 'group kind');
+      if (g.noRatio !== undefined) assert.strictEqual(g.noRatio, true, 'group noRatio');
       assert.ok(Array.isArray(g.rows) && g.rows.length >= 2 && g.rows.length <= 8, `rows 2-8 in ${g.title}`);
       assert.strictEqual(g.rows.filter((r) => r.current === true).length, 1, `exactly one current in ${g.title}`);
       for (const r of g.rows) {
@@ -90,6 +91,7 @@ for (const q of QUESTIONS) {
         assert.match(r.source.url || '', /^https:\/\/\S+/);
         if (r.basis !== undefined) assert.ok(nonEmpty(r.basis), 'basis');
         if (r.note !== undefined) assert.ok(nonEmpty(r.note), 'note');
+        if (r.noRatio !== undefined) assert.strictEqual(r.noRatio, true, 'row noRatio');
       }
       if (g.kind === 'level') {
         assert.strictEqual(new Set(g.rows.map((r) => r.unit)).size, 1, `one unit in level group ${g.title}`);

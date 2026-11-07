@@ -320,6 +320,97 @@
     return JSON.stringify(state);
   }
 
+  // ---------- compare card (pure) ----------
+  var MINUS = '−';
+  function num1(v) { // at most 1 decimal, no trailing .0, thousands separators
+    var r = Math.round(Math.abs(v) * 10) / 10;
+    var parts = String(r).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  }
+  function fmtAmount(value, unit) {
+    var u = unit || '';
+    var neg = value < 0 ? MINUS : '';
+    var abs = Math.abs(value);
+    if ((u === '億ドル' || u === '億円') && abs >= 10000) {
+      var rounded = Math.round(abs * 10) / 10;
+      var cho = Math.floor(rounded / 10000);
+      var oku = Math.round((rounded - cho * 10000) * 10) / 10;
+      var tail = u.slice(1); // ドル / 円
+      if (oku === 0) return neg + num1(cho) + '兆' + tail;
+      return neg + num1(cho) + '兆' + num1(oku) + '億' + tail;
+    }
+    return neg + num1(abs) + u;
+  }
+  function fmtPct(value) {
+    var r = Math.round(value * 10) / 10;
+    if (r === 0) return '0%';
+    return (r < 0 ? MINUS : '+') + num1(r) + '%';
+  }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function timesText(x) { return x >= 10 ? String(Math.round(x)) : (Math.round(x * 10) / 10).toFixed(1); }
+  function ratioTextFor(cur, v) {
+    var ratio = cur / v;
+    if (ratio >= 2) {
+      var t = Math.round(ratio * 10) / 10;
+      return '今回は約' + timesText(t) + '倍';
+    }
+    if (ratio >= 1) return '今回は+' + Math.round((ratio - 1) * 100) + '%';
+    return '今回は' + MINUS + Math.round((1 - ratio) * 100) + '%';
+  }
+  function rateSummary(rows, cur) {
+    var best = null;
+    rows.forEach(function (r) {
+      if (!r.current && r.value > 0 && (!best || r.value > best.value)) best = r;
+    });
+    if (!cur || !best) return undefined;
+    var head = '今回の' + fmtPct(cur.value) + 'は、過去の最高(' + best.label + ' ' + fmtPct(best.value) + ')';
+    if (cur.value <= 0) return head + 'を下回っています';
+    if (cur.value > best.value) {
+      var x = cur.value / best.value;
+      return head + 'の約' + timesText(Math.round(x * 10) / 10) + '倍';
+    }
+    return head + 'の約' + Math.max(1, Math.round(cur.value / best.value * 10)) + '割';
+  }
+  function compareView(compare) {
+    var out = { groups: [], hot: null };
+    var groups = compare && Array.isArray(compare.groups) ? compare.groups : [];
+    groups.forEach(function (g) {
+      if (!g || typeof g !== 'object' || !Array.isArray(g.rows)) return;
+      var kind = g.kind === 'rate' ? 'rate' : 'level';
+      var rows = g.rows.filter(function (r) { return r && typeof r === 'object' && isNum(r.value); });
+      if (!rows.length) return;
+      var max = 0;
+      rows.forEach(function (r) { max = Math.max(max, Math.abs(r.value)); });
+      var cur = null;
+      rows.forEach(function (r) { if (r.current === true && !cur) cur = r; });
+      var noRatio = g.noRatio === true;
+      var view = {
+        title: String(g.title || ''), kind: kind, noRatio: noRatio,
+        rows: rows.map(function (r) {
+          var w = r.value === 0 || max === 0 ? 0 : Math.min(100, Math.max(2, Math.round(Math.abs(r.value) / max * 100)));
+          var o = {
+            label: String(r.label || ''), value: r.value, unit: r.unit, current: r === cur,
+            note: r.note, asof: r.asof, source: r.source,
+            text: kind === 'rate' ? fmtPct(r.value) : fmtAmount(r.value, r.unit),
+            widthPct: w
+          };
+          if (kind === 'level' && !noRatio && cur && r !== cur && r.noRatio !== true &&
+              r.value > 0 && cur.value > 0 && r.basis === cur.basis) {
+            o.ratioText = ratioTextFor(cur.value, r.value);
+          }
+          return o;
+        })
+      };
+      if (kind === 'rate') {
+        var sm = rateSummary(rows.map(function (r) { return { label: String(r.label || ''), value: r.value, current: r === cur }; }), cur ? { value: cur.value } : null);
+        if (sm) { view.summary = sm; if (!out.hot) out.hot = 'ホットさの目安:' + sm; }
+      }
+      out.groups.push(view);
+    });
+    return out;
+  }
+
   var api = {
     jstDate: jstDate,
     daysBetween: daysBetween,
@@ -336,6 +427,9 @@
     badgesFor: badgesFor,
     numberAnswerOk: numberAnswerOk,
     isStale: isStale,
+    fmtAmount: fmtAmount,
+    fmtPct: fmtPct,
+    compareView: compareView,
     emptyState: emptyState,
     loadState: loadState,
     serialize: serialize
