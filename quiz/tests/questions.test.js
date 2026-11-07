@@ -88,10 +88,12 @@ for (const q of QUESTIONS) {
         assert.ok(r.source && nonEmpty(r.source.name), 'row source.name');
         assert.ok(r.source.name.endsWith('(検索結果で確認)'), 'row source.name must end with (検索結果で確認)');
         assert.match(r.source.url || '', /^https:\/\/\S+/);
+        if (r.basis !== undefined) assert.ok(nonEmpty(r.basis), 'basis');
         if (r.note !== undefined) assert.ok(nonEmpty(r.note), 'note');
       }
       if (g.kind === 'level') {
         assert.strictEqual(new Set(g.rows.map((r) => r.unit)).size, 1, `one unit in level group ${g.title}`);
+        assert.strictEqual(new Set(g.rows.map((r) => r.basis)).size, 1, `one basis in level group ${g.title}`);
       }
     }
   });

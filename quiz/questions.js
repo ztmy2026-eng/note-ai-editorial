@@ -268,6 +268,7 @@
     if (unit) r.unit = unit;
     if (opt && opt.current) r.current = true;
     r.asof = asof; r.source = source;
+    if (opt && opt.basis) r.basis = opt.basis;
     if (opt && opt.note) r.note = opt.note;
     return r;
   }
@@ -324,24 +325,24 @@
         choices: ['好況時の増産投資で、やがて供給過剰になりやすいから', '法律の規制で、売上が頭打ちになりやすいから', '好況のときは、工場が止まりやすいから', '好況が続くと、半導体が使われにくくなるから'],
         answer: '好況時の増産投資で、やがて供給過剰になりやすいから' }] },
     { id: 'semi_ai-basic-07', level: 'basic', field: 'semi_ai', type: 'choice',
-      question: '米国半導体工業会(SIA)の発表によると、2026年4〜6月期(第2四半期)の世界の半導体売上高は、およそ何億ドルでしたか?',
-      choices: ['約4,000億ドル', '約2,000億ドル', '約8,000億ドル', '約1,000億ドル'], answer: '約4,000億ドル',
-      explain: 'SIAは2026年8月6日に、2026年第2四半期の世界半導体売上高が403.3 billion(約4,033億)ドルで、第1四半期より35.1%増えたと発表しました。AI向けのチップやメモリの需要が大きな押し上げ要因とされます。売上高は後から修正されることがあるため、最新の数字は公式ページで確認してください。',
+      question: '米国半導体工業会(SIA)の発表によると、2026年7〜9月期(第3四半期)の世界の半導体売上高は、およそ何億ドルでしたか?',
+      choices: ['約5,000億ドル', '約2,500億ドル', '約10,000億ドル', '約1,250億ドル'], answer: '約5,000億ドル',
+      explain: 'SIAは2026年11月3日に、2026年第3四半期の世界半導体売上高が517.7 billion(約5,177億)ドルで、第2四半期より24.1%増えたと発表しました。9月の単月は172.6 billionドルで、前年の9月より146.8%増でした。売上高は後から修正されることがあるため、最新の数字は公式ページで確認してください。',
       term: '世界半導体売上高', termDef: '世界の半導体メーカーの売上を合計した数字。WSTSが集計し、SIAなどが公表する。市場全体の景気を見る目安になる。',
-      asof: '2026-08-06', checked: '2026-11-07', source: { name: '米国半導体工業会(SIA)「Global Semiconductor Sales Increase 35.1% from Q1 2026 to Q2 2026」(検索結果で確認)', url: 'https://www.semiconductors.org/global-semiconductor-sales-increase-35-1-from-q1-2026-to-q2-2026/' },
+      asof: '2026-11-03', checked: '2026-11-07', source: { name: '米国半導体工業会(SIA)「Global Semiconductor Sales Increase 24.1% from Q2 2026 to Q3 2026」(検索結果で確認)', url: 'https://www.semiconductors.org/global-semiconductor-sales-increase-24-1-from-q2-2026-to-q3-2026/' },
       compare: { groups: [
         { title: '時間で比べる', kind: 'level', rows: [
-          cmpRow('2021年4〜6月期', 1336, '億ドル', '2021-08-03', cmpSrc('SIA「Global Semiconductor Sales Increase 29.2% Year-to-Year in June; Q2 Sales Up 8.3% Over Q1」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-29-2-year-to-year-in-june-q2-sales-up-8-3-over-q1/'), { note: '発表時点の値(1,336億ドル)' }),
-          cmpRow('2024年4〜6月期', 1499, '億ドル', '2024-08-07', cmpSrc('SIA「Global Semiconductor Sales Increase 18.3% in Q2 2024 Compared to Q2 2023」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-18-3-in-q2-2024-compared-to-q2-2023-quarter-to-quarter-sales-up-6-5/'), { note: '発表時点の値(1,499億ドル)' }),
-          cmpRow('2025年4〜6月期(1年前)', 1797, '億ドル', '2025-08-04', cmpSrc('SIA「Global Semiconductor Sales Increase 7.8% from Q1 to Q2」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-7-8-from-q1-to-q2-month-to-month-sales-tick-up-1-5-in-june/'), { note: '発表時点の値(1,797億ドル)' }),
-          cmpRow('2026年1〜3月期(1つ前)', 2985, '億ドル', '2026-05-04', cmpSrc('SIA「Global Semiconductor Sales Increase 25% from Q4 2025 to Q1 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-25-from-q4-2025-to-q1-2026/'), { note: '発表時点の値(2,985億ドル)' }),
-          cmpRow('2026年4〜6月期', 4033, '億ドル', '2026-08-06', cmpSrc('SIA「Global Semiconductor Sales Increase 35.1% from Q1 2026 to Q2 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-35-1-from-q1-2026-to-q2-2026/'), { current: true })
+          cmpRow('2021年7〜9月期', 1448, '億ドル', '2021-11-01', cmpSrc('SIA「Q3 Global Semiconductor Sales Increase 27.6% Year-to-Year」', 'https://www.semiconductors.org/q3-global-semiconductor-sales-increase-27-6-year-to-year/'), { basis: 'quarter', note: '発表時点の値' }),
+          cmpRow('2024年7〜9月期', 1660, '億ドル', '2024-11-06', cmpSrc('SIA「Global Semiconductor Sales Increase 23.2% in Q3 2024 YoY; QoQ Sales Up 10.7%」(iconnect007転載)', 'https://iconnect007.com/article/142915/global-semiconductor-sales-increase-232-in-q3-2024-yoy-qoq-sales-up-107/142912/ein'), { basis: 'quarter', note: '発表時点の値' }),
+          cmpRow('2025年7〜9月期(1年前)', 2084, '億ドル', '2025-11-03', cmpSrc('SIA「Global Semiconductor Sales Increase 15.8% from Q2 to Q3; Month-to-Month Sales Grow 7.0% in September」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-15-8-from-q2-to-q3-month-to-month-sales-grow-7-0-in-september/'), { basis: 'quarter', note: '発表時点の値' }),
+          cmpRow('2026年4〜6月期(1つ前)', 4033, '億ドル', '2026-08-06', cmpSrc('SIA「Global Semiconductor Sales Increase 35.1% from Q1 2026 to Q2 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-35-1-from-q1-2026-to-q2-2026/'), { basis: 'quarter', note: '発表時点の値。のちに修正されることがある' }),
+          cmpRow('2026年7〜9月期', 5177, '億ドル', '2026-11-03', cmpSrc('SIA「Global Semiconductor Sales Increase 24.1% from Q2 2026 to Q3 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-24-1-from-q2-2026-to-q3-2026/'), { current: true, basis: 'quarter' })
         ] },
         { title: '過去の伸び率と比べる', kind: 'rate', rows: [
-          cmpRow('2021年4〜6月期(前の期から)', 8.3, null, '2021-08-03', cmpSrc('SIA「Global Semiconductor Sales Increase 29.2% Year-to-Year in June; Q2 Sales Up 8.3% Over Q1」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-29-2-year-to-year-in-june-q2-sales-up-8-3-over-q1/'), { note: '前の四半期(1〜3月期)からの伸び' }),
-          cmpRow('2024年4〜6月期(前の期から)', 6.5, null, '2024-08-07', cmpSrc('SIA「Global Semiconductor Sales Increase 18.3% in Q2 2024 Compared to Q2 2023」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-18-3-in-q2-2024-compared-to-q2-2023-quarter-to-quarter-sales-up-6-5/'), { note: '前の四半期(1〜3月期)からの伸び' }),
-          cmpRow('2025年4〜6月期(前の期から)', 7.8, null, '2025-08-04', cmpSrc('SIA「Global Semiconductor Sales Increase 7.8% from Q1 to Q2」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-7-8-from-q1-to-q2-month-to-month-sales-tick-up-1-5-in-june/'), { note: '前の四半期(1〜3月期)からの伸び' }),
-          cmpRow('2026年4〜6月期(前の期から)', 35.1, null, '2026-08-06', cmpSrc('SIA「Global Semiconductor Sales Increase 35.1% from Q1 2026 to Q2 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-35-1-from-q1-2026-to-q2-2026/'), { current: true, note: '前の四半期(1〜3月期)からの伸び' })
+          cmpRow('2021年7〜9月期(前の期から)', 7.4, null, '2021-11-01', cmpSrc('SIA「Q3 Global Semiconductor Sales Increase 27.6% Year-to-Year」', 'https://www.semiconductors.org/q3-global-semiconductor-sales-increase-27-6-year-to-year/'), { note: '前の四半期(4〜6月期)からの伸び' }),
+          cmpRow('2024年7〜9月期(前の期から)', 10.7, null, '2024-11-06', cmpSrc('SIA「Global Semiconductor Sales Increase 23.2% in Q3 2024 YoY; QoQ Sales Up 10.7%」(iconnect007転載)', 'https://iconnect007.com/article/142915/global-semiconductor-sales-increase-232-in-q3-2024-yoy-qoq-sales-up-107/142912/ein'), { note: '前の四半期(4〜6月期)からの伸び' }),
+          cmpRow('2025年7〜9月期(前の期から)', 15.8, null, '2025-11-03', cmpSrc('SIA「Global Semiconductor Sales Increase 15.8% from Q2 to Q3; Month-to-Month Sales Grow 7.0% in September」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-15-8-from-q2-to-q3-month-to-month-sales-grow-7-0-in-september/'), { note: '前の四半期(4〜6月期)からの伸び' }),
+          cmpRow('2026年7〜9月期(前の期から)', 24.1, null, '2026-11-03', cmpSrc('SIA「Global Semiconductor Sales Increase 24.1% from Q2 2026 to Q3 2026」', 'https://www.semiconductors.org/global-semiconductor-sales-increase-24-1-from-q2-2026-to-q3-2026/'), { current: true, note: '前の四半期(4〜6月期)からの伸び' })
         ] }
       ] } },
     { id: 'semi_ai-basic-08', level: 'basic', field: 'semi_ai', type: 'choice',
@@ -352,13 +353,11 @@
       asof: '2026-08-06', checked: '2026-11-07', source: { name: '世界半導体市場統計(WSTS)「Global Semiconductor Market records exceptional growth in Q2 2026」(検索結果で確認)', url: 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026' },
       compare: { groups: [
         { title: '時間で比べる', kind: 'level', rows: [
-          cmpRow('2024年通年', 6305, '億ドル', '2026-02-06', cmpSrc('SIA「Global Annual Semiconductor Sales Increase 25.6% to $791.7 Billion in 2025」(2024年の合計として記載)', 'https://www.semiconductors.org/global-annual-semiconductor-sales-increase-25-6-to-791-7-billion-in-2025/'), { note: '1年分' }),
-          cmpRow('2025年上半期', 3460, '億ドル', '2025-08-04', cmpSrc('WSTS「Global Semiconductor Market show continued growth in Q2 2025」', 'https://www.wsts.org/76/103/Global-Semiconductor-Market-show-continued-growth-in-Q2-2025'), { note: '半年分(約3,460億ドル)' }),
-          cmpRow('2025年通年', 7956, '億ドル', '2026-03-06', cmpSrc('WSTS「Global Semiconductor Market grows 26% in 2025 to 796B」', 'https://www.wsts.org/76/Global-Semiconductor-Market-grows-26-in-2025-to-796B'), { note: '1年分' }),
-          cmpRow('2026年上半期', 7020, '億ドル', '2026-08-06', cmpSrc('WSTS「Global Semiconductor Market records exceptional growth in Q2 2026」', 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026'), { current: true, note: '半年分' })
+          cmpRow('2025年上半期', 3460, '億ドル', '2025-08-04', cmpSrc('WSTS「Global Semiconductor Market show continued growth in Q2 2025」', 'https://www.wsts.org/76/103/Global-Semiconductor-Market-show-continued-growth-in-Q2-2025'), { basis: 'half-year', note: '半年分(約3,460億ドル)' }),
+          cmpRow('2026年上半期', 7020, '億ドル', '2026-08-06', cmpSrc('WSTS「Global Semiconductor Market records exceptional growth in Q2 2026」', 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026'), { current: true, basis: 'half-year', note: '半年分' })
         ] },
         { title: '過去の伸び率と比べる', kind: 'rate', rows: [
-          cmpRow('2017年通年(前年比)', 21.6, null, '2018-02-05', cmpSrc('SIA「Annual Semiconductor Sales Increase 21.6 Percent, Top $400 Billion for First Time」', 'https://www.semiconductors.org/annual-semiconductor-sales-increase-21-6-percent-top-400-billion-for-first-time/')),
+          cmpRow('2017年通年(前年比)', 21.6, null, '2018-02-05', cmpSrc('SIA「Annual Semiconductor Sales Increase 21.6 Percent, Top $400 Billion for First Time」', 'https://www.semiconductors.org/annual-semiconductor-sales-increase-21-6-percent-top-400-billion-for-first-time/'), { note: '1年分の伸び' }),
           cmpRow('2021年通年(前年比)', 26.2, null, '2022-02-14', cmpSrc('SIA「Global Semiconductor Sales, Units Shipped Reach All-Time Highs in 2021」', 'https://www.semiconductors.org/global-semiconductor-sales-units-shipped/')),
           cmpRow('2025年上半期(前年同期比)', 18.9, null, '2025-08-04', cmpSrc('WSTS「Global Semiconductor Market show continued growth in Q2 2025」', 'https://www.wsts.org/76/103/Global-Semiconductor-Market-show-continued-growth-in-Q2-2025')),
           cmpRow('2025年通年(前年比)', 26.2, null, '2026-03-06', cmpSrc('WSTS「Global Semiconductor Market grows 26% in 2025 to 796B」', 'https://www.wsts.org/76/Global-Semiconductor-Market-grows-26-in-2025-to-796B')),
@@ -428,11 +427,11 @@
       asof: '2026-08-06', checked: '2026-11-07', source: { name: '世界半導体市場統計(WSTS)「Global Semiconductor Market records exceptional growth in Q2 2026」(検索結果で確認)', url: 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026' },
       compare: { groups: [
         { title: '時間で比べる', kind: 'level', rows: [
-          cmpRow('2019年', 4121, '億ドル', '2020-02-03', cmpSrc('SIA「Worldwide Semiconductor Sales Decrease 12 Percent to $412 Billion in 2019」', 'https://www.semiconductors.org/worldwide-semiconductor-sales-decrease-12-percent-to-412-billion-in-2019/')),
-          cmpRow('2021年', 5559, '億ドル', '2022-02-14', cmpSrc('SIA「Global Semiconductor Sales, Units Shipped Reach All-Time Highs in 2021」', 'https://www.semiconductors.org/global-semiconductor-sales-units-shipped/')),
-          cmpRow('2024年', 6305, '億ドル', '2026-02-06', cmpSrc('SIA「Global Annual Semiconductor Sales Increase 25.6% to $791.7 Billion in 2025」(2024年の合計として記載)', 'https://www.semiconductors.org/global-annual-semiconductor-sales-increase-25-6-to-791-7-billion-in-2025/')),
-          cmpRow('2025年', 7956, '億ドル', '2026-03-06', cmpSrc('WSTS「Global Semiconductor Market grows 26% in 2025 to 796B」', 'https://www.wsts.org/76/Global-Semiconductor-Market-grows-26-in-2025-to-796B')),
-          cmpRow('2026年(予測)', 16550, '億ドル', '2026-08-06', cmpSrc('WSTS「Global Semiconductor Market records exceptional growth in Q2 2026」', 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026'), { current: true, note: '予測。実績ではありません' })
+          cmpRow('2019年', 4121, '億ドル', '2020-02-03', cmpSrc('SIA「Worldwide Semiconductor Sales Decrease 12 Percent to $412 Billion in 2019」', 'https://www.semiconductors.org/worldwide-semiconductor-sales-decrease-12-percent-to-412-billion-in-2019/'), { basis: 'year' }),
+          cmpRow('2021年', 5559, '億ドル', '2022-02-14', cmpSrc('SIA「Global Semiconductor Sales, Units Shipped Reach All-Time Highs in 2021」', 'https://www.semiconductors.org/global-semiconductor-sales-units-shipped/'), { basis: 'year' }),
+          cmpRow('2024年', 6305, '億ドル', '2026-02-06', cmpSrc('SIA「Global Annual Semiconductor Sales Increase 25.6% to $791.7 Billion in 2025」(2024年の合計として記載)', 'https://www.semiconductors.org/global-annual-semiconductor-sales-increase-25-6-to-791-7-billion-in-2025/'), { basis: 'year' }),
+          cmpRow('2025年', 7956, '億ドル', '2026-03-06', cmpSrc('WSTS「Global Semiconductor Market grows 26% in 2025 to 796B」', 'https://www.wsts.org/76/Global-Semiconductor-Market-grows-26-in-2025-to-796B'), { basis: 'year' }),
+          cmpRow('2026年(予測)', 16550, '億ドル', '2026-08-06', cmpSrc('WSTS「Global Semiconductor Market records exceptional growth in Q2 2026」', 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026'), { current: true, basis: 'year', note: '予測。実績ではありません' })
         ] },
         { title: '過去の伸び率と比べる', kind: 'rate', rows: [
           cmpRow('2017年(前年比)', 21.6, null, '2018-02-05', cmpSrc('SIA「Annual Semiconductor Sales Increase 21.6 Percent, Top $400 Billion for First Time」', 'https://www.semiconductors.org/annual-semiconductor-sales-increase-21-6-percent-top-400-billion-for-first-time/')),
@@ -446,16 +445,16 @@
       choices: ['約6,300億円', '約1,600億円', '約3,200億円', '約1兆2,600億円'], answer: '約6,300億円',
       explain: '2026年4月、ラピダスへの2026年度の追加支援(約6,315億円)を承認したと、経済産業大臣が表明したと報じられました(経済産業省の資料にも同趣旨の記載があるとの検索結果)。国が巨額の支援をするのは、先端半導体を国内で作る体制を整えるためですが、事業が成功する保証はありません。支援額は年度ごとに変わります。',
       term: '半導体への公的支援', termDef: '国が補助金や出資などで、国内の半導体の生産・開発を後押しする政策。',
-      asof: '2026-04-11', checked: '2026-11-07', source: { name: '経済産業省の発表・資料(報道で補足)(検索結果で確認)', url: 'https://www.meti.go.jp/policy/mono_info_service/joho/laws/josokuho/josokuho_futaiketsugi_R8-7.pdf' },
+      asof: '2026-04-11', checked: '2026-11-07', source: { name: 'EE Times Japan「経産省、Rapidusに6315億円追加支援」(経済産業省の発表を報道)(検索結果で確認)', url: 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html' },
       compare: { groups: [
         { title: '時間で比べる', kind: 'level', rows: [
-          cmpRow('2025年度の追加支援', 8025, '億円', '2025-03-31', cmpSrc('時事通信「ラピダスに追加支援8025億円 半導体支援で25年度―経産省」', 'https://sp.m.jiji.com/english/show/39175'), { note: '上限額。報道ベース' }),
-          cmpRow('2026年度の追加支援', 6315, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { current: true, note: '上限額。報道ベース' })
+          cmpRow('2025年度の追加支援', 8025, '億円', '2025-03-31', cmpSrc('時事通信「ラピダスに追加支援8025億円 半導体支援で25年度―経産省」', 'https://sp.m.jiji.com/english/show/39175'), { basis: 'fiscal-year', note: '上限額。報道ベース' }),
+          cmpRow('2026年度の追加支援', 6315, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { current: true, basis: 'fiscal-year', note: '上限額。報道ベース' })
         ] },
-        { title: 'ほかと比べる', kind: 'level', rows: [
-          cmpRow('ラピダスへの支援の累計(2022〜2026年度)', 23540, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」(支援額は総額2兆3540億円に)', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { note: '研究開発の支援の合計。政府の出資は別' }),
+        { title: '支援の規模を比べる', kind: 'level', rows: [
+          cmpRow('累計(2022〜2026年度。今年度分を含む)', 23540, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」(支援額は総額2兆3540億円に)', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { note: '研究開発の支援の合計。政府の出資は別' }),
           cmpRow('2026年度の追加支援(ラピダス)', 6315, '億円', '2026-04-11', cmpSrc('EE Times Japan「経産省、Rapidusに6315億円追加支援」', 'https://eetimes.itmedia.co.jp/ee/spv/2604/13/news082_2.html'), { current: true, note: '1年度分' }),
-          cmpRow('熊本のTSMC第2工場への支援', 7320, '億円', '2024-02-24', cmpSrc('中央社(台湾)「日本經產大臣:拍板補助7320億日圓建台積電熊本二廠」', 'https://www.cna.com.tw/news/afe/202402240135.aspx'), { note: '上限額。会社も支援の対象も別です' })
+          cmpRow('熊本のTSMC第2工場への支援(2026年10月に減額後)', 6451.5, '億円', '2026-10-16', cmpSrc('EE Times Japan「経産省、TSMC熊本第2工場の計画変更を認定(助成額6451.5億円)」', 'https://eetimes.itmedia.co.jp/ee/spv/2610/19/news041.html'), { note: '上限額。2024年2月の7,320億円から減額' })
         ] }
       ] } },
   );
@@ -520,9 +519,10 @@
       asof: '2026-08-06', checked: '2026-11-07', source: { name: '世界半導体市場統計(WSTS)「Global Semiconductor Market records exceptional growth in Q2 2026」(検索結果で確認)', url: 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026' },
       compare: { groups: [
         { title: 'ほかと比べる', kind: 'rate', rows: [
-          cmpRow('メモリ(2026年の予測)', 302, null, '2026-08-06', cmpSrc('WSTS「Global Semiconductor Market records exceptional growth in Q2 2026」', 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026'), { current: true, note: '年間の予測' }),
-          cmpRow('ロジック(2026年上半期の実績)', 45, null, '2026-08-06', cmpSrc('WSTS「Global Semiconductor Market records exceptional growth in Q2 2026」', 'https://www.wsts.org/76/Global-Semiconductor-Market-records-exceptional-growth-in-Q2-2026'), { note: '上半期の前年同期比。年間の予測ではありません' }),
-          cmpRow('アナログ(2026年の春の予測)', 10.2, null, '2026-06-02', cmpSrc('TelecomLead「WSTS Raises Semiconductor Forecast: Market to Reach $1.51 Trillion in 2026」(WSTS春の予測の報道)', 'https://telecomlead.com/?p=126102'), { note: '6月の予測。8月の見直し前の数字' })
+          cmpRow('メモリ(2026年の春の予測)', 249.5, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { current: true, note: '6月の予測。8月の見直しでメモリは+302%に上がりました' }),
+          cmpRow('ロジック(2026年の春の予測)', 37.3, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { note: '6月の予測' }),
+          cmpRow('マイコン(2026年の春の予測)', 19.8, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { note: '6月の予測' }),
+          cmpRow('アナログ(2026年の春の予測)', 10.2, null, '2026-06-02', cmpSrc('WSTS「Semiconductor Market Forecast Spring 2026」(春の予測の表)', 'https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf'), { note: '6月の予測' })
         ] },
         { title: '過去の伸び率と比べる', kind: 'rate', rows: [
           cmpRow('メモリ 2017年(前年比)', 61.5, null, '2018-02-05', cmpSrc('SIA「Annual Semiconductor Sales Increase 21.6 Percent, Top $400 Billion for First Time」', 'https://www.semiconductors.org/annual-semiconductor-sales-increase-21-6-percent-top-400-billion-for-first-time/')),
