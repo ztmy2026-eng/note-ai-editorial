@@ -578,7 +578,7 @@ test('compareView rate summary: higher, lower, negative, none', () => {
   v = L.compareView(rate([rrow('p', 40), rrow('now', -3, { current: true })]));
   assert.strictEqual(v.groups[0].summary, '今回の−3%は、ここに並べた過去の中で最高(p +40%)を下回っています');
   v = L.compareView(rate([rrow('p', 200), rrow('now', 1, { current: true })]));
-  assert.strictEqual(v.groups[0].summary, '今回の+1%は、ここに並べた過去の中で最高(p +200%)の約1割');
+  assert.strictEqual(v.groups[0].summary, '今回の+1%は、ここに並べた過去の中で最高(p +200%)の1割に満たない');
   v = L.compareView(rate([rrow('p', 5), rrow('now', 102, { current: true })]));
   assert.strictEqual(v.groups[0].summary, '今回の+102%は、ここに並べた過去の中で最高(p +5%)の約20倍');
   v = L.compareView(rate([rrow('p', -5), rrow('now', 10, { current: true })]));
@@ -613,13 +613,13 @@ test('compareView is defensive', () => {
 
 test('peers rate group: wording and never feeds hot', () => {
   const g = (to, rows) => ({ groups: [{ title: 'R', kind: 'rate', compareTo: to, rows: rows }] });
-  let v = L.compareView(g('peers', [rrow('seg', 37.3), rrow('now', 249.5, { current: true })]));
-  assert.strictEqual(v.groups[0].summary, '今回の+249.5%は、ほかのカテゴリーで最高(seg +37.3%)の約6.7倍');
+  let v = L.compareView(g('peers', [rrow('seg', 37.3), rrow('メモリ(春の予測。8月の見直しで+302%)', 249.5, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, 'メモリの+249.5%は、ここに並べたほかのカテゴリーで最高(seg +37.3%)の約6.7倍');
   assert.strictEqual(v.hot, null);
   v = L.compareView(g('peers', [rrow('seg', 40), rrow('now', 10, { current: true })]));
-  assert.strictEqual(v.groups[0].summary, '今回の+10%は、ほかのカテゴリーで最高(seg +40%)の約3割');
+  assert.strictEqual(v.groups[0].summary, 'nowの+10%は、ここに並べたほかのカテゴリーで最高(seg +40%)の約3割');
   v = L.compareView(g('peers', [rrow('seg', 40), rrow('now', -3, { current: true })]));
-  assert.strictEqual(v.groups[0].summary, '今回の\u22123%は、ほかのカテゴリーで最高(seg +40%)を下回っています');
+  assert.strictEqual(v.groups[0].summary, 'nowの\u22123%は、ここに並べたほかのカテゴリーで最高(seg +40%)を下回っています');
   v = L.compareView(g('past', [rrow('p', 40), rrow('now', -3, { current: true })]));
   assert.strictEqual(v.groups[0].summary, '今回の\u22123%は、ここに並べた過去の中で最高(p +40%)を下回っています');
 });
@@ -630,5 +630,22 @@ test('hot comes from the first past group even after a peers group', () => {
     { title: 'Q', kind: 'rate', rows: [rrow('p', 5), rrow('now', 10, { current: true })] }
   ] });
   assert.strictEqual(v.hot, 'ホットさの目安:今回の+10%は、ここに並べた過去の中で最高(p +5%)の約2.0倍');
-  assert.ok(v.groups[0].summary.indexOf('ほかのカテゴリーで最高') > 0);
+  assert.ok(v.groups[0].summary.indexOf('ここに並べたほかのカテゴリーで最高') > 0);
+});
+
+test('rate summary: same level, near-equal, tiny', () => {
+  let v = L.compareView(rate([rrow('p', 24), rrow('now', 24.1, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+24.1%は、ここに並べた過去の中で最高(p +24%)と同じ水準');
+  v = L.compareView(rate([rrow('p', 24), rrow('now', 23, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+23%は、ここに並べた過去の中で最高(p +24%)と同じ水準');
+  v = L.compareView(rate([rrow('p', 35.1), rrow('now', 24.1, { current: true })]));
+  assert.strictEqual(v.groups[0].summary, '今回の+24.1%は、ここに並べた過去の中で最高(p +35.1%)の約7割');
+  v = L.compareView(rate([rrow('p', 100), rrow('now', 96.5, { current: true })]));
+  assert.ok(!/10割/.test(v.groups[0].summary));
+});
+
+test('ratioText: almost equal values', () => {
+  const v = L.compareView(lvl([row('a', 1000), row('b', 1004), row('now', 1002, { current: true })]));
+  assert.strictEqual(v.groups[0].rows[0].ratioText, '今回はほぼ同じ');
+  assert.strictEqual(v.groups[0].rows[1].ratioText, '今回はほぼ同じ');
 });

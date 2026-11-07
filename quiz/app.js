@@ -511,7 +511,7 @@
     body.appendChild(h('h3', { class: 'cmp-title', text: '比べてみよう' }));
     if (v.hot) {
       body.appendChild(h('p', { class: 'cmp-hot', text: v.hot }));
-      body.appendChild(h('p', { class: 'cmp-caution', text: '比べ方の目安です。期間や範囲が違う数字には倍率を付けていません。並べているのは確認できた数字だけで、全期間ではありません。' }));
+      body.appendChild(h('p', { class: 'cmp-caution', text: '比べ方の目安です。期間や範囲が違う金額には倍率を付けていません。伸び率の倍率は、期間や集計元が違うものも並べています。並べているのは確認できた数字だけで、全期間ではありません。' }));
     }
     v.groups.forEach(function (g) {
       var list = h('ul', { class: 'cmp-rows' });

@@ -355,22 +355,28 @@
       var t = Math.round(ratio * 10) / 10;
       return '今回は約' + timesText(t) + '倍';
     }
-    if (ratio >= 1) return '今回は+' + Math.round((ratio - 1) * 100) + '%';
-    return '今回は' + MINUS + Math.round((1 - ratio) * 100) + '%';
+    var pct = Math.round(Math.abs(ratio - 1) * 100);
+    if (pct === 0) return '今回はほぼ同じ';
+    return ratio >= 1 ? '今回は+' + pct + '%' : '今回は' + MINUS + pct + '%';
   }
+  // subject: the row label up to its first parenthesis (peers groups), or 今回 (past groups)
   function rateSummary(rows, cur, peers) {
     var best = null;
     rows.forEach(function (r) {
       if (!r.current && r.value > 0 && (!best || r.value > best.value)) best = r;
     });
     if (!cur || !best) return undefined;
-    var head = '今回の' + fmtPct(cur.value) + 'は、' + (peers ? 'ほかのカテゴリーで最高(' : 'ここに並べた過去の中で最高(') + best.label + ' ' + fmtPct(best.value) + ')';
+    var subject = peers ? String(cur.label || '').split(/[(\uFF08]/)[0] || '今回' : '今回';
+    var head = subject + 'の' + fmtPct(cur.value) + 'は、' +
+      (peers ? 'ここに並べたほかのカテゴリーで最高(' : 'ここに並べた過去の中で最高(') + best.label + ' ' + fmtPct(best.value) + ')';
     if (cur.value <= 0) return head + 'を下回っています';
-    if (cur.value > best.value) {
-      var x = cur.value / best.value;
-      return head + 'の約' + timesText(Math.round(x * 10) / 10) + '倍';
-    }
-    return head + 'の約' + Math.max(1, Math.round(cur.value / best.value * 10)) + '割';
+    var ratio = cur.value / best.value;
+    if (ratio >= 1.05) return head + 'の約' + timesText(Math.round(ratio * 10) / 10) + '倍';
+    if (ratio >= 0.95) return head + 'と同じ水準';
+    if (ratio < 0.05) return head + 'の1割に満たない';
+    var k = Math.round(ratio * 10);
+    if (k >= 10) return head + 'とほぼ同じ水準';
+    return head + 'の約' + Math.max(1, k) + '割';
   }
   function compareView(compare) {
     var out = { groups: [], hot: null };
@@ -403,7 +409,7 @@
         })
       };
       if (kind === 'rate') {
-        var sm = rateSummary(rows.map(function (r) { return { label: String(r.label || ''), value: r.value, current: r === cur }; }), cur ? { value: cur.value } : null, g.compareTo === 'peers');
+        var sm = rateSummary(rows.map(function (r) { return { label: String(r.label || ''), value: r.value, current: r === cur }; }), cur ? { value: cur.value, label: String(cur.label || '') } : null, g.compareTo === 'peers');
         if (sm) { view.summary = sm; if (!out.hot && g.compareTo !== 'peers') out.hot = 'ホットさの目安:' + sm; }
       }
       out.groups.push(view);
