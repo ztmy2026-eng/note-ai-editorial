@@ -7,10 +7,22 @@ const EXPECTED_FIELDS = ['basics', 'semi_ai', 'energy', 'health', 'robotics'];
 const LEVELS = ['basic', 'mid', 'adv'];
 const FIELDS = ['basics', 'semi_ai', 'energy', 'health', 'robotics'];
 const TYPES = ['choice', 'number'];
-const TODAY = '2026-10-25';
+const TODAY = '2026-11-07';
 const DIGIT = /[0-9０-９]/;
 const FORBIDDEN = ['買うべき', '売るべき', 'おすすめ銘柄'];
 const nonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
+
+test('semiconductor sales questions are multiple choice with compare data', () => {
+  const ids = ['semi_ai-basic-07', 'semi_ai-basic-08', 'semi_ai-mid-07', 'semi_ai-mid-08', 'semi_ai-adv-07'];
+  const qs = ids.map((id) => QUESTIONS.find((q) => q.id === id));
+  for (const q of qs) {
+    assert.ok(q, 'question exists');
+    assert.strictEqual(q.type, 'choice', q.id);
+    assert.ok(!('tol' in q) && !('unit' in q), `${q.id}: no tol/unit`);
+  }
+  const withLevel = qs.filter((q) => q.compare && q.compare.groups.some((g) => g.kind === 'level' && g.rows.length >= 2));
+  assert.ok(withLevel.length >= 3, `compare level groups: ${withLevel.length}`);
+});
 
 test('ids are unique', () => {
   const ids = QUESTIONS.map((q) => q.id);
@@ -50,6 +62,37 @@ for (const q of QUESTIONS) {
       // WebFetchできない公式ページは検索結果で確認したので、出典名の末尾に印を付ける
       assert.ok(q.source.name.endsWith('(検索結果で確認)'), 'source.name must end with (検索結果で確認)');
       assert.ok(q.question.includes(q.asof.slice(0, 4)), 'asof year should appear in question text');
+    }
+  });
+
+  test(`compare: ${q.id}`, () => {
+    if (q.compare === undefined) return;
+    assert.ok(q.asof !== undefined && q.source, 'compare requires asof and source');
+    const gs = q.compare.groups;
+    assert.ok(Array.isArray(gs) && gs.length >= 1 && gs.length <= 4, 'groups 1-4');
+    for (const g of gs) {
+      assert.ok(nonEmpty(g.title), 'group title');
+      assert.ok(['level', 'rate'].includes(g.kind), 'group kind');
+      assert.ok(Array.isArray(g.rows) && g.rows.length >= 2 && g.rows.length <= 8, `rows 2-8 in ${g.title}`);
+      assert.strictEqual(g.rows.filter((r) => r.current === true).length, 1, `exactly one current in ${g.title}`);
+      for (const r of g.rows) {
+        assert.ok(nonEmpty(r.label), 'row label');
+        assert.ok(Number.isFinite(r.value), 'row value finite');
+        if (g.kind === 'level') {
+          assert.ok(r.value > 0, 'level value > 0');
+          assert.ok(nonEmpty(r.unit), 'level unit');
+        }
+        assert.match(r.asof || '', /^\d{4}-\d{2}-\d{2}$/);
+        assert.ok(!Number.isNaN(Date.parse(r.asof)), 'valid date');
+        assert.ok(r.asof <= TODAY, 'row asof in the future');
+        assert.ok(r.source && nonEmpty(r.source.name), 'row source.name');
+        assert.ok(r.source.name.endsWith('(検索結果で確認)'), 'row source.name must end with (検索結果で確認)');
+        assert.match(r.source.url || '', /^https:\/\/\S+/);
+        if (r.note !== undefined) assert.ok(nonEmpty(r.note), 'note');
+      }
+      if (g.kind === 'level') {
+        assert.strictEqual(new Set(g.rows.map((r) => r.unit)).size, 1, `one unit in level group ${g.title}`);
+      }
     }
   });
 
