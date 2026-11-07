@@ -475,7 +475,7 @@
     if (pres.term) {
       box.appendChild(h('p', { class: 'fb-term' }, '用語: ', h('b', { text: pres.term }), q.termDef ? ' ' + q.termDef : ''));
     }
-    if (pres.asof) box.appendChild(asofLine(pres, q, s.date));
+    if (pres.asof) box.appendChild(asofLine(pres, q, s.date, true));
     box.appendChild(reportButton(q.id));
     var last = s.idx === s.items.length - 1;
     box.appendChild(h('button', { type: 'button', class: 'btn', id: 'next-btn', onclick: function () { next(); } },
@@ -483,16 +483,76 @@
     root.appendChild(box);
   }
 
-  function asofLine(pres, q, date) {
+  function asofLine(pres, q, date, openCompare) {
     var src = pres.source || {};
     var url = safeUrl(src.url);
     var stale = QL.isStale(q, date);
-    return h('p', { class: 'asof' },
+    var line = h('p', { class: 'asof' },
       '数字は ' + pres.asof + ' 時点 ／ 出典: ',
       url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: src.name || url }) : (src.name || '不明'),
       q.checked ? ' ／ 確認 ' + q.checked : null,
       stale ? h('span', { class: 'stale', text: '古い数字(最新ではありません)' }) : null,
       h('small', { class: 'asof-note', text: '数字は基準日時点です。最新ではない場合があります' }));
+    var frag = document.createDocumentFragment();
+    frag.appendChild(line);
+    var card = compareCard(q, openCompare === true);
+    if (card) frag.appendChild(card);
+    return frag;
+  }
+
+  // 「比べてみよう」card. open=true: shown at once (quiz feedback). Otherwise behind a button.
+  var cmpSeq = 0;
+  function compareCard(q, open) {
+    if (!q || !q.compare || !QL.compareView) return null;
+    var v = QL.compareView(q.compare);
+    if (!v.groups.length) return null;
+    var id = 'cmp' + (++cmpSeq);
+    var body = h('div', { class: 'cmp', id: id, role: 'group', 'aria-label': '比べてみよう' });
+    body.appendChild(h('h3', { class: 'cmp-title', text: '比べてみよう' }));
+    if (v.hot) {
+      body.appendChild(h('p', { class: 'cmp-hot', text: v.hot }));
+      body.appendChild(h('p', { class: 'cmp-caution', text: '比べ方の目安です。期間や範囲が違う数字には倍率を付けていません。' }));
+    }
+    v.groups.forEach(function (g) {
+      var list = h('ul', { class: 'cmp-rows' });
+      g.rows.forEach(function (r) {
+        list.appendChild(h('li', { class: 'cmp-row' + (r.current ? ' now' : '') },
+          h('div', { class: 'cmp-head' },
+            h('span', { class: 'cmp-label' }, r.current ? h('span', { class: 'cmp-badge', text: '今回' }) : null, r.label),
+            h('b', { class: 'cmp-val', text: r.text })),
+          h('div', { class: 'cmp-bar', 'aria-hidden': 'true' },
+            h('i', { style: 'width:' + r.widthPct + '%' })),
+          r.ratioText ? h('p', { class: 'cmp-ratio', text: r.ratioText }) : null,
+          r.note ? h('p', { class: 'cmp-note', text: r.note }) : null));
+      });
+      body.appendChild(h('section', { class: 'cmp-group' },
+        h('h4', { text: g.title }),
+        g.kind === 'rate' && g.summary ? h('p', { class: 'cmp-sum', text: g.summary }) : null,
+        list));
+    });
+    var src = h('ul', { class: 'cmp-src' });
+    v.groups.forEach(function (g) {
+      g.rows.forEach(function (r) {
+        var s = r.source || {};
+        var url = safeUrl(s.url);
+        src.appendChild(h('li', {},
+          h('span', { text: g.title + ' / ' + r.label + ' → ' }),
+          url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: s.name || url }) : (s.name || '不明'),
+          r.asof ? ' (基準日 ' + r.asof + ')' : ''));
+      });
+    });
+    body.appendChild(h('details', { class: 'cmp-details' }, h('summary', { text: '出典と基準日' }), src));
+    if (open) return h('section', { class: 'cmp-wrap' }, body);
+    body.hidden = true;
+    var btn = h('button', { type: 'button', class: 'cmp-toggle', 'aria-expanded': 'false', 'aria-controls': id },
+      h('span', { text: '比べてみよう' }), h('span', { class: 'cmp-chev', 'aria-hidden': 'true', text: '▼' }));
+    btn.addEventListener('click', function () {
+      var o = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', o ? 'true' : 'false');
+      body.hidden = !o;
+      btn.querySelector('.cmp-chev').textContent = o ? '▲' : '▼';
+    });
+    return h('section', { class: 'cmp-wrap' }, btn, body);
   }
 
   function reportButton(id) {
