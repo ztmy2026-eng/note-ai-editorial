@@ -219,3 +219,7 @@
 - CGの背景は「雑」との指摘。**`assets/photos/<forest|night|sea|sky>/` の本物の写真(Unsplash License)を背景に使う**(出どころ・注意は assets/photos/README.md)。写真が無いカテゴリだけ、CGにする。
 - フォントは、明朝・古風は「高貴すぎる」ので使わない。**ポップで力強い書体**だけ(Dela Gothic One・Zen Maru Gothic・RocknRoll One・Reggae One・Mochiy Pop One・Potta One)を、毎回変える。
 - 背景は、森・青空・海・夜空を日付で順に使う。文字は大きく、白と黄色(金額の行)。
+
+## 本文に表(| … |)を置かない(2026-11-09 持ち主の指示)
+- Markdownの表は、noteに貼ると列がぐちゃぐちゃになる。**本文には表を置かず、箇条書きにする**。早見表のように見せたいときは、図(画像。`checklist` など)にして、本文には「【画像:figN.png】」で載せる。
+- 機械でも、書き出し(export-note)とダッシュボードの本文は、表を自動で箇条書きに直す(src/note_editorial/export.py の tables_to_lists)。ただし、書く段階から表を使わない。
