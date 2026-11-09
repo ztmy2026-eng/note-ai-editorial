@@ -35,3 +35,15 @@ for s in (200, 300, 400, 500, 600, 700, 1000):
     t_old = g_old - basic(g_old, False); t_new = g_new - basic(g_new, True)
     a, b = tax(t_old) * 10000, tax(t_new) * 10000
     print(f"年収{s}万: 給与所得 {g_old:.0f}→{g_new:.0f}万 / 課税所得 {t_old:.0f}→{t_new:.0f}万 / 税 {a:,.0f}→{b:,.0f}円 / 差 {a-b:,.0f}円")
+
+
+# ---- 2026-11-09 批評を受けて追加:社会保険料を引いた版(これを記事の主役にする) ----
+# 社会保険料(健康保険・厚生年金・雇用保険)を「年収の15%」と仮に置く(仮の例。実際は人・会社・地域で違う。公的な単一の数字ではない)。
+# 基礎控除の区分は「合計所得(=給与所得)」で決まり、社会保険料を引く前の金額なので、区分は変わらない。
+print("--- 社会保険料=年収の15%(仮)を引いた場合 ---")
+for s in (200, 300, 400, 500, 600, 700, 800, 1000):
+    sh = s * .15
+    g_old = s - old_ctrl(s); g_new = s - (kyuyo_ctrl(s, True) if s > 220 else 74)
+    t_old = max(0, g_old - basic(g_old, False) - sh); t_new = max(0, g_new - basic(g_new, True) - sh)
+    a, b = tax(t_old) * 10000, tax(t_new) * 10000
+    print(f"年収{s}万: 社保{sh:.1f}万 / 給与所得 {g_old:.0f}万 / 課税所得 {t_old:.0f}→{t_new:.0f}万 / 税 {a:,.0f}→{b:,.0f}円 / 差 {a-b:,.0f}円")
