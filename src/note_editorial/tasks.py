@@ -115,6 +115,19 @@ def _shrunk_png(path: Path, w: int, h: int) -> bytes | None:
 
 def _jpeg_of(path: Path, quality: float = .86, scale: float = 1.0) -> bytes | None:
     """画像をJPEGにして返す(Chrome/Edge で描く。毛並みのように細かい絵は、PNGより、ずっと小さくなる)。できなければ None。"""
+    try:  # Pillow があれば、それで作る(写真のような大きい画像でも確実)
+        import io
+        from PIL import Image
+        im = Image.open(path).convert("RGB")
+        if scale != 1.0:
+            im = im.resize((max(1, round(im.width * scale)), max(1, round(im.height * scale))))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=int(quality * 100), optimize=True)
+        return buf.getvalue()
+    except ImportError:
+        pass
+    except Exception:
+        return None
     import subprocess
     import tempfile
     try:
@@ -165,7 +178,7 @@ def export_image_docs(root: Path, run_id: str) -> list[dict]:
             if small and len(small) * 4 // 3 <= MAX_IMAGE_B64:
                 raw, w, h = small, w // 2, h // 2
             else:
-                for q, sc in ((.88, 1.0), (.72, 1.0), (.9, .5)):  # 画質を少しずつ下げ、最後は半分の大きさにする
+                for q, sc in ((.88, 1.0), (.72, 1.0), (.9, .5), (.8, .5), (.7, .5), (.6, .5)):  # 画質を少しずつ下げ、最後は半分の大きさにする
                     jpg = _jpeg_of(path, q, sc)
                     if jpg and len(jpg) * 4 // 3 <= MAX_IMAGE_B64:
                         raw, mime = jpg, "image/jpeg"
