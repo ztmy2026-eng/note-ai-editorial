@@ -6,6 +6,7 @@ from __future__ import annotations
 import html
 import math
 import re
+from pathlib import Path
 
 NAVY = "#16233f"
 
@@ -363,6 +364,35 @@ def _scene_forest(rnd):
 {far}<rect y="330" width="1280" height="340" fill="url(#fog1)"/>{mid}<rect y="400" width="1280" height="270" fill="url(#fog1)" opacity=".75"/>{near}<rect y="500" width="1280" height="170" fill="url(#fog1)" opacity=".35"/>{front}"""
 
 
+PHOTO_DIR = Path("assets/photos")
+
+
+def _photo_bg(scene, seed):
+    """assets/photos/<scene>/ に本物の写真があれば、1280x670に切り出して、埋め込み用の <img> を返す。無ければ None。
+    写真の出典・ライセンスは assets/photos/README.md に書く(Unsplash License など、商用・加工が可能なものだけ)。"""
+    import base64
+    import io
+    d = PHOTO_DIR / scene
+    files = sorted([f for f in d.glob("*") if f.suffix.lower() in (".jpg", ".jpeg", ".png")]) if d.exists() else []
+    if not files:
+        return None
+    f = files[seed % len(files)]
+    try:
+        from PIL import Image
+        im = Image.open(f).convert("RGB")
+        W, H = 1280, 670
+        r = max(W / im.width, H / im.height)
+        im = im.resize((int(im.width * r) + 1, int(im.height * r) + 1))
+        x, y = (im.width - W) // 2, (im.height - H) // 2
+        im = im.crop((x, y, x + W, y + H))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=86)
+        data = base64.b64encode(buf.getvalue()).decode("ascii")
+    except Exception:
+        data = base64.b64encode(f.read_bytes()).decode("ascii")
+    return f'<img src="data:image/jpeg;base64,{data}" style="position:absolute;left:0;top:0;width:1280px;height:670px;object-fit:cover">'
+
+
 SCENES = {"night": _scene_night, "sky": _scene_sky, "sea": _scene_sea, "forest": _scene_forest}
 FONT_ROT = ["dela", "maru", "rocknroll", "reggae", "mochiy", "potta"]  # ポップで力強い書体だけ(明朝・古風は「高貴すぎる」ので使わない)
 
@@ -371,7 +401,8 @@ def nature(s, ill, scene):
     import random
     from .fonts import font_css
     rnd = random.Random(sum(ord(c) for c in s["title_html"]))
-    svg = SCENES[scene](rnd)
+    photo = _photo_bg(scene, sum(ord(c) for c in s["title_html"]))
+    svg = SCENES[scene](rnd) if photo is None else ""
     key = s.get("font") or FONT_ROT[sum(ord(c) for c in s["title_html"]) % len(FONT_ROT)]
     lines = [x for x in re.split(r"<br\s*/?>", s["title_html"]) if _plain(x).strip()]
     hot = [("<b>" in x or "<em>" in x) for x in lines]
@@ -389,12 +420,12 @@ def nature(s, ill, scene):
         col = "#ffe27a" if h else "#ffffff"
         rows += (f'<div style="font-size:{z}px;line-height:1.2;white-space:nowrap;color:{col};letter-spacing:.02em;'
                  f'-webkit-text-stroke:{thick}px {col};text-shadow:0 3px 22px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)">{html.escape(x)}</div>')
-    shade = ('<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.42),rgba(0,0,0,.1) 70%,rgba(0,0,0,0))"></div>')
+    shade = ('<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.5),rgba(0,0,0,.18) 70%,rgba(0,0,0,.05))"></div>')
     tag = (f'<div style="position:absolute;left:70px;top:46px;font-size:30px;letter-spacing:.16em;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);'
            f'border-bottom:3px solid #ffe27a;padding-bottom:6px">{html.escape(s["tag"])}</div>')
     top = 120 + max(0, int((H - sum(sizes) * 1.22) / 2))
     return f"""{css}<div class="fig" id="t" style="width:1280px;height:670px;padding:0;position:relative;overflow:hidden;background:#000;font-family:{family}">
-<svg style="position:absolute;left:0;top:0" width="1280" height="670" viewBox="0 0 1280 670">{svg}<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .5 -.12"/></filter><rect width="1280" height="670" filter="url(#grain)" opacity=".5"/></svg>{shade}{tag}
+{photo or ""}<svg style="position:absolute;left:0;top:0" width="1280" height="670" viewBox="0 0 1280 670">{svg}<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .5 -.12"/></filter><rect width="1280" height="670" filter="url(#grain)" opacity=".5"/></svg>{shade}{tag}
 <div style="position:absolute;left:70px;top:{top}px">{rows}</div>
 <div style="position:absolute;right:30px;bottom:18px;font-size:20px;letter-spacing:.1em;color:#fff;opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.7)">人生最適化中の会社員</div></div>"""
 
