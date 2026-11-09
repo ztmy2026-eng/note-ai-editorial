@@ -3,13 +3,10 @@
   "type": "cover",
   "name": "cover",
   "tag": "買い物の節約",
-  "title_html": "「<em>安いから</em>」で<br><b>1万円</b>買っても、<br>半分しか使わないと<br><b>3,750円</b>の損",
+  "title_html": "セールで損する人は、<br>買う前に<b>これだけ</b>見て!",
   "icon": "cart",
-  "style": "sea",
-  "big": "3,750円",
-  "bigsub": "損!",
-  "size": 42,
-  "font": "mincho"
+  "style": "sky",
+  "font": "rocknroll"
  },
  {
   "type": "timeline",

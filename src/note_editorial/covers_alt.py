@@ -411,7 +411,8 @@ def nature(s, ill, scene):
     plain = [_plain(x).strip() for x in lines]
     css, family = font_css(key, "".join(plain) + s["tag"] + "人生最適化中の会社員")
     W, H = 1120, 470
-    sizes = [min(150, W / max(_vis_len(x), 1)) for x in plain]
+    wf = {"dela": 1.22, "mochiy": 1.1, "potta": 1.08, "rocknroll": 1.04}.get(key, 1.0)  # 幅の広い書体は、小さめにして、はみ出さないようにする
+    sizes = [min(150, W / (max(_vis_len(x), 1) * wf)) for x in plain]
     k = min(1.0, H / (sum(sizes) * 1.22))
     sizes = [max(52, int(z * k)) for z in sizes]
     thick = {"dela": 0, "maru": 1.6, "rocknroll": 1.6, "reggae": 0.8, "mochiy": 1.2, "potta": 1.0}.get(key, 1.2)

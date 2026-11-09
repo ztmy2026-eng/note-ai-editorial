@@ -457,7 +457,7 @@ def _vary_cover_bg(specs, run_id):
             s["bg"] = BG_ORDER[day % len(BG_ORDER)]
         if s.get("type") == "cover" and not s.get("style"):
             # 2026-11-09 持ち主の指示:表紙のフォントは毎回変える(安っぽいゴシックはやめる)。日付で上質な4種を順に使う(covers_alt.py)
-            s["style"] = ("night", "sky", "sea")[day % 3]  # 2026-11-09 持ち主の指示:自然の背景(夜空・青空・海)。文字は大きく太く、フォントは毎回変える
+            s["style"] = ("forest", "sky", "sea", "night")[day % 4]  # 2026-11-09 持ち主の指示:自然の背景(夜空・青空・海)。文字は大きく太く、フォントは毎回変える
         if s.get("type") == "cover":  # 2026-10-18 決定: 見出し画像の猫(写真・絵)はやめ、ピクトグラムにする
             s.pop("photo", None)
             if not s.get("illust_html") and (not s.get("icon") or str(s.get("icon")).startswith("cat")):
