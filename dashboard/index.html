@@ -319,29 +319,48 @@ function b64ToBlob(b64, mime) {
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
   return new Blob([u8], { type: mime });
 }
-async function copyImage(doc, btn, slot) {
-  try {
-    if (!navigator.clipboard || !window.ClipboardItem) throw new Error("image clipboard is not available");
-    let blob = b64ToBlob(doc.data, doc.mime);
-    if (doc.mime !== "image/png") {  // クリップボードに入れられる画像はPNGだけ。JPEGで保存した画像は、PNGに直す
-      const bmp = await createImageBitmap(blob);
-      const cv = document.createElement("canvas"); cv.width = bmp.width; cv.height = bmp.height;
-      cv.getContext("2d").drawImage(bmp, 0, 0);
-      blob = await new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error("png"))), "image/png"));
+async function saveImage(doc, btn, slot) {   // 2026-11-09: noteには貼り付けできないので、コピーではなく「保存」にした
+  const blob = b64ToBlob(doc.data, doc.mime);
+  const ext = doc.mime === "image/jpeg" ? "jpg" : "png";
+  const name = `${String(doc.file || "image").replace(/\.\w+$/, "")}.${ext}`;
+  const showBig = (msg) => slot.replaceChildren(
+    h("p", { class: "hint", text: msg }),
+    h("img", { class: "img-big", src: `data:${doc.mime};base64,${doc.data}`, alt: doc.label }));
+  try {                                       // まず、ページの保存機能(downloads):保存してよいか確認が出る
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (dl) {
+      await dl.save({ filename: name, data: blob });
+      flash(btn, "保存しました ✓");
+      return;
     }
-    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    flash(btn, "コピーしました ✓");
-    slot.replaceChildren();
-  } catch (e) {                    // 画像のコピーを断られたら、大きく出して、長押しで保存・コピーしてもらう
-    slot.replaceChildren(
-      h("p", { class: "hint err", text: "自動でコピーできませんでした。下の画像を長押しして、「コピー」か「写真に保存」を選んでください。" }),
-      h("img", { class: "img-big", src: `data:${doc.mime};base64,${doc.data}`, alt: doc.label }));
+  } catch (e) {
+    if (e && e.code === "declined") return;   // 自分で断ったときは、何もしない
+  }
+  try {                                       // スマホ:共有の画面を開く(「画像を保存」「写真に保存」を選べる)
+    const file = new File([blob], name, { type: doc.mime });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      flash(btn, "保存の画面を開きました ✓");
+      return;
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") return; // 自分で閉じたときは、何もしない
+  }
+  try {                                       // パソコンなど:ファイルとして保存する
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    flash(btn, "保存しました ✓");
+    showBig("保存されないときは、下の画像を長押しして、「写真に保存」を選んでください。");
+  } catch (e) {
+    showBig("自動で保存できませんでした。下の画像を長押しして、「写真に保存」を選んでください。");
   }
 }
 function imageItem(doc) {
   const slot = h("div", { class: "img-slot" });
-  const btn = h("button", { class: "btn", type: "button", text: "画像をコピー" });
-  btn.addEventListener("click", () => copyImage(doc, btn, slot));
+  const btn = h("button", { class: "btn", type: "button", text: "画像を保存" });
+  btn.addEventListener("click", () => saveImage(doc, btn, slot));
   return h("div", { class: "img-item" },
     h("div", { class: "group-title", text: doc.label }),
     h("img", { class: "thumb", src: `data:${doc.mime};base64,${doc.data}`, alt: doc.label, loading: "lazy" }),
@@ -355,8 +374,8 @@ function buildImages(t) {
     return h("p", { class: "note-small", text: t.has_images ? "画像は、まだこのページに反映されていません。Claudeに「ダッシュボードを更新して」と送ると出ます。" : "この記事の画像は、まだありません。" });
   }
   return h("div", { class: "block" },
-    h("h4", { text: "画像(コピーして、noteに貼る)" }),
-    h("p", { text: "上から、本文に出てくる順番です。noteの編集画面で、本文の「【画像:…】」の行を消して、そこにカーソルを置き、貼り付けてください。貼り付けできないときは、画像を長押しして保存し、noteの「画像を追加」から選びます。" }),
+    h("h4", { text: "画像(保存して、noteに入れる)" }),
+    h("p", { text: "上から、本文に出てくる順番です。画像は、貼り付けではなく「保存」で使います。各画像の「画像を保存」を押して、出てくる画面で「画像を保存」か「写真に保存」を選んでください。noteの編集画面では、本文の「【画像:…】」の行を消して、そこで「画像を追加」から、保存した画像を選びます。" }),
     h("div", { class: "imgs" }, by("note").map(imageItem)),
     by("other").length ? h("details", { class: "preview" }, h("summary", { text: "見出し画像の簡易版(文字だけ)" }), h("div", { class: "imgs" }, by("other").map(imageItem))) : null,
     by("instagram").length ? h("details", { class: "preview" }, h("summary", { text: `Instagram用の画像(${by("instagram").length}枚)` }), h("div", { class: "imgs" }, by("instagram").map(imageItem))) : null);
