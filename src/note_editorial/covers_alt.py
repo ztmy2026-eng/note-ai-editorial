@@ -261,4 +261,158 @@ def antique(s, ill):
     return premium(s, ill, "antique")
 
 
-STYLES = {"scene": scene, "burst": burst, "memo": memo, "poster": poster, "pachi": pachi, "mincho": mincho, "maru": maru, "dela": dela, "antique": antique}
+# ---- 2026-11-09: 自然の背景(夜空・青空・海・森)。noteでは表紙が小さいので、文字は大きく太く。絵は、SVGフィルターで描いたCG(写真ではない) ----
+def _noise(rnd, n):
+    return [rnd.random() for _ in range(n)]
+
+
+def _scene_night(rnd):
+    stars = ""
+    for _ in range(260):
+        x, y = rnd.randint(0, 1280), rnd.randint(0, 520)
+        r = rnd.choice([.6, .8, 1, 1, 1.3, 1.6])
+        stars += f'<circle cx="{x}" cy="{y}" r="{r}" fill="#fff" opacity="{rnd.uniform(.35,.95):.2f}"/>'
+    bright = ""
+    for _ in range(14):
+        x, y = rnd.randint(40, 1240), rnd.randint(20, 420)
+        bright += f'<circle cx="{x}" cy="{y}" r="2.2" fill="#fff"/><circle cx="{x}" cy="{y}" r="7" fill="#cfe3ff" opacity=".25"/>'
+    pts, x, y = [], 0, 600
+    for i in range(0, 1300, 20):
+        y = max(560, min(640, y + rnd.randint(-14, 14)))
+        pts.append(f"{i},{y}")
+    mount = "0,670 " + " ".join(pts) + " 1280,670"
+    return f"""<defs>
+<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#01030a"/><stop offset=".55" stop-color="#071634"/><stop offset=".9" stop-color="#1b3868"/><stop offset="1" stop-color="#2b4a7e"/></linearGradient>
+<filter id="mw" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".006 .018" numOctaves="5" seed="4" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 .78  0 0 0 0 .86  0 0 0 0 1  0 0 0 2.6 -.95"/><feGaussianBlur stdDeviation="3"/></filter>
+<linearGradient id="band" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<mask id="bm"><rect x="-200" y="-100" width="1700" height="900" fill="url(#band)" transform="rotate(-24 640 335)"/></mask>
+<radialGradient id="glow" cx=".72" cy="1" r=".6"><stop offset="0" stop-color="#6f8fd6" stop-opacity=".55"/><stop offset="1" stop-color="#6f8fd6" stop-opacity="0"/></radialGradient></defs>
+<rect width="1280" height="670" fill="url(#g)"/>
+<rect width="1280" height="670" filter="url(#mw)" mask="url(#bm)" opacity=".85"/>
+<rect width="1280" height="670" fill="url(#glow)"/>{stars}{bright}
+<polygon points="{mount}" fill="#02050c"/>"""
+
+
+def _scene_sky(rnd):
+    return """<defs>
+<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b5cc4"/><stop offset=".55" stop-color="#3e92e0"/><stop offset="1" stop-color="#bfe3fb"/></linearGradient>
+<filter id="c1" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".007 .012" numOctaves="6" seed="11" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 6 -2.6"/><feGaussianBlur stdDeviation="1.4"/></filter>
+<filter id="c2" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".011 .02" numOctaves="6" seed="23" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 .93  0 0 0 0 .96  0 0 0 0 1  0 0 0 5 -2.3"/><feGaussianBlur stdDeviation="1"/></filter>
+<linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#fff" stop-opacity="1"/></linearGradient>
+<mask id="mk"><rect width="1280" height="670" fill="url(#m)"/></mask>
+<radialGradient id="sun" cx=".85" cy=".1" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<rect width="1280" height="670" fill="url(#g)"/><rect width="1280" height="670" fill="url(#sun)"/>
+<rect width="1280" height="670" filter="url(#c2)" mask="url(#mk)" opacity=".75"/>
+<rect width="1280" height="670" filter="url(#c1)" mask="url(#mk)" opacity=".95"/>"""
+
+
+def _scene_sea(rnd):
+    return """<defs>
+<linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3f7a"/><stop offset=".45" stop-color="#e0719a"/><stop offset=".8" stop-color="#ffb877"/><stop offset="1" stop-color="#ffe0a8"/></linearGradient>
+<linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d98a73"/><stop offset=".12" stop-color="#4a5f8e"/><stop offset=".6" stop-color="#16345f"/><stop offset="1" stop-color="#0a1c38"/></linearGradient>
+<filter id="w" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".004 .09" numOctaves="4" seed="9" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 .86  0 0 0 0 .72  0 0 0 3.2 -1.55"/></filter>
+<filter id="w2" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".002 .05" numOctaves="3" seed="5" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 .05  0 0 0 0 .12  0 0 0 0 .25  0 0 0 2.4 -.9"/></filter>
+<radialGradient id="sun" cx=".66" cy=".53" r=".42"><stop offset="0" stop-color="#fff6d6" stop-opacity="1"/><stop offset=".12" stop-color="#ffd58a" stop-opacity=".85"/><stop offset="1" stop-color="#ff9a5a" stop-opacity="0"/></radialGradient>
+<linearGradient id="col" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9b8" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9b8" stop-opacity="0"/></linearGradient>
+<mask id="cm"><rect x="760" y="360" width="170" height="310" fill="url(#col)"/></mask>
+<filter id="blur"><feGaussianBlur stdDeviation="2.5"/></filter></defs>
+<rect width="1280" height="670" fill="url(#sk)"/><rect width="1280" height="670" fill="url(#sun)"/>
+<rect y="355" width="1280" height="315" fill="url(#sea)"/>
+<rect y="355" width="1280" height="315" filter="url(#w2)" opacity=".8"/>
+<rect y="355" width="1280" height="315" filter="url(#w)" mask="url(#cm)" opacity=".95"/>
+<rect y="353" width="1280" height="4" fill="#fff3d0" opacity=".55" filter="url(#blur)"/>"""
+
+
+def _scene_forest(rnd):
+    def tree(x, base, h, w, color):
+        pts = [f"{x},{base}"]
+        tiers = 6
+        left, right = [], []
+        for k in range(tiers):
+            yy = base - h * (k + 1) / tiers
+            ww = w * (1 - k / tiers) * rnd.uniform(.9, 1.1)
+            left.append((x - ww / 2, yy + h / tiers * .55))
+            left.append((x - ww * .28, yy))
+            right.append((x + ww * .28, yy))
+            right.append((x + ww / 2, yy + h / tiers * .55))
+        poly = [(x - w / 2, base)] + left + [(x, base - h)] + list(reversed(right)) + [(x + w / 2, base)]
+        return f'<polygon points="{" ".join(f"{a:.0f},{b:.0f}" for a, b in poly)}" fill="{color}"/>'
+    def layer(base, h, w, color, step, blur):
+        out, x = "", -30
+        while x < 1320:
+            out += tree(x + rnd.randint(-12, 12), base + rnd.randint(-10, 10), h * rnd.uniform(.6, 1.15), w * rnd.uniform(.8, 1.2), color)
+            x += step * rnd.uniform(.7, 1.25)
+        return f'<g filter="url(#bl{blur})">{out}</g>'
+    far = layer(470, 190, 70, "#8fb0a6", 46, 3)
+    mid = layer(540, 280, 100, "#4f7b6d", 62, 2)
+    near = layer(620, 400, 150, "#244a3f", 90, 1)
+    front = layer(720, 560, 220, "#0c2822", 150, 0)
+    return f"""<defs>
+<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9cc9bd"/><stop offset=".55" stop-color="#d4e9dc"/><stop offset="1" stop-color="#f1efd0"/></linearGradient>
+<linearGradient id="fog1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf4e6" stop-opacity="0"/><stop offset="1" stop-color="#eaf4e6" stop-opacity=".8"/></linearGradient>
+<linearGradient id="ray" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffbe0" stop-opacity=".75"/><stop offset="1" stop-color="#fffbe0" stop-opacity="0"/></linearGradient>
+<filter id="b"><feGaussianBlur stdDeviation="10"/></filter>
+<filter id="bl3"><feGaussianBlur stdDeviation="3.2"/></filter><filter id="bl2"><feGaussianBlur stdDeviation="1.6"/></filter><filter id="bl1"><feGaussianBlur stdDeviation=".8"/></filter><filter id="bl0"><feGaussianBlur stdDeviation="0"/></filter></defs>
+<rect width="1280" height="670" fill="url(#g)"/>
+<g filter="url(#b)"><polygon points="760,-20 900,-20 560,670 330,670" fill="url(#ray)"/><polygon points="980,-20 1070,-20 840,670 700,670" fill="url(#ray)" opacity=".7"/></g>
+{far}<rect y="330" width="1280" height="340" fill="url(#fog1)"/>{mid}<rect y="400" width="1280" height="270" fill="url(#fog1)" opacity=".75"/>{near}<rect y="500" width="1280" height="170" fill="url(#fog1)" opacity=".35"/>{front}"""
+
+
+SCENES = {"night": _scene_night, "sky": _scene_sky, "sea": _scene_sea, "forest": _scene_forest}
+FONT_ROT = ["dela", "mincho", "maru", "kaisei"]
+
+
+def nature(s, ill, scene):
+    import random
+    from .fonts import font_css
+    rnd = random.Random(sum(ord(c) for c in s["title_html"]))
+    svg = SCENES[scene](rnd)
+    key = s.get("font") or FONT_ROT[sum(ord(c) for c in s["title_html"]) % len(FONT_ROT)]
+    lines = [x for x in re.split(r"<br\s*/?>", s["title_html"]) if _plain(x).strip()]
+    hot = [("<b>" in x or "<em>" in x) for x in lines]
+    if not any(hot):
+        hot[-1] = True
+    plain = [_plain(x).strip() for x in lines]
+    css, family = font_css(key, "".join(plain) + s["tag"] + "人生最適化中の会社員")
+    W, H = 1120, 470
+    sizes = [min(150, W / max(_vis_len(x), 1)) for x in plain]
+    k = min(1.0, H / (sum(sizes) * 1.22))
+    sizes = [max(52, int(z * k)) for z in sizes]
+    thick = {"dela": 0, "mincho": 2.2, "maru": 1.6, "kaisei": 2.0}.get(key, 1.5)
+    rows = ""
+    for x, z, h in zip(plain, sizes, hot):
+        col = "#ffe27a" if h else "#ffffff"
+        rows += (f'<div style="font-size:{z}px;line-height:1.2;white-space:nowrap;color:{col};letter-spacing:.02em;'
+                 f'-webkit-text-stroke:{thick}px {col};text-shadow:0 3px 22px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)">{html.escape(x)}</div>')
+    shade = ('<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.42),rgba(0,0,0,.1) 70%,rgba(0,0,0,0))"></div>')
+    tag = (f'<div style="position:absolute;left:70px;top:46px;font-size:30px;letter-spacing:.16em;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);'
+           f'border-bottom:3px solid #ffe27a;padding-bottom:6px">{html.escape(s["tag"])}</div>')
+    top = 120 + max(0, int((H - sum(sizes) * 1.22) / 2))
+    return f"""{css}<div class="fig" id="t" style="width:1280px;height:670px;padding:0;position:relative;overflow:hidden;background:#000;font-family:{family}">
+<svg style="position:absolute;left:0;top:0" width="1280" height="670" viewBox="0 0 1280 670">{svg}<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .5 -.12"/></filter><rect width="1280" height="670" filter="url(#grain)" opacity=".5"/></svg>{shade}{tag}
+<div style="position:absolute;left:70px;top:{top}px">{rows}</div>
+<div style="position:absolute;right:30px;bottom:18px;font-size:20px;letter-spacing:.1em;color:#fff;opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.7)">人生最適化中の会社員</div></div>"""
+
+
+def night(s, ill):
+    return nature(s, ill, "night")
+
+
+def sky(s, ill):
+    return nature(s, ill, "sky")
+
+
+def sea(s, ill):
+    return nature(s, ill, "sea")
+
+
+def forest(s, ill):
+    return nature(s, ill, "forest")
+
+
+STYLES = {"scene": scene, "burst": burst, "memo": memo, "poster": poster, "pachi": pachi, "mincho": mincho, "maru": maru, "dela": dela, "antique": antique, "night": night, "sky": sky, "sea": sea, "forest": forest}

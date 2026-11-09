@@ -360,7 +360,7 @@ def render_all_cli(specs: list[dict], out_dir: Path) -> list[Path]:
             src.write_text(_page_html(s), encoding="utf-8")
             out.unlink(missing_ok=True)
             height = int(m.group(1))
-            cmd = base + ["--force-device-scale-factor=2", f"--screenshot={out.resolve()}",
+            cmd = base + ["--force-device-scale-factor=2", "--virtual-time-budget=5000", f"--screenshot={out.resolve()}",
                           f"--window-size=1280,{height + offset}", src.resolve().as_uri()]
             try:
                 subprocess.run(cmd, capture_output=True, timeout=90, check=False)
@@ -398,7 +398,11 @@ def render_all(specs: list[dict], out_dir: Path) -> list[Path]:
             for s in specs:
                 out = out_dir / f"{s['name']}.png"
                 pg.set_content('<html><head><meta charset="utf-8">' + BASE + '</head><body>' + R[s["type"]](s) + '</body></html>')
-                pg.wait_for_timeout(150)
+                try:
+                    pg.evaluate("document.fonts.ready.then(() => 1)")
+                except Exception:
+                    pass
+                pg.wait_for_timeout(500)
                 pg.locator("#t").screenshot(path=str(out))
                 made.append(out)
         finally:
@@ -453,7 +457,7 @@ def _vary_cover_bg(specs, run_id):
             s["bg"] = BG_ORDER[day % len(BG_ORDER)]
         if s.get("type") == "cover" and not s.get("style"):
             # 2026-11-09 持ち主の指示:表紙のフォントは毎回変える(安っぽいゴシックはやめる)。日付で上質な4種を順に使う(covers_alt.py)
-            s["style"] = ("mincho", "maru", "dela", "antique")[day % 4]
+            s["style"] = ("night", "sky", "sea")[day % 3]  # 2026-11-09 持ち主の指示:自然の背景(夜空・青空・海)。文字は大きく太く、フォントは毎回変える
         if s.get("type") == "cover":  # 2026-10-18 決定: 見出し画像の猫(写真・絵)はやめ、ピクトグラムにする
             s.pop("photo", None)
             if not s.get("illust_html") and (not s.get("icon") or str(s.get("icon")).startswith("cat")):

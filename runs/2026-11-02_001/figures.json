@@ -5,9 +5,10 @@
   "tag": "電気代",
   "title_html": "電気代、<br>たった<em>5つ変える</em>だけで、<br>年<b>約14,400円</b>お得に!",
   "icon": "bolt",
-  "style": "antique",
+  "style": "sky",
   "big": "約14,400円",
-  "bigsub": "年のお得"
+  "bigsub": "年のお得",
+  "font": "maru"
  },
  {
   "type": "bar",

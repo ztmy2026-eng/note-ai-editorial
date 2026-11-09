@@ -5,10 +5,11 @@
   "tag": "買い物の節約",
   "title_html": "「<em>安いから</em>」で<br><b>1万円</b>買っても、<br>半分しか使わないと<br><b>3,750円</b>の損",
   "icon": "cart",
-  "style": "dela",
+  "style": "sea",
   "big": "3,750円",
   "bigsub": "損!",
-  "size": 42
+  "size": 42,
+  "font": "mincho"
  },
  {
   "type": "timeline",

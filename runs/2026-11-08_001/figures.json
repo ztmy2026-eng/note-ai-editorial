@@ -5,9 +5,10 @@
   "tag": "申請でもらえるお金",
   "title_html": "申請すれば<em>76万円</em>、<br>申請しないと<b>0円</b>",
   "icon": "yen",
-  "style": "mincho",
+  "style": "night",
   "big": "76万円",
-  "bigsub": "申請すれば"
+  "bigsub": "申請すれば",
+  "font": "kaisei"
  },
  {
   "type": "bar",
