@@ -452,7 +452,7 @@ def _vary_cover_bg(specs, run_id):
         if s.get("type") == "cover" and not s.get("bg"):
             s["bg"] = BG_ORDER[day % len(BG_ORDER)]
         if s.get("type") == "cover" and not s.get("style") and re.search(r"<b>.+?</b>", s.get("title_html", "")):
-            s["style"] = "burst"  # 2026-11-09 持ち主が表紙の「2番目(マンガ風)」を選んだ。赤字の金額(<b>)があるときは、それを大きな数字にする
+            s["style"] = "pachi"  # 2026-11-09 持ち主が参考画像(パチンコ演出風の派手なデザイン)を指定。人物は使わない(真似に見えるため)。赤字(<b>)の行をピンク、ほかを金色の特大文字にする
         if s.get("type") == "cover":  # 2026-10-18 決定: 見出し画像の猫(写真・絵)はやめ、ピクトグラムにする
             s.pop("photo", None)
             if not s.get("illust_html") and (not s.get("icon") or str(s.get("icon")).startswith("cat")):

@@ -128,4 +128,50 @@ def poster(s, ill):
 <div style="position:absolute;left:64px;bottom:22px;font-size:22px;color:#9fb0d0">人生最適化中の会社員</div></div>"""
 
 
-STYLES = {"scene": scene, "burst": burst, "memo": memo, "poster": poster}
+def _vis_len(text):
+    return sum(0.58 if ord(c) < 0x2000 else 1.0 for c in text)
+
+
+def pachi(s, ill):
+    """パチンコ演出風(2026-11-09 持ち主の参考画像のような、派手なデザイン)。人物は使わない。
+    紫〜ピンクの光る背景・キラキラ・太い縁取りの金色/ピンクの特大文字・金貨。参考画像の人物・配置・形はそのまま真似しない。"""
+    raw = s["title_html"]
+    lines = [x for x in re.split(r"<br\s*/?>", raw) if _plain(x).strip()]
+    has_b = [("<b>" in x) for x in lines]
+    if not any(has_b):
+        has_b[-1] = True
+    plain = [_plain(x).strip() for x in lines]
+    W, H = 760, 520
+    sizes = [min(120, W / max(_vis_len(x), 1)) for x in plain]
+    tot = sum(sizes) * 1.18
+    k = min(1.0, H / tot)
+    sizes = [max(40, int(z * k)) for z in sizes]
+    top = 96 + max(0, int((H - sum(sizes) * 1.2) / 2))
+    rows = ""
+    for x, z, pink in zip(plain, sizes, has_b):
+        grad = "linear-gradient(#fff6a8 0%,#ffd21f 45%,#ff9a00 100%)" if not pink else "linear-gradient(#ffd6fb 0%,#ff5ce1 45%,#c2189f 100%)"
+        glow = "0 0 22px #ffb300" if not pink else "0 0 26px #ff2bd6"
+        rows += (f'<div style="position:relative;line-height:1.16;margin:0 0 2px 0;font-size:{z}px;font-weight:900;white-space:nowrap;letter-spacing:.01em">'
+                 f'<span style="-webkit-text-stroke:{max(12, z // 6)}px #14000f;color:#14000f;text-shadow:{glow}">{html.escape(x)}</span>'
+                 f'<span style="position:absolute;left:0;top:0;background:{grad};-webkit-background-clip:text;background-clip:text;color:transparent;'
+                 f'-webkit-text-stroke:2px #fff7;filter:drop-shadow(0 3px 0 #0006)">{html.escape(x)}</span></div>')
+    # キラキラ(決まった配置)
+    sp = []
+    import random
+    rnd = random.Random(7)
+    for i in range(46):
+        sp.append((rnd.randint(10, 1270), rnd.randint(10, 660), rnd.choice([6, 8, 10, 14, 20, 28])))
+    stars = _sparkles(sp, "#fff")
+    bokeh = "".join(f'<circle cx="{rnd.randint(0,1280)}" cy="{rnd.randint(0,670)}" r="{rnd.randint(10,46)}" fill="#ffffff" opacity="{rnd.choice([.06,.09,.12])}"/>' for _ in range(22))
+    coins = _coins([(1010, 150, 70), (1150, 300, 56), (930, 420, 62), (1090, 470, 84), (1200, 590, 44), (860, 580, 40)])
+    tag = (f'<div style="position:absolute;left:44px;top:36px;background:#ff3fd1;color:#fff;font-weight:900;font-size:26px;padding:6px 22px;'
+           f'border-radius:30px;border:4px solid #14000f;box-shadow:0 0 18px #ff3fd1">{html.escape(s["tag"])}</div>')
+    return f"""<div class="fig" id="t" style="width:1280px;height:670px;padding:0;position:relative;overflow:hidden;color:#fff;
+background:radial-gradient(circle at 72% 42%,#ff58dc 0%,#b0179f 30%,#58087a 62%,#1c0430 100%)">
+<svg style="position:absolute;left:0;top:0" width="1280" height="670">{bokeh}</svg>
+{stars}{coins}{tag}
+<div style="position:absolute;left:44px;top:{top}px;transform:rotate(-3deg);transform-origin:0 0">{rows}</div>
+<div style="position:absolute;right:24px;bottom:16px;font-size:22px;font-weight:700;color:#ffd7f7;text-shadow:0 0 8px #14000f">人生最適化中の会社員</div></div>"""
+
+
+STYLES = {"scene": scene, "burst": burst, "memo": memo, "poster": poster, "pachi": pachi}
