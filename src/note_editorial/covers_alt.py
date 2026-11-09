@@ -89,7 +89,7 @@ def burst(s, ill):
 <div style="font-size:{bigsize}px">{html.escape(big)}</div><div style="font-size:44px;margin-top:6px;color:#ffe066">{html.escape(s.get('bigsub',''))}</div></div>
 <div style="position:absolute;left:34px;top:60px;width:610px;background:#fff;border:6px solid {NAVY};border-radius:18px;padding:26px 32px;transform:rotate(-2deg);box-shadow:9px 10px 0 {NAVY}">
 <div style="font-size:{s.get('size',42)}px;font-weight:900;line-height:1.4">{title}</div></div>
-<div style="position:absolute;left:46px;bottom:26px;width:300px;height:260px;transform:rotate(-4deg)">{_scale(ill,300,315)}</div>
+<div style="position:absolute;left:60px;bottom:24px;width:230px;height:231px;transform:rotate(-4deg)"><div style="width:400px;height:420px;transform:scale(.55);transform-origin:0 0">{ill}</div></div>
 <div style="position:absolute;right:30px;bottom:22px;font-size:24px;font-weight:700">人生最適化中の会社員</div></div>"""
 
 

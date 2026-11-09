@@ -451,6 +451,8 @@ def _vary_cover_bg(specs, run_id):
     for s in specs:
         if s.get("type") == "cover" and not s.get("bg"):
             s["bg"] = BG_ORDER[day % len(BG_ORDER)]
+        if s.get("type") == "cover" and not s.get("style") and re.search(r"<b>.+?</b>", s.get("title_html", "")):
+            s["style"] = "burst"  # 2026-11-09 持ち主が表紙の「2番目(マンガ風)」を選んだ。赤字の金額(<b>)があるときは、それを大きな数字にする
         if s.get("type") == "cover":  # 2026-10-18 決定: 見出し画像の猫(写真・絵)はやめ、ピクトグラムにする
             s.pop("photo", None)
             if not s.get("illust_html") and (not s.get("icon") or str(s.get("icon")).startswith("cat")):
