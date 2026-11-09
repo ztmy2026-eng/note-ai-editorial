@@ -364,7 +364,7 @@ def _scene_forest(rnd):
 
 
 SCENES = {"night": _scene_night, "sky": _scene_sky, "sea": _scene_sea, "forest": _scene_forest}
-FONT_ROT = ["dela", "mincho", "maru", "kaisei"]
+FONT_ROT = ["dela", "maru", "rocknroll", "reggae", "mochiy", "potta"]  # ポップで力強い書体だけ(明朝・古風は「高貴すぎる」ので使わない)
 
 
 def nature(s, ill, scene):
@@ -383,7 +383,7 @@ def nature(s, ill, scene):
     sizes = [min(150, W / max(_vis_len(x), 1)) for x in plain]
     k = min(1.0, H / (sum(sizes) * 1.22))
     sizes = [max(52, int(z * k)) for z in sizes]
-    thick = {"dela": 0, "mincho": 2.2, "maru": 1.6, "kaisei": 2.0}.get(key, 1.5)
+    thick = {"dela": 0, "maru": 1.6, "rocknroll": 1.6, "reggae": 0.8, "mochiy": 1.2, "potta": 1.0}.get(key, 1.2)
     rows = ""
     for x, z, h in zip(plain, sizes, hot):
         col = "#ffe27a" if h else "#ffffff"

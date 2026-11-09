@@ -22,6 +22,11 @@ PRESETS = {
     "antique": ("zen-antique", "Zen Antique", 400),          # 古風・重厚
     "kaisei": ("kaisei-decol", "Kaisei Decol", 700),         # 個性のある書体
     "tegomin": ("new-tegomin", "New Tegomin", 400),          # 手書き風の明朝
+    # 2026-11-09 「明朝・古風は高貴すぎる」との指摘。表紙は、親しみのあるポップで力強い書体だけを使う
+    "rocknroll": ("rocknroll-one", "RocknRoll One", 400),
+    "reggae": ("reggae-one", "Reggae One", 400),
+    "mochiy": ("mochiy-pop-one", "Mochiy Pop One", 400),
+    "potta": ("potta-one", "Potta One", 400),
 }
 
 
