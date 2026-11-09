@@ -174,4 +174,91 @@ background:radial-gradient(circle at 72% 42%,#ff58dc 0%,#b0179f 30%,#58087a 62%,
 <div style="position:absolute;right:24px;bottom:16px;font-size:22px;font-weight:700;color:#ffd7f7;text-shadow:0 0 8px #14000f">人生最適化中の会社員</div></div>"""
 
 
-STYLES = {"scene": scene, "burst": burst, "memo": memo, "poster": poster, "pachi": pachi}
+# ---- 2026-11-09: 落ち着いた上質なデザイン。フォントは毎回変える(fonts.py)。斜め配置・太い縁取り・どぎつい色はやめる ----
+THEMES = {
+    "mincho": dict(font="mincho", bg="linear-gradient(135deg,#f7f0e1,#efe4cc)", ink="#14213d", accent="#b8321f", sub="#6b5b3e", frame="#14213d"),
+    "maru": dict(font="maru", bg="linear-gradient(135deg,#e6f6ef,#d3eee3)", ink="#0e3b3a", accent="#e8590c", sub="#3d6b66", frame="#0e3b3a"),
+    "dela": dict(font="dela", bg="#ffd23f", ink="#141414", accent="#141414", sub="#141414", frame="#141414"),
+    "antique": dict(font="antique", bg="radial-gradient(circle at 70% 35%,#1d3557,#0c1626 70%)", ink="#f3e7c8", accent="#e9c46a", sub="#bda66a", frame="#c9a94f"),
+}
+
+
+def _plain_lines(s):
+    lines = [x for x in re.split(r"<br\s*/?>", s["title_html"]) if _plain(x).strip()]
+    return lines
+
+
+def premium(s, ill, theme):
+    from .fonts import font_css
+    th = THEMES[theme]
+    lines = _plain_lines(s)
+    hot = [("<b>" in x or "<em>" in x) for x in lines]
+    if not any(hot):
+        hot[-1] = True
+    plain = [_plain(x).strip() for x in lines]
+    css, family = font_css(th["font"], "".join(plain) + s["tag"] + "人生最適化中の会社員")
+    W, H = 640, 370
+    sizes = [min(104, W / max(_vis_len(x), 1)) for x in plain]
+    k = min(1.0, H / (sum(sizes) * 1.3))
+    sizes = [max(38, int(z * k)) for z in sizes]
+    rows = ""
+    for x, z, h in zip(plain, sizes, hot):
+        if theme == "dela":
+            st = f"background:{th['ink']};color:{th['bg']};padding:.02em .18em;display:inline-block;" if h else f"color:{th['ink']};"
+        elif theme == "maru":
+            st = (f"color:{th['ink']};background:linear-gradient(transparent 58%,#ffd43b 58%);" if h else f"color:{th['ink']};")
+        else:
+            st = f"color:{th['accent']};" if h else f"color:{th['ink']};"
+        bigger = int(z * 1.12) if h else z
+        rows += f'<div style="font-size:{bigger}px;line-height:1.26;letter-spacing:.03em;white-space:nowrap"><span style="{st}">{html.escape(x)}</span></div>'
+    if theme == "antique":
+        frame = (f'<div style="position:absolute;inset:26px;border:1.5px solid {th["frame"]}"></div>'
+                 f'<div style="position:absolute;inset:36px;border:1px solid {th["frame"]}88"></div>')
+    elif theme == "mincho":
+        frame = (f'<div style="position:absolute;inset:28px;border:2px solid {th["frame"]}"></div>')
+    elif theme == "dela":
+        frame = ""
+    else:
+        frame = ""
+    if theme == "maru":
+        deco = ('<div style="position:absolute;right:-90px;top:-110px;width:470px;height:470px;border-radius:50%;background:#ffffff88"></div>'
+                '<div style="position:absolute;left:-120px;bottom:-160px;width:420px;height:420px;border-radius:50%;background:#ffffff66"></div>')
+    else:
+        deco = ""
+    if theme == "dela":
+        iconbox = f'<div style="position:absolute;right:70px;top:150px;width:360px;height:360px;border-radius:50%;background:{th["ink"]};overflow:hidden;box-shadow:12px 12px 0 #ffffff99"><div style="transform:scale(.72);transform-origin:50% 50%;margin:20px 0 0 14px">{ill}</div></div>'
+    elif theme == "antique":
+        iconbox = f'<div style="position:absolute;right:92px;top:160px;width:340px;height:340px;border-radius:50%;border:2px solid {th["frame"]};background:#ffffff0d;overflow:hidden"><div style="transform:scale(.7);transform-origin:50% 50%;margin:30px 0 0 14px">{ill}</div></div>'
+    elif theme == "mincho":
+        iconbox = f'<div style="position:absolute;right:96px;top:170px;width:320px;height:320px;border-radius:50%;background:{th["ink"]};overflow:hidden"><div style="transform:scale(.68);transform-origin:50% 50%;margin:34px 0 0 14px">{ill}</div></div>'
+    else:
+        iconbox = f'<div style="position:absolute;right:84px;top:160px;width:340px;height:340px;border-radius:44px;background:#fff;box-shadow:0 18px 40px rgba(14,59,58,.18);overflow:hidden"><div style="background:{th["ink"]};width:100%;height:100%;padding:34px 0 0 14px;box-sizing:border-box"><div style="transform:scale(.7);transform-origin:50% 50%">{ill}</div></div></div>'
+    tag_bg = {"mincho": th["ink"], "maru": th["ink"], "dela": th["ink"], "antique": "transparent"}[theme]
+    tag_col = {"mincho": "#f7f0e1", "maru": "#fff", "dela": th["bg"], "antique": th["accent"]}[theme]
+    tag_border = f"1.5px solid {th['accent']}" if theme == "antique" else "none"
+    tag = (f'<div style="display:inline-block;background:{tag_bg};color:{tag_col};border:{tag_border};font-size:25px;letter-spacing:.14em;'
+           f'padding:7px 22px;border-radius:{30 if theme=="maru" else 2}px">{html.escape(s["tag"])}</div>')
+    return f"""{css}<div class="fig" id="t" style="width:1280px;height:670px;padding:0;position:relative;overflow:hidden;background:{th['bg']};color:{th['ink']};font-family:{family}">
+{deco}{frame}{iconbox}
+<div style="position:absolute;left:78px;top:70px">{tag}</div>
+<div style="position:absolute;left:78px;top:150px">{rows}</div>
+<div style="position:absolute;left:78px;bottom:54px;font-size:22px;letter-spacing:.12em;color:{th['sub']}">人生最適化中の会社員</div></div>"""
+
+
+def mincho(s, ill):
+    return premium(s, ill, "mincho")
+
+
+def maru(s, ill):
+    return premium(s, ill, "maru")
+
+
+def dela(s, ill):
+    return premium(s, ill, "dela")
+
+
+def antique(s, ill):
+    return premium(s, ill, "antique")
+
+
+STYLES = {"scene": scene, "burst": burst, "memo": memo, "poster": poster, "pachi": pachi, "mincho": mincho, "maru": maru, "dela": dela, "antique": antique}

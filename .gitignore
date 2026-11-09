@@ -13,3 +13,4 @@ __pycache__/
 # ログは各自の環境で生成(Gitには載せない)
 logs/*
 !logs/.gitkeep
+.fontcache/
