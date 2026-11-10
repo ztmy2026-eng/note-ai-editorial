@@ -113,6 +113,20 @@ img.thumb, img.img-big { display: block; width: 100%; height: auto; border-radiu
 .empty { color: var(--ink-sub); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 20px 16px; }
 .empty b { color: var(--ink); }
 
+
+/* ---- 目次(題名ごとに飛ぶ) 2026-11-11 ---- */
+.card { scroll-margin-top: 64px; }
+.toc { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.toc a { display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
+  color: var(--ink); text-decoration: none; font-size: .9rem; line-height: 1.4; }
+.toc a:active { background: var(--accent-soft); }
+.toc .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.toc .dot.warn { background: var(--accent); } .toc .dot.go { background: var(--good); }
+.toc .tt { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.toc .st { flex: none; font-size: .72rem; color: var(--ink-sub); }
+.totop { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 6; min-height: 44px; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--navy); background: var(--navy); color: var(--on-navy); font-weight: 700; box-shadow: 0 2px 10px rgba(0,0,0,.25); cursor: pointer; }
+
 /* ---- 数字 ---- */
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
@@ -163,6 +177,7 @@ svg .axis { stroke: var(--line); stroke-width: 1; }
 
   <main>
     <section id="p-tasks" role="tabpanel" aria-labelledby="tab-tasks">
+      <nav class="toc" id="toc" aria-label="記事の一覧(押すとその記事に移動)" hidden></nav>
       <div class="list" id="tasks"></div>
     </section>
 
@@ -189,6 +204,7 @@ svg .axis { stroke: var(--line); stroke-width: 1; }
     </section>
   </main>
 </div>
+<button class="totop" id="totop" type="button" hidden aria-label="一覧に戻る">↑ 一覧へ</button>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -482,7 +498,7 @@ function buildCard(t) {
   const st = taskStatus(t);
   const done = new Set(t.steps_done || []);
   const next = (t.next_action || "").replace(/`/g, "");
-  const card = h("article", { class: "card", "data-id": t.id },
+  const card = h("article", { class: "card", id: "card-" + t.id, "data-id": t.id },
     h("div", { class: "card-head" },
       h("span", { class: "pill " + st.kind, text: st.label }),
       h("h3", { text: t.title || "(題名なし)" }),
@@ -495,6 +511,27 @@ function buildCard(t) {
     h("div", { class: "fallback-slot" }));
   return card;
 }
+
+
+function renderToc(list) {                       // 題名の一覧。押すと、その記事のカードへ移動する
+  const toc = $("toc");
+  if (!toc) return;
+  toc.replaceChildren();
+  toc.hidden = list.length < 2;
+  list.forEach(([id, t]) => {
+    const st = taskStatus(t);
+    const a = h("a", { href: "#card-" + id }, h("span", { class: "dot " + st.kind }), h("span", { class: "tt", text: t.title || id }), h("span", { class: "st", text: st.label }));
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const c = state.cards.get(id);
+      if (c) c.el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    toc.append(a);
+  });
+}
+const totop = $("totop");
+totop.addEventListener("click", () => { const toc = $("toc"); (toc && !toc.hidden ? toc : document.body).scrollIntoView({ behavior: "smooth", block: "start" }); });
+window.addEventListener("scroll", () => { totop.hidden = window.scrollY < 500 || $("p-tasks").hidden; }, { passive: true });
 
 function renderTasks(docs) {
   state.tasks = new Map(docs.map((s) => [s.id, { ...s.data(), id: s.id }]));   // 実行IDは書類名から取る(中身に頼らない)
@@ -519,6 +556,7 @@ function renderTasks(docs) {
   if (!list.length) {
     if (!empty) root.append(h("div", { class: "empty" }, h("b", { text: "いまやることはありません。" }), h("br"), "新しい記事ができると、ここに出ます。最近の状況は「やること」の反映時刻を見てください。"));
   } else if (empty) empty.remove();
+  renderToc(list);
   const n = list.filter(([, t]) => t.needs_human).length;
   $("count").hidden = n === 0;
   $("count").textContent = String(n);
