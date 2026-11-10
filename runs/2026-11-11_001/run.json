@@ -1,0 +1,37 @@
+{
+  "run_id": "2026-11-11_001",
+  "theme": "investing",
+  "theme_name": "投資・資産形成",
+  "created": "2026-11-10T22:46:08+00:00",
+  "status": "sns_approved",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-11-10T22:49:07+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-11-10T22:52:17+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-11-10T22:52:43+00:00",
+      "by": "auto"
+    }
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-11-09",
+    "date": "2026-11-11",
+    "title": "「いつか始めよう」のまま、1年たってない?",
+    "approved": false
+  }
+}
