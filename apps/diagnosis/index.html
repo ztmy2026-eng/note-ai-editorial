@@ -1,0 +1,129 @@
+<title>おかね診断</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--fg:#1d2a24;--sub:#5b6a62;--line:#dfe5e0;--accent:#1f7a55;--accent-fg:#fff;--chip:#eaf1ec;--warn:#9a5b00;--warnbg:#fff4de;--good:#1f7a55}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1b2420;--fg:#e8efe9;--sub:#9fb0a6;--line:#2c3a33;--accent:#4cc38a;--accent-fg:#0d1a13;--chip:#24322b;--warn:#f0b45a;--warnbg:#2f2615;--good:#4cc38a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815;--card:#1b2420;--fg:#e8efe9;--sub:#9fb0a6;--line:#2c3a33;--accent:#4cc38a;--accent-fg:#0d1a13;--chip:#24322b;--warn:#f0b45a;--warnbg:#2f2615;--good:#4cc38a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 "Noto Sans JP",system-ui,sans-serif;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:22px;margin:4px 0 0}
+.lead{color:var(--sub);font-size:14px;margin:0}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tab{min-height:56px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:12px;font:inherit;font-size:14px;font-weight:700;padding:6px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{font-size:17px;margin:0}
+.q{font-weight:700;font-size:15px;margin:0}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.opt{min-height:52px;border:1px solid var(--line);background:var(--chip);color:var(--fg);border-radius:10px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;font-variant-numeric:tabular-nums}
+.opt[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.opt:focus-visible,.tab:focus-visible,.step button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.step{display:flex;align-items:center;gap:10px}
+.step button{width:56px;height:56px;border-radius:12px;border:1px solid var(--line);background:var(--chip);color:var(--fg);font-size:26px;font-weight:700;cursor:pointer}
+.step output{flex:1;text-align:center;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.result{background:var(--chip);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.big{font-size:30px;font-weight:800;color:var(--good);font-variant-numeric:tabular-nums;line-height:1.2}
+.big.warn{color:var(--warn)}
+.note{font-size:13px;color:var(--sub);margin:0}
+.warnbox{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin:0}
+.src{font-size:12px;color:var(--sub);margin:0;overflow-wrap:anywhere}
+.src a{color:var(--accent)}
+</style>
+<main>
+<div>
+<h1>おかね診断</h1>
+<p class="lead">タップするだけ。数字は公的な資料の平均と、仮の計算です。</p>
+</div>
+<div class="tabs" role="tablist">
+<button class="tab" role="tab" id="t0" aria-selected="true" data-i="0">年末調整</button>
+<button class="tab" role="tab" id="t1" aria-selected="false" data-i="1">お菓子・飲み物</button>
+<button class="tab" role="tab" id="t2" aria-selected="false" data-i="2">冬の電気代</button>
+</div>
+
+<section class="card" id="p0">
+<h2>年末調整で、税金はいくら安くなる?</h2>
+<p class="q">年収(額面)をえらぶ</p>
+<div class="opts" id="o0"></div>
+<div class="result" id="r0"></div>
+<p class="warnbox">仮の例です。給与だけ・独身・扶養なし・社会保険料は年収の15%と仮に置いています。家族や他の控除があると変わります。実際の額は、会社の年末調整で決まります。</p>
+<p class="src">根拠: 令和8年分からの給与所得控除・基礎控除の見直しを、所得税の速算表で計算(復興特別所得税は含まない)。</p>
+</section>
+
+<section class="card" id="p1" hidden>
+<h2>お菓子と飲み物、使いすぎ?</h2>
+<p class="q">家族の人数</p>
+<div class="step"><button id="m1" aria-label="1人減らす">−</button><output id="n1">1人</output><button id="p1b" aria-label="1人増やす">+</button></div>
+<p class="q">1か月に、お菓子と飲み物に使う額(だいたいでOK)</p>
+<div class="opts" id="o1"></div>
+<div class="step"><button id="m2" aria-label="1,000円減らす">−</button><output id="n2">5,000円</output><button id="p2b" aria-label="1,000円増やす">+</button></div>
+<div class="result" id="r1"></div>
+<p class="warnbox">平均は「二人以上の世帯」(平均2.87人)の数字です。人数に合わせた目安は、平均を人数で割って掛けただけの簡単な計算で、公的な数字ではありません。</p>
+<p class="src">根拠: 総務省 家計調査 2025年平均(二人以上の世帯)。菓子類 月9,211円 + 飲料 月5,859円 = 月15,070円。</p>
+</section>
+
+<section class="card" id="p2" hidden>
+<h2>この冬、電気代はいくら安くなる?</h2>
+<p class="q">1か月の電気の使用量(検針票の「kWh」)</p>
+<div class="opts" id="o2"></div>
+<div class="step"><button id="m3" aria-label="10kWh減らす">−</button><output id="n3">250kWh</output><button id="p3b" aria-label="10kWh増やす">+</button></div>
+<div class="result" id="r2"></div>
+<p class="warnbox">使用量が毎月同じとして計算した目安です。ガスは確認が足りないので、ここでは出していません。実際の値引きは、検針票・請求書で確認してください。</p>
+<p class="src">根拠: 電気の値引き単価 12月 1円・1月 4.5円・2月 4.5円(1kWhあたり)。3か月の合計は使用量×10円。</p>
+</section>
+</main>
+<script>
+(function(){
+var yen=function(n){return Math.round(n).toLocaleString("ja-JP")+"円"};
+var $=function(i){return document.getElementById(i)};
+// タブ
+var tabs=document.querySelectorAll(".tab");
+function show(i){
+  for(var k=0;k<3;k++){$("p"+k).hidden=(k!==i);tabs[k].setAttribute("aria-selected",k===i?"true":"false")}
+  try{localStorage.setItem("okane-tab",i)}catch(e){}
+}
+tabs.forEach(function(b){b.addEventListener("click",function(){show(+b.dataset.i)})});
+function chips(box,vals,fmt,cur,on){
+  var el=$(box);el.innerHTML="";
+  vals.forEach(function(v){
+    var b=document.createElement("button");b.className="opt";b.textContent=fmt(v);
+    b.setAttribute("aria-pressed",v===cur?"true":"false");
+    b.addEventListener("click",function(){on(v)});el.appendChild(b);
+  });
+}
+// 1 年末調整(calc_tax.py の社保15%版の結果)
+var DIFF={200:3500,300:8000,400:8000,500:27000,600:36000,700:8000,800:8000,1000:8000};
+var inc=500;
+function r0(){
+  chips("o0",[200,300,400,500,600,700,800,1000],function(v){return v+"万円"},inc,function(v){inc=v;r0()});
+  var d=DIFF[inc];
+  $("r0").innerHTML='<div>年収'+inc+'万円の人の、所得税の差(目安)</div><div class="big">約'+yen(d)+' 安くなる</div>'+
+    '<p class="note">'+(d>=20000?'この年収は、改正の効果が大きい帯です。':'この年収は、効果は小さめの帯です。')+'</p>';
+}
+// 2 お菓子・飲み物
+var AVG=15070,PER=AVG/2.87,ppl=1,amt=5000;
+function r1(){
+  $("n1").textContent=ppl+"人";$("n2").textContent=amt.toLocaleString("ja-JP")+"円";
+  chips("o1",[3000,5000,8000,12000,15000,20000],function(v){return v.toLocaleString("ja-JP")+"円"},amt,function(v){amt=v;r1()});
+  var base=PER*ppl,diff=(amt-base)*12,over=diff>0;
+  $("r1").innerHTML='<div>'+ppl+'人の目安は月 約'+yen(base)+'</div>'+
+    '<div class="big'+(over?' warn':'')+'">年に約'+yen(Math.abs(diff))+(over?' 多め':' 少なめ')+'</div>'+
+    '<p class="note">あなたの月'+yen(amt)+'を、目安と比べた差を12か月分にした額です。'+(over?'平均より多い分を少し減らすと、そのまま手元に残ります。':'平均より少なく、ここは節約できている方です。')+'</p>'+
+    '<p class="note">参考: 二人以上世帯の平均は、お菓子・飲み物で年 約'+yen(AVG*12)+'。</p>';
+}
+// 3 電気
+var kwh=250;
+function r2(){
+  $("n3").textContent=kwh+"kWh";
+  chips("o2",[150,200,250,300,400,500],function(v){return v+"kWh"},kwh,function(v){kwh=v;r2()});
+  $("r2").innerHTML='<div>月'+kwh+'kWhの家の、1〜2月と12月の値引き(3か月)</div><div class="big">約'+yen(kwh*10)+' 安くなる</div>'+
+    '<p class="note">内わけ: 12月 '+yen(kwh*1)+' / 1月 '+yen(kwh*4.5)+' / 2月 '+yen(kwh*4.5)+'</p>';
+}
+function step(btn,fn){$(btn).addEventListener("click",fn)}
+step("m1",function(){ppl=Math.max(1,ppl-1);r1()});step("p1b",function(){ppl=Math.min(8,ppl+1);r1()});
+step("m2",function(){amt=Math.max(0,amt-1000);r1()});step("p2b",function(){amt=Math.min(100000,amt+1000);r1()});
+step("m3",function(){kwh=Math.max(0,kwh-10);r2()});step("p3b",function(){kwh=Math.min(2000,kwh+10);r2()});
+r0();r1();r2();
+try{var t=+localStorage.getItem("okane-tab");if(t>=0&&t<3)show(t)}catch(e){}
+})();
+</script>
