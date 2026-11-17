@@ -27,7 +27,10 @@
       "by": "auto"
     }
   },
-  "posted": null,
+  "posted": {
+    "at": "2026-11-17T03:37:05+00:00",
+    "url": "https://note.com/chidou_taxian/n/nb4f7cebbb961"
+  },
   "plan": {
     "week_start": "2026-11-09",
     "date": "2026-11-09",
