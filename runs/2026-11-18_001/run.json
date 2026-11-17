@@ -3,12 +3,13 @@
   "theme": "investing",
   "theme_name": "投資・資産形成",
   "created": "2026-11-17T22:46:38+00:00",
-  "status": "critique_done",
+  "status": "publish_approved",
   "steps_done": [
     "research",
     "ideas",
     "draft",
-    "critique"
+    "critique",
+    "revised"
   ],
   "approvals": {
     "idea": {
@@ -16,7 +17,10 @@
       "at": "2026-11-17T22:49:44+00:00",
       "by": "auto"
     },
-    "publish": null,
+    "publish": {
+      "at": "2026-11-17T22:53:48+00:00",
+      "by": "auto"
+    },
     "sns": null
   },
   "posted": null,
