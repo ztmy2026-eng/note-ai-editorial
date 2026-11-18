@@ -224,7 +224,15 @@ def synthesize_edge(texts: list[str], out_dir: Path, ffmpeg: str, voice: str = E
     注意: edge-tts は非公式のクライアントで、利用条件の扱いが明確でない。個人の発信での利用にとどめる。"""
     import asyncio
 
+    import os
+    import ssl
+
     import edge_tts
+    import edge_tts.communicate as _comm
+    # クラウドは通信の入口が独自の証明書を使う。edge-tts は自分の証明書だけを見るので、環境が示す証明書(確認は切らない)を追加で使う
+    cafile = os.environ.get("SSL_CERT_FILE") or ("/root/.ccr/ca-bundle.crt" if Path("/root/.ccr/ca-bundle.crt").exists() else "")
+    if cafile and Path(cafile).exists():
+        _comm._SSL_CTX = ssl.create_default_context(cafile=cafile)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async def run_all() -> None:
