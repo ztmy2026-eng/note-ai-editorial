@@ -1,0 +1,37 @@
+{
+  "run_id": "2026-11-20_001",
+  "theme": "side-job",
+  "theme_name": "副業",
+  "created": "2026-11-19T22:46:04+00:00",
+  "status": "sns_approved",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-11-19T22:49:39+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-11-19T22:53:30+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-11-19T22:54:07+00:00",
+      "by": "auto"
+    }
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-11-16",
+    "date": "2026-11-20",
+    "title": "家でできる副業、始めやすい順に比べる",
+    "approved": false
+  }
+}
