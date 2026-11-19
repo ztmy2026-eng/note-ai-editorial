@@ -1,0 +1,41 @@
+{
+  "run_id": "2026-11-19_001",
+  "theme": "ai-work",
+  "theme_name": "AI × 仕事効率化",
+  "created": "2026-11-18T22:46:10+00:00",
+  "status": "sns_approved",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-11-18T22:49:06+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-11-18T22:52:29+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-11-18T22:53:06+00:00",
+      "by": "auto"
+    }
+  },
+  "posted": null,
+  "plan": {
+    "week_start": "2026-11-16",
+    "date": "2026-11-19",
+    "title": "AIで毎月の出費を整理する、5分の手順",
+    "approved": false
+  },
+  "skipped": {
+    "at": "2026-11-18T23:01:06+00:00",
+    "reason": "持ち主の指示:AI家計簿の記事は書かない"
+  }
+}
