@@ -45,6 +45,15 @@ def _cmd_new_run(args) -> int:
     return 0
 
 
+def _cmd_make_char_reel(args) -> int:
+    from . import charreel
+    res = charreel.make_char_reel(Path(args.root), args.run_id, voice=args.voice)
+    voice = "声つき(VOICEVOX:ずんだもん)" if res["voice"] == "voicevox" else "音なし"
+    print(f"キャラ動画を作りました: {res['video']}({res['scenes']}場面・約{res['seconds']}秒・{voice})")
+    print(f"投稿文: {res['caption']} / 読み上げの原稿: {res['narration']}")
+    return 0
+
+
 def _cmd_make_reel(args) -> int:
     from . import reels
     res = reels.make_reel(Path(args.root), args.run_id, voice=args.voice)
@@ -423,6 +432,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_id")
     s.add_argument("--voice", choices=["auto", "voicevox", "edge", "sapi", "none"], default="auto", help="auto=親しみやすい声(edge)→Windowsの声→音なし / edge / sapi / none")
     s.set_defaults(fn=_cmd_make_reel)
+    s = sub.add_parser("make-char-reel", help="台本(reel_cat/script.json)から、猫の博士のキャラ動画(縦長mp4)を作る。VOICEVOXがあれば、ずんだもんの声つき")
+    s.add_argument("run_id")
+    s.add_argument("--voice", choices=["auto", "voicevox", "none"], default="auto")
+    s.set_defaults(fn=_cmd_make_char_reel)
     s = sub.add_parser("title-style", help="今日のタイトルの型(短い型/2段型)を表示する(実験期間 2026-10-13〜10-26)")
     s.add_argument("--date", default="", help="日付(YYYY-MM-DD)。省略時は今日(日本時間)")
     s.set_defaults(fn=_cmd_title_style)
