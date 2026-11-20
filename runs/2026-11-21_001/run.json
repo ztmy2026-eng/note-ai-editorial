@@ -3,14 +3,29 @@
   "theme": "newcomer",
   "theme_name": "新社会人 × お金・仕事・キャリア",
   "created": "2026-11-20T22:46:01+00:00",
-  "status": "research_done",
+  "status": "sns_approved",
   "steps_done": [
-    "research"
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
   ],
   "approvals": {
-    "idea": null,
-    "publish": null,
-    "sns": null
+    "idea": {
+      "candidate": 1,
+      "at": "2026-11-20T22:51:24+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-11-20T22:55:29+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-11-20T22:56:08+00:00",
+      "by": "auto"
+    }
   },
   "posted": null,
   "plan": {
