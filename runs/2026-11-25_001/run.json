@@ -1,0 +1,31 @@
+{
+  "run_id": "2026-11-25_001",
+  "theme": "side-job",
+  "theme_name": "副業",
+  "created": "2026-11-24T22:45:38+00:00",
+  "status": "sns_approved",
+  "steps_done": [
+    "research",
+    "ideas",
+    "draft",
+    "critique",
+    "revised",
+    "sns"
+  ],
+  "approvals": {
+    "idea": {
+      "candidate": 1,
+      "at": "2026-11-24T22:49:24+00:00",
+      "by": "auto"
+    },
+    "publish": {
+      "at": "2026-11-24T22:52:44+00:00",
+      "by": "auto"
+    },
+    "sns": {
+      "at": "2026-11-24T22:53:13+00:00",
+      "by": "auto"
+    }
+  },
+  "posted": null
+}
